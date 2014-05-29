@@ -18,7 +18,7 @@ METAOPTS = ['ami-id', 'ami-launch-index', 'ami-manifest-path',
             'public-keys', 'ramdisk-id', 'reservation-id', 'security-groups',
             'user-data']
 
-class Error(Exception):
+class EC2MetadataError(Exception):
     pass
 
 class EC2Metadata:
@@ -29,7 +29,7 @@ class EC2Metadata:
         self.api = api
 
         if not self._test_connectivity(self.addr, 80):
-            raise Error("could not establish connection to: %s" % self.addr)
+            raise EC2MetadataError("could not establish connection to: %s" % self.addr)
 
     @staticmethod
     def _test_connectivity(addr, port):
@@ -56,7 +56,7 @@ class EC2Metadata:
         """return value of metaopt"""
 
         if metaopt not in METAOPTS:
-            raise Error('unknown metaopt', metaopt, METAOPTS)
+            raise EC2MetadataError('unknown metaopt', metaopt, METAOPTS)
 
         if metaopt == 'availability-zone':
             return self._get('meta-data/placement/availability-zone')
@@ -78,6 +78,19 @@ class EC2Metadata:
             return self._get('user-data')
 
         return self._get('meta-data/' + metaopt)
+
+    def setAPIVersion(self, apiVersion=None):
+        """Set the API version to use for the query"""
+        if not apiVersion:
+            # Nothing to do
+            return self.api
+        url = 'http://%s' %self.addr
+        availableAPIs = urllib.urlopen(url).read().split('\n')
+        if apiVersion not in availableAPIs:
+            msg = 'Requested API version "%s" not available' %apiVersion
+            raise EC2MetadataError(msg)
+        self.api = apiVersion
+        
 
 def get(metaopt):
     """primitive: return value of metaopt"""
