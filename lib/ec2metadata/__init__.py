@@ -127,19 +127,4 @@ class EC2Metadata:
         self.api = apiVersion
         self._resetetaOptsAPIMap()
         self._setMetaOpts()
-        
-
-def display(metdadata, metaopts, prefix=False):
-    """primitive: display metaopts (list) values with optional prefix"""
-
-    m = metdadata
-    for metaopt in metaopts:
-        value = m.get(metaopt)
-        if not value:
-            value = "unavailable"
-
-        if prefix:
-            print "%s: %s" % (metaopt, value)
-        else:
-            print value
 
