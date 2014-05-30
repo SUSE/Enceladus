@@ -11,13 +11,6 @@ import time
 import urllib
 import socket
 
-METAOPTS = ['ami-id', 'ami-launch-index', 'ami-manifest-path',
-            'ancestor-ami-id', 'availability-zone', 'block-device-mapping',
-            'instance-id', 'instance-type', 'local-hostname', 'local-ipv4',
-            'kernel-id', 'product-codes', 'public-hostname', 'public-ipv4',
-            'public-keys', 'ramdisk-id', 'reservation-id', 'security-groups',
-            'user-data']
-
 class EC2MetadataError(Exception):
     pass
 
@@ -25,11 +18,16 @@ class EC2Metadata:
     """Class for querying metadata from EC2"""
 
     def __init__(self, addr='169.254.169.254', api='2008-02-01'):
-        self.addr = addr
-        self.api = api
+        self.addr    = addr
+        self.api     = api
+        self.dataCategories  = ['dynamic/', 'meta-data/']
 
         if not self._test_connectivity(self.addr, 80):
-            raise EC2MetadataError("could not establish connection to: %s" % self.addr)
+            msg = 'Could not establish connection to: %s' % self.addr
+            raise EC2MetadataError(msg)
+
+        self._resetetaOptsAPIMap()
+        self._setMetaOpts()
 
     @staticmethod
     def _test_connectivity(addr, port):
@@ -44,6 +42,24 @@ class EC2Metadata:
 
         return False
 
+    def _addMetaOpts(self, path):
+        """Add meta options available under the current path to the options
+           to API map"""
+        options = self.metaOptsAPIMap.keys()
+        value = self._get(path)
+        if not value:
+            return None
+        entries = value.split('\n')
+        for item in entries:
+            if item:
+                if item == 'public-keys/':
+                    continue
+                if item not in options:
+                    if item[-1] != '/':
+                        self.metaOptsAPIMap[item] = path + item
+                    else:
+                        self._addMetaOpts(path+item)
+
     def _get(self, uri):
         url = 'http://%s/%s/%s' % (self.addr, self.api, uri)
         value = urllib.urlopen(url).read()
@@ -52,14 +68,23 @@ class EC2Metadata:
 
         return value
 
+    def _resetetaOptsAPIMap(self):
+        """Set options that have special semantics"""
+        self.metaOptsAPIMap = { 'public-keys' : 'meta-data/public-keys',
+                                'user-data' : 'user-data'
+                              }
+        
+    def _setMetaOpts(self):
+        """Set the metadata options for the current API on this object."""
+        for path in self.dataCategories:
+            self._addMetaOpts(path)
+
     def get(self, metaopt):
-        """return value of metaopt"""
+        """Return value of metaopt"""
 
-        if metaopt not in METAOPTS:
-            raise EC2MetadataError('unknown metaopt', metaopt, METAOPTS)
-
-        if metaopt == 'availability-zone':
-            return self._get('meta-data/placement/availability-zone')
+        path = self.metaOptsAPIMap.get(metaopt, None)
+        if not path:
+            raise EC2MetadataError('Unknown metaopt: %s' %metaopt)
 
         if metaopt == 'public-keys':
             public_keys = []
@@ -74,11 +99,14 @@ class EC2Metadata:
 
             return public_keys
 
-        if metaopt == 'user-data':
-            return self._get('user-data')
+        return self._get(path)
 
-        return self._get('meta-data/' + metaopt)
-
+    def getMetaOptions(self):
+        """Return the available options for the current api version"""
+        options = self.metaOptsAPIMap.keys()
+        options.sort()
+        return options
+    
     def setAPIVersion(self, apiVersion=None):
         """Set the API version to use for the query"""
         if not apiVersion:
@@ -90,18 +118,14 @@ class EC2Metadata:
             msg = 'Requested API version "%s" not available' %apiVersion
             raise EC2MetadataError(msg)
         self.api = apiVersion
+        self._resetetaOptsAPIMap()
+        self._setMetaOpts()
         
 
-def get(metaopt):
-    """primitive: return value of metaopt"""
-
-    m = EC2Metadata()
-    return m.get(metaopt)
-
-def display(metaopts, prefix=False):
+def display(metdadata, metaopts, prefix=False):
     """primitive: display metaopts (list) values with optional prefix"""
 
-    m = EC2Metadata()
+    m = metdadata
     for metaopt in metaopts:
         value = m.get(metaopt)
         if not value:
