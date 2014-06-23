@@ -26,7 +26,7 @@ if __name__ == '__main__':
         license='GPL-3.0+',
         author='Alon Swartz, Robert Schweikert',
         author_email='alon@turnkeylinux.org, rjschwei@suse.com',
-        version='1.1.0',
+        version='1.2.0',
         packages=setuptools.find_packages('lib'),
         package_dir={
             '': 'lib',

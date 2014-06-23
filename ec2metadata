@@ -21,16 +21,16 @@ import getopt
 
 import ec2metadata
 
-def usage(e=None):
+def usage(options, e=None):
     if e:
         print >> sys.stderr, "Error:", e
 
-    print >> sys.stderr, "Syntax: %s [--options]" % sys.argv[0]
-    print >> sys.stderr, __doc__.strip()
+    print >> sys.stdout, "Syntax: %s [--options]" % sys.argv[0]
+    print >> sys.stdout, __doc__.strip()
 
-    print >> sys.stderr, "Options:"
-    for metaopt in ec2metadata.METAOPTS:
-        print >> sys.stderr, "    --" + metaopt
+    print >> sys.stdout, "Options:"
+    for opt in options:
+        print >> sys.stdout, "    --" + opt
 
     sys.exit(1)
 
@@ -46,6 +46,7 @@ def main():
         del sys.argv[apiArgPos + 1]
         del sys.argv[apiArgPos]
 
+    meta = None
     try:
         meta = ec2metadata.EC2Metadata()
     except ec2metadata.EC2MetadataError, e:
@@ -59,24 +60,24 @@ def main():
             print e
             sys.exit(1)
     try:
-        getopt_metaopts = ec2metadata.METAOPTS[:]
+        getopt_metaopts = meta.getMetaOptions()
         getopt_metaopts.append('help')
         opts, args = getopt.gnu_getopt(sys.argv[1:], "h", getopt_metaopts)
     except getopt.GetoptError, e:
-        usage(e)
+        usage(getopt_metaopts, e)
 
     if len(opts) == 0:
-        ec2metadata.display(ec2metadata.METAOPTS, prefix=True)
+        ec2metadata.display(meta, meta.getMetaOptions(), prefix=True)
         return
 
     metaopts = []
     for opt, val in opts:
         if opt in ('-h', '--help'):
-            usage()
+            usage(getopt_metaopts)
 
         metaopts.append(opt.replace('--', ''))
 
-    ec2metadata.display(metaopts)
+    ec2metadata.display(meta,metaopts)
 
 
 if __name__ == "__main__":
