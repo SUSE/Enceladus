@@ -64,8 +64,9 @@ def main():
         getopt_metaopts = meta.getMetaOptions()
         getopt_metaopts.append('help')
         getopt_metaopts.append('listapis')
-        getopt_metaopts.append('output')                
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlo', getopt_metaopts)
+        getopt_metaopts.append('output')
+        getopt_metaopts.append('xml')
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlox', getopt_metaopts)
     except getopt.GetoptError, e:
         usage(getopt_metaopts, e)
 
@@ -74,6 +75,7 @@ def main():
         return
 
     metaopts = []
+    genXML = False
     outFile = None
     for opt, val in opts:
         if opt in ('-h', '--help'):
@@ -88,18 +90,26 @@ def main():
         elif opt in ('-o', '--output'):
             outFile = args[0]
             continue
+        elif opt in ('-x', '--xml'):
+            genXML = True
+            continue
             
         metaopts.append(opt.replace('--', ''))
 
     if outFile:
         try:
-            ec2metautils.writefile(outFile, meta, metaopts, True)
+            if genXML:
+                ec2metautils.writeXMLfile(outFile, meta, metaopts)
+            else: 
+                ec2metautils.writefile(outFile, meta, metaopts, True)
         except IOError as e:
            print >> sys.stderr, e
            sys.exit(1)
     else:
-        ec2metautils.display(meta,metaopts)
-
+        if genXML:
+            ec2metautils.displayXML(meta, metaopts)
+        else:
+            ec2metautils.display(meta, metaopts)
 
 if __name__ == "__main__":
    main()

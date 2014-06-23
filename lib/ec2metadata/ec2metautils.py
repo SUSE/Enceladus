@@ -17,17 +17,31 @@ unnecessary state out of the metadata class
 
 import ec2metadata
 
+def _genXML(metadata, metaopts):
+    """Use the option name as a tag name to wrap the data."""
+
+    xml = ''
+    for metaopt in metaopts:
+        value = metadata.get(metaopt)
+        if not value:
+            value = "unavailable"
+        xml += '<%s>' %metaopt
+        xml += value
+        xml += '</%s>\n' %metaopt
+        
+    return xml
+
 def _write(filePath, data):
     """Write the data to the given file"""
     fout = open(filePath, 'w')
     fout.write(data)
     fout.close()
 
-def display(metdadata, metaopts, prefix=False):
+def display(metadata, metaopts, prefix=False):
     """primitive: display metaopts (list) values with optional prefix"""
 
     for metaopt in metaopts:
-        value = metdadata.get(metaopt)
+        value = metadata.get(metaopt)
         if not value:
             value = "unavailable"
 
@@ -35,6 +49,11 @@ def display(metdadata, metaopts, prefix=False):
             print "%s: %s" % (metaopt, value)
         else:
             print value
+
+def displayXML(metadata, metaopts):
+    """Collect the requested data and display it as XML"""
+    data = _genXML(metadata, metaopts)
+    print data
 
 def writefile(filePath, metadata, metaopts, prefix=False):
     """Collect the requested data and write it to the given file."""
@@ -50,4 +69,10 @@ def writefile(filePath, metadata, metaopts, prefix=False):
         else:
             data += value
 
+    _write(filePath, data)
+
+def writeXMLfile(filePath, metadata, metaopts):
+    """Collect the requested data and write it to the given file as XML"""
+
+    data = _genXML(metadata, metaopts)
     _write(filePath, data)
