@@ -20,6 +20,7 @@ import sys
 import getopt
 
 import ec2metadata
+import ec2metadata.ec2metautils as ec2metautils
 
 def usage(options, e=None):
     if e:
@@ -50,20 +51,21 @@ def main():
     try:
         meta = ec2metadata.EC2Metadata()
     except ec2metadata.EC2MetadataError, e:
-        print e
+        print >> sys.stderr, e
         sys.exit(1)
         
     if apiVersion:
         try:
             meta.setAPIVersion(apiVersion)
         except ec2metadata.EC2MetadataError, e:
-            print e
+            print >> sys.stderr, e
             sys.exit(1)
     try:
         getopt_metaopts = meta.getMetaOptions()
         getopt_metaopts.append('help')
         getopt_metaopts.append('listapis')
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hl', getopt_metaopts)
+        getopt_metaopts.append('output')                
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlo', getopt_metaopts)
     except getopt.GetoptError, e:
         usage(getopt_metaopts, e)
 
@@ -72,6 +74,7 @@ def main():
         return
 
     metaopts = []
+    outFile = None
     for opt, val in opts:
         if opt in ('-h', '--help'):
             usage(getopt_metaopts)
@@ -82,10 +85,20 @@ def main():
             for ver in apiVers:
                 print >> sys.stdout, '    %s' %ver
             sys.exit(0)
+        elif opt in ('-o', '--output'):
+            outFile = args[0]
+            continue
             
         metaopts.append(opt.replace('--', ''))
 
-    ec2metadata.display(meta,metaopts)
+    if outFile:
+        try:
+            ec2metautils.writefile(outFile, meta, metaopts, True)
+        except IOError as e:
+           print >> sys.stderr, e
+           sys.exit(1)
+    else:
+        ec2metautils.display(meta,metaopts)
 
 
 if __name__ == "__main__":
