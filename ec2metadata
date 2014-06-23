@@ -62,7 +62,8 @@ def main():
     try:
         getopt_metaopts = meta.getMetaOptions()
         getopt_metaopts.append('help')
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "h", getopt_metaopts)
+        getopt_metaopts.append('listapis')
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hl', getopt_metaopts)
     except getopt.GetoptError, e:
         usage(getopt_metaopts, e)
 
@@ -74,7 +75,14 @@ def main():
     for opt, val in opts:
         if opt in ('-h', '--help'):
             usage(getopt_metaopts)
-
+            sys.exit(0)
+        elif opt in ('-l', '--listapis'):
+            apiVers = meta.getAvailableAPIVersions()
+            print >> sys.stdout, 'Available API versions:'
+            for ver in apiVers:
+                print >> sys.stdout, '    %s' %ver
+            sys.exit(0)
+            
         metaopts.append(opt.replace('--', ''))
 
     ec2metadata.display(meta,metaopts)

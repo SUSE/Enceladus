@@ -101,6 +101,13 @@ class EC2Metadata:
 
         return self._get(path)
 
+    def getAvailableAPIVersions(self):
+        """Return a list of the available API versions"""
+        url = 'http://%s/' %self.addr
+        value = urllib.urlopen(url).read()
+        apiVers = value.split('\n')
+        return apiVers
+    
     def getMetaOptions(self):
         """Return the available options for the current api version"""
         options = self.metaOptsAPIMap.keys()
