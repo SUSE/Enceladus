@@ -71,7 +71,7 @@ def main():
         usage(getopt_metaopts, e)
 
     if len(opts) == 0:
-        ec2metadata.display(meta, meta.getMetaOptions(), prefix=True)
+        ec2metautils.display(meta, meta.getMetaOptions(), prefix=True)
         return
 
     metaopts = []
