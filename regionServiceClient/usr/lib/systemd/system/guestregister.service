@@ -1,0 +1,10 @@
+[Unit]
+Description=Obtain Cloud SMT info and register with the SMT server
+After=network.service
+
+[Service]
+ExecStart=/usr/sbin/registercloudguest
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

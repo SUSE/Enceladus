@@ -1,0 +1,9 @@
+The region service client obtains cloud specific SMT information from the
+region service and then uses this information to "register" the guest image
+with the SMT server.
+
+The server hosts for the region service are configured in the
+/etc/regionserverclnt.cfg file.
+
+After obtaining the information from the region server the code uses the
+standard clientSetup4SMT.sh script to setup the repositories.

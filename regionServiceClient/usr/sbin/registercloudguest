@@ -1,0 +1,423 @@
+#!/usr/bin/python
+
+# Copyright (c) $2014, SUSE LLC, All rights reserved.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 3.0 of the License, or (at your option) any later version.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library.
+
+"""This script obtains information from the configured region server in the
+   cloud environment and uses the information to register the guest with
+   the SMT server based on the information provided by the region server.
+
+   The configuration is in ini format and is located in
+   etc/regionserverclnt.cfg"""
+
+import ConfigParser
+import glob
+import logging
+import os
+import random
+import requests
+import subprocess
+import sys
+import base64
+
+from lxml import etree
+from M2Crypto import X509
+
+configFile = '/etc/regionserverclnt.cfg'
+
+#==============================================================================
+def checkRegistration(smtServerName):
+    """Check if the instance is already registerd"""
+    credExist = hasCredentials()
+    reposExist = hasRepos(smtServerName)
+    if reposExist and credExist:
+        return 1
+    elif reposExist and not credExist:
+        removeRepos(smtServerName)
+    elif credExist and not reposExist:
+        # We might have to rethink this when BYOL comes along and
+        # registers with our SMT
+        removeCredentials()
+
+    return None
+
+#==============================================================================
+def hasCredentials():
+    """Check if a credentials file exists."""
+    if (os.path.exists('/etc/zypp/credentials.d/NCCcredentials') or
+    os.path.exists('/etc/zypp/credentials.d/SCCcredentials')):
+        return 1
+
+    return None
+
+#==============================================================================
+def hasRepos(smtServerName):
+    """Check if repositories exist."""
+    repoSrvName = smtServerName.replace('.','_')
+    if (glob.glob('/etc/zypp/repos.d/*%s*' %repoSrvName)):
+        return 1
+
+    return None
+
+#==============================================================================
+def removeCredentials():
+    """Remove the server generated credentials"""
+    nccCreds = '/etc/zypp/credentials.d/NCCcredentials'
+    sccCreds = '/etc/zypp/credentials.d/SCCcredentials'
+    if os.path.exists(nccCreds):
+        logging.info('Removing credentials: %s' %nccCreds)
+        os.unlink(nccCreds)
+    if os.path.exists(sccCreds):
+        logging.info('Removing credentials: %s' %sccCreds)
+        os.unlink(sccCreds)
+
+    return 1
+
+#==============================================================================
+def removeRepos(smtServerName):
+    """Remove the repositories for the given server"""
+    repoSrvName = smtServerName.replace('.','_')
+    repos = glob.glob('/etc/zypp/repos.d/*%s*' %repoSrvName)
+    for repo in repos:
+        logging.info('Removing repo: %s' %repo)
+        os.unlink(repo)
+
+    return 1
+
+#==============================================================================
+def x509FingerPrintValid(smtCA_request, fingerprint):
+    try:
+        x509 = X509.load_cert_string(str(smtCA_request.text))
+        x509_fingerprint = x509.get_fingerprint('sha1')
+    except:
+        errMsg = 'Could not read X509 fingerprint from cert'
+        logging.error(errMsg)
+        return 0
+    if x509_fingerprint != fingerprint.replace(':',''):
+        errMsg = 'Fingerprint could not be verified'
+        logging.error(errMsg)
+        return 0
+    return 1
+
+#==============================================================================
+def importCA(smtCA_request):
+    key_chain = '/usr/share/pki/trust/anchors/registration_server.pem'
+    logging.info('Writing SMT rootCA: %s' %key_chain)
+    try:
+        smtCAFile = open(key_chain, 'w')
+        smtCAFile.write(smtCA_request.text)
+        smtCAFile.close()
+    except IOError:
+        errMsg = 'Could not store SMT certificate'
+        logging.error(errMsg)
+        return 0
+    try:
+        ca_update = ["update-ca-certificates"]
+        cmd = subprocess.Popen(
+            ca_update,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        logging.info('Updating CA certificates: %s' %ca_update)
+        cmd.communicate()
+    except:
+        errMsg = 'Could not update certificates %s' %cmd[1]
+        logging.error(errMsg)
+        return 0
+    return 1
+
+#==============================================================================
+def getProducts():
+    products = []
+    try:
+        cmd = subprocess.Popen(
+            ["zypper", "-x", "products"], stdout=subprocess.PIPE
+        )
+        product_xml = cmd.communicate()
+    except:
+        errMsg = 'Could not get product list %s' %cmd[1]
+        logging.error(errMsg)
+        return
+
+    # Detrmine the base product
+    baseProdSet = '/etc/products.d/baseproduct'
+    baseprodName = None
+    if os.path.islink(baseProdSet):
+        baseprod = os.path.realpath(baseProdSet)
+        baseprodName = baseprod.split(os.sep)[-1].split('.')[0]
+    else:
+        errMsg = 'No baseproduct installed system cannot be registerd'
+        logging.error(errMsg)
+        return
+    
+    product_tree = etree.fromstring(str(product_xml[0]))
+    for child in product_tree.find("product-list"):
+        name = child.attrib['name']
+        if name == baseprodName:
+            continue
+        vers = child.attrib['version']
+        arch = child.attrib['arch']
+        prod = name + "/" + vers + "/" + arch
+        if prod not in products:
+            products.append(prod)
+            
+    return products
+
+#==============================================================================
+# Support custom logfile with -f command line option
+if '-f' in sys.argv:
+    idx = sys.argv.index('-f')
+    configFile = sys.argv[idx+1]
+
+# Read the configuration
+cfg = ConfigParser.RawConfigParser()
+try:
+    parsed = cfg.read(configFile)
+except:
+    print 'Could not parse configuration file %s' %configFile
+    type, value, tb = sys.exc_info()
+    print value.message
+    sys.exit(1)
+    
+if not parsed:
+    print 'Error parsing config file: %s' %configFile
+    sys.exit(1)
+
+# Set up logging
+logFile = '/var/log/cloudregister'
+try:
+    logging.basicConfig(
+        filename=logFile,
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s:%(message)s'
+        )
+except IOError:
+    print 'Could not open log file ', logFile, ' for writing.'
+    sys.exit(1)
+
+# Get the configured region servers
+regionsrvs = cfg.get('server', 'regionsrv')
+
+# Get the location of the cert files for the region servers
+certDir =  cfg.get('server', 'certLocation')
+
+# Get the API to use
+api = cfg.get('server', 'api')
+logging.info('Using API: %s' %api)
+
+# Check if additional arguments are to be passed to the region server
+regionSrvArgs = None
+if cfg.has_section('instance'):
+    if cfg.has_option('instance', 'instanceArgs'):
+        module = cfg.get('instance', 'instanceArgs')
+        if module and module != 'none':
+            try:
+                mod = __import__('cloudregister.%s' %module, fromlist=[''])
+                regionSrvArgs = '?' + mod.generateRegionSrvArgs()
+                logging.info('Region server arguments: %s' %regionSrvArgs)
+                api += regionSrvArgs
+            except:
+                msg = 'Configured instanceArgs module could not be loaded. '
+                msg += 'Continuing without additional arguments.'
+                logging.warning(msg)
+
+# Get the SMT server information from one of the configured region servers
+response = None
+servers = regionsrvs.split(',')
+random.shuffle(servers)
+for srv in servers:
+    srvName = srv.strip()
+    logging.info('Using region server: %s' %srvName)
+    certFile = certDir + '/' + srvName + '.pem'
+    if not os.path.isfile(certFile):
+        logging.info('No cert found: %s skip this server' %certFile)
+        continue
+    try:
+        response = requests.get('https://%s/%s' %(srvName, api),
+                                verify=certFile,
+                                timeout=15.0)
+        if response.status_code == 200:
+            break
+        else:
+            logging.error('=' *20)
+            logging.error('Server returned: %d' %response.status_code)
+            logging.error(response.text)
+            logging.error('=' *20)
+    except:
+        logging.error('No response from: %s' %srvName)
+        if srv == servers[-1]:
+            logging.error('None of the servers responded')
+            logging.error('\tAttemted: %s' %servers)
+            logging.error('Exiting without registration')
+            sys.exit(1)
+        continue
+
+if not response.status_code == 200:
+    logging.error('Request not answered by any server, exiting')
+    sys.exit(1)
+
+# Parse the response to form the arguments for SMT server registration
+serverIP = None
+serverName = None
+serverFingerprint = None
+testedServers = []
+root = etree.fromstring(response.text)
+for child in root:
+    serverIP = child.attrib['SMTserverIP']
+    testedServers.append(serverIP)
+    alive = requests.get('http://%s/smt.crt' %serverIP)
+    if alive.status_code == 200:
+        serverName = child.attrib['SMTserverName']
+        serverFingerprint = child.attrib['fingerprint']
+        # Use the first server that responds
+        break
+
+if not serverFingerprint:
+    logging.error('None response from: %s' %testedServers)
+    sys.exit(1)
+
+# Handle hosts file to avoid DNS lookup
+knownHosts = open('/etc/hosts', 'r').readlines()
+serverKnown = None
+updateIP = None
+isRegistered = None
+for entry in knownHosts:
+    if entry.find(serverName) != -1:
+        serverKnown = 1
+        knownSrvIP = entry.split()[0]
+        if knownSrvIP != serverIP:
+            # same host name but different IP
+            updateIP = knownSrvIP
+if not serverKnown:
+    hosts = open('/etc/hosts', 'a')
+    hosts.write('\n# Added by SMT registration do not remove\n')
+    entry = '%s\t%s\t%s\n' %(serverIP, serverName, serverName.split('.')[0])
+    hosts.write(entry)
+    hosts.close()
+    logging.info('Modified /etc/hosts, added: %s' %entry)
+elif serverKnown and updateIP:
+    # We know of the server name but the IP has changed
+    knownHosts = open('/etc/hosts', 'r').read()
+    newContent = knownHosts.replace(updateIP, serverIP)
+    hosts = open('/etc/hosts', 'w')
+    hosts.write(newContent)
+    hosts.close()
+    logging.info('Modified /etc/hosts, changed IP for: %s' %serverName)
+    isRegistered = checkRegistration(serverName)
+elif serverKnown:
+    # We know the server, most likely previously registered
+    isRegistered = checkRegistration(serverName)
+
+if isRegistered:
+    logging.info('Instance is registered, nothing to do')
+    sys.exit(0)
+
+# Check if we need to send along any instance data
+instDataFile = '/tmp/instanceData.txt'
+if cfg.has_section('instance'):
+    if cfg.has_option('instance', 'dataProvider'):
+        cmdLn = cfg.get('instance', 'dataProvider')
+        if cmdLn != 'none':
+            cmd = cmdLn.split()[0]
+            if cmd[0] != '/':
+                try:
+                    p = subprocess.Popen(
+                        ['which %s' %cmd],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        close_fds=True
+                    )
+                except:
+                    errMsg = 'Could not find configured dataProvider: %s' %cmd
+                    logging.error(errMsg)
+            if os.access(cmd, os.X_OK):
+                # There is nothing secret about the instace data
+                # It is expected to be signed such that it cannot be altered
+                os.system("%s > %s" %(cmdLn, instDataFile))
+            else:
+                msg = 'Configured dataProvider "%s" is not executable' %cmd
+                logging.error(msg)
+
+
+register11 = '/usr/lib/suseRegister/bin/clientSetup4SMT.sh'
+register12 = '/usr/sbin/SUSEConnect'
+if (os.path.exists(register11) and os.access(register11, os.X_OK)):
+    cmd = register11
+    cmd += ' --host %s ' %serverName
+    cmd += '--fingerprint %s ' %serverFingerprint
+    cmd += '--yes '
+
+    if os.path.exists(instDataFile):
+        cmd += '--regdata %s' %instDataFile
+
+    logging.info('Registration: %s' %cmd)
+    res = os.system(cmd)
+
+    if res:
+        logging.error('Registration failed')
+        sys.exit(1)
+
+    # registration was successful, let's check if the repos do
+    # really exist and if not complete the registration by calling
+    # suse_register with the restore-repos option
+    reposExist = hasRepos(serverName)
+    if not reposExist:
+        cmd = "suse_register --restore-repos"
+        res = os.system(cmd)
+
+    if res:
+        logging.info('Repositories were not restored')
+
+elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
+    # get product list
+    products = getProducts()
+    if not len(products):
+        logging.error('No products found')
+        sys.exit(1)
+
+    smtCA_request = requests.get('http://%s/smt.crt' %serverName)
+    if not x509FingerPrintValid(smtCA_request, serverFingerprint):
+        logging.error('SMT certificate fingerprint verification failed')
+        sys.exit(1)
+
+    if not importCA(smtCA_request):
+        logging.error('SMT certificate import failed')
+        sys.exit(1)
+
+    # Register the base product first
+    cmd = register12
+    cmd += ' --url https://%s ' %serverName
+    if os.path.exists(instDataFile):
+        cmd += ' --instance-data %s ' %instDataFile
+    res = os.system(cmd)
+    if res:
+        logging.error('Baseproduct registration failed')
+        sys.exit(1)
+        
+    for product in products:
+        cmd = register12
+        cmd += ' --url https://%s ' %serverName
+        cmd += ' --product %s ' %product
+        if os.path.exists(instDataFile):
+            cmd += ' --instance-data %s ' %instDataFile
+
+        logging.info('Registration: %s' %cmd)
+        res = os.system(cmd)
+
+        if res:
+            logging.error('Registration failed')
+            sys.exit(1)
+
+else:
+    logging.error('No registration executable found')
+    sys.exit(1)
