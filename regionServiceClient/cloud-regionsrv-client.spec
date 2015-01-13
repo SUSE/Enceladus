@@ -2,7 +2,7 @@
 # spec file for package cloud-regionsrv-client
 # this code base is under development
 #
-# Copyright (c) 2013 SUSE LLC
+# Copyright (c) 2015 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv-client
-Version:        6.3.6
+Version:        6.3.7
 Release:        0
 License:        LGPL-3.0
 Summary:        Cloud Environment Guest Registration

@@ -1,6 +1,8 @@
 [Unit]
 Description=Obtain Cloud SMT info and register with the SMT server
+Requires=network.service
 After=network.service
+Before=cloud-final.service
 
 [Service]
 ExecStart=/usr/sbin/registercloudguest
