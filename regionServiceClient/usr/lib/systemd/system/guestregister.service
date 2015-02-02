@@ -6,7 +6,7 @@ Before=cloud-final.service
 
 [Service]
 ExecStart=/usr/sbin/registercloudguest
-Type=simple
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target
