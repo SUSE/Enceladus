@@ -174,16 +174,21 @@ def getProducts():
     return products
 
 #==============================================================================
-def getSMTCert(smtServer):
+def getSMTCert(smtServer, retries=3):
     """Return the response object or none if the request fails."""
 
     cert = None
-    try:
-        cert = requests.get('http://%s/smt.crt' %smtServer)
-    except:
-        # No response from server
-        logging.error('=' *20)
-        logging.error('Server %s is unreachable' %smtServer)
+    attempts = 0
+    while attempts < retries:
+        attempts += 1
+        try:
+            cert = requests.get('http://%s/smt.crt' %smtServer)
+        except:
+            # No response from server
+            logging.error('=' *20)
+            logging.error('Attempt %s of %s' %(attempts, retries))
+            logging.error('Server %s is unreachable' %smtServer)
+
 
     return cert
     
