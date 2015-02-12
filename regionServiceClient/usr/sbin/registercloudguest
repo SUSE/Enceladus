@@ -174,6 +174,25 @@ def getProducts():
     return products
 
 #==============================================================================
+def getSMTCert(smtServer, retries=3):
+    """Return the response object or none if the request fails."""
+
+    cert = None
+    attempts = 0
+    while attempts < retries:
+        attempts += 1
+        try:
+            cert = requests.get('http://%s/smt.crt' %smtServer)
+        except:
+            # No response from server
+            logging.error('=' *20)
+            logging.error('Attempt %s of %s' %(attempts, retries))
+            logging.error('Server %s is unreachable' %smtServer)
+
+
+    return cert
+    
+#==============================================================================
 # Support custom logfile with -f command line option
 if '-f' in sys.argv:
     idx = sys.argv.index('-f')
@@ -275,8 +294,8 @@ root = etree.fromstring(response.text)
 for child in root:
     serverIP = child.attrib['SMTserverIP']
     testedServers.append(serverIP)
-    alive = requests.get('http://%s/smt.crt' %serverIP)
-    if alive.status_code == 200:
+    alive = getSMTCert(serverIP)
+    if alive and alive.status_code == 200:
         serverName = child.attrib['SMTserverName']
         serverFingerprint = child.attrib['fingerprint']
         # Use the first server that responds
@@ -385,7 +404,10 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         logging.error('No products found')
         sys.exit(1)
 
-    smtCA_request = requests.get('http://%s/smt.crt' %serverName)
+    smtCA_request = getSMTCert(serverName)
+    if not smtCA_request:
+        sys.exit(1)
+
     if not x509FingerPrintValid(smtCA_request, serverFingerprint):
         logging.error('SMT certificate fingerprint verification failed')
         sys.exit(1)
