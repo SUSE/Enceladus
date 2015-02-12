@@ -1,0 +1,127 @@
+#!/usr/bin/perl
+
+#Copyright (C) 2015 SUSE LLC
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+use Getopt::Long;
+use POSIX;
+use JSON;
+
+my $device;
+my $tag;
+my $xmlOut;
+
+my $result = GetOptions(
+   "device|d=s" => \$device,
+   "tag|t" => \$tag,
+   "xml|x" => \$xmlOut
+);
+
+if ( $result != 1 ) {
+    usage();
+    die "invalid options";
+}
+if (! $device) {
+    usage();
+    die "no image file given";
+}
+
+sub usage {
+    print "Usage:\n";
+    print "  azureMetaData \n";
+    print '    --device | -d  <disk-image-file.vhdfixed|device-path> ';
+    print "(required with --tag)\n";
+    print "    --tag | -t  --> Read the disk tag\n";
+    print "    --xml | -x  --> Wrap information in XML tags\n";
+}
+
+sub getVHDDiskTag {
+    my $file = shift;
+    my $fh;
+    my $read_bytes;
+    my $junk;
+    my $result;
+    my $done;
+    if (! sysopen($fh,$file, O_RDONLY)) {
+        die "open file $file failed: $!"
+    }
+    # Read the tag at 64K boundary
+    seek $fh,65536,0;
+    $read_bytes = sysread ($fh, $done, 4);
+    if ($read_bytes != 4) {
+        die "sysread failed, want 4 bytes got $read_bytes"
+    }
+    $junk = unpack 'l',  $done;
+    $junk = pack   'l>', $junk;
+    $junk = unpack 'H*', $junk;
+    $result = "$junk-";
+    $read_bytes = sysread ($fh, $done, 2);
+    if ($read_bytes != 2) {
+        die "sysread failed, want 2 bytes got $read_bytes"
+    }
+    $junk = unpack 'S',  $done;
+    $junk = pack   'S>', $junk;
+    $junk = unpack 'H*', $junk;
+    $result.= "$junk-";
+    $read_bytes = sysread ($fh, $done, 2);
+    if ($read_bytes != 2) {
+        die "sysread failed, want 2 bytes got $read_bytes"
+    }
+    $junk = unpack 'S',  $done;
+    $junk = pack   'S>', $junk;
+    $junk = unpack 'H*', $junk;
+    $result.= "$junk-";
+    $read_bytes = sysread ($fh, $done, 2);
+    if ($read_bytes != 2) {
+        die "sysread failed, want 2 bytes got $read_bytes"
+    }
+    $junk = unpack 'H*', $done;
+    $result.= "$junk-";
+    $read_bytes = sysread ($fh, $done, 6);
+    if ($read_bytes != 6) {
+        die "sysread failed, want 6 bytes got $read_bytes"
+    }
+    $junk = unpack 'H*', $done;
+    $result.= $junk;
+    close $fh;
+    return $result;
+}
+
+sub writeMetaData {
+    my $data = shift;
+    my $xmlFormat = shift;
+    my $json_ref = JSON->new->allow_nonref;
+    my %json_data;
+    $json_data{billingTag} = $data->{tag};
+    $json_ref -> pretty;
+    my $json_text = $json_ref ->encode( \%json_data );
+    chomp $json_text;
+    if ($xmlFormat) {
+        return "<document>".$json_text."</document>";
+    } else {
+        return $json_text;
+    }
+}
+
+
+if ($tag && ! $device) {
+    print "Must specify device to read disk tag\n";
+    usage();
+    exit 1;
+}
+
+print writeMetaData( { tag => getVHDDiskTag($device) } , $xmlOut);
