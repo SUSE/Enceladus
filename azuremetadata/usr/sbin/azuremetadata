@@ -42,7 +42,7 @@ if (! $device) {
 
 sub usage {
     print "Usage:\n";
-    print "  azureMetaData \n";
+    print "  azuremetadata \n";
     print '    --device | -d  <disk-image-file.vhdfixed|device-path> ';
     print "(required with --tag)\n";
     print "    --tag | -t  --> Read the disk tag\n";
