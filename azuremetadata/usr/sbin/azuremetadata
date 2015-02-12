@@ -17,98 +17,99 @@
 
 use strict;
 use warnings;
+
+use XML::LibXML;
 use Getopt::Long;
-use POSIX;
 use JSON;
 
-my $device;
-my $tag;
-my $xmlOut;
+use AzureAgent;
+use AzureDisk;
 
-my $result = GetOptions(
-   "device|d=s" => \$device,
-   "tag|t" => \$tag,
-   "xml|x" => \$xmlOut
-);
-
-if ( $result != 1 ) {
-    usage();
-    die "invalid options";
+sub main {
+    my %options = parse_options();
+    my %data;
+    if ($options{tag}) {
+        # VHD disk tag discovery
+        $data{billingTag} = AzureDisk::getVHDDiskTag($options{device});
+    } elsif ($options{external_ip}) {
+        # Public External IP discovery
+        my $ip = AzureAgent::read_external_ip(
+            AzureAgent::import_config()
+        );
+        $data{external_ip} = $ip;
+    } elsif ($options{internal_ip}) {
+        # Private Internal IP discovery
+        my $ip = AzureAgent::read_internal_ip(
+            AzureAgent::import_config()
+        );
+        $data{internal_ip} = $ip;
+    }
+    print writeMetaData(\%data, $options{xmlOut})
 }
-if (! $device) {
-    usage();
-    die "no image file given";
+
+sub parse_options {
+    my %options;
+    my $external_ip;
+    my $internal_ip;
+    my $tag;
+    my $device;
+    my $xmlOut;
+    my $result = GetOptions(
+        "external-ip|e" => \$external_ip,
+        "internal-ip|i" => \$internal_ip,
+        "tag|t"         => \$tag,
+        "device|d=s"    => \$device,
+        "xml|x"         => \$xmlOut
+    );
+    $options{external_ip} = $external_ip;
+    $options{internal_ip} = $internal_ip;
+    $options{tag} = $tag;
+    $options{device} = $device;
+    $options{xmlOut} = $xmlOut;
+    if ( $result != 1 ) {
+        usage();
+        die "invalid options";
+    }
+    if ((! $options{tag}) &&
+        (! $options{external_ip}) &&
+        (! $options{internal_ip})
+    ) {
+        usage();
+        die "no command given";
+    }
+    if (! $options{device}) {
+        $options{device} = '/dev/sda';
+    }
+    return %options;
 }
 
 sub usage {
     print "Usage:\n";
     print "  azuremetadata \n";
-    print '    --device | -d  <disk-image-file.vhdfixed|device-path> ';
-    print "(required with --tag)\n";
-    print "    --tag | -t  --> Read the disk tag\n";
-    print "    --xml | -x  --> Wrap information in XML tags\n";
-}
-
-sub getVHDDiskTag {
-    my $file = shift;
-    my $fh;
-    my $read_bytes;
-    my $junk;
-    my $result;
-    my $done;
-    if (! sysopen($fh,$file, O_RDONLY)) {
-        die "open file $file failed: $!"
-    }
-    # Read the tag at 64K boundary
-    seek $fh,65536,0;
-    $read_bytes = sysread ($fh, $done, 4);
-    if ($read_bytes != 4) {
-        die "sysread failed, want 4 bytes got $read_bytes"
-    }
-    $junk = unpack 'l',  $done;
-    $junk = pack   'l>', $junk;
-    $junk = unpack 'H*', $junk;
-    $result = "$junk-";
-    $read_bytes = sysread ($fh, $done, 2);
-    if ($read_bytes != 2) {
-        die "sysread failed, want 2 bytes got $read_bytes"
-    }
-    $junk = unpack 'S',  $done;
-    $junk = pack   'S>', $junk;
-    $junk = unpack 'H*', $junk;
-    $result.= "$junk-";
-    $read_bytes = sysread ($fh, $done, 2);
-    if ($read_bytes != 2) {
-        die "sysread failed, want 2 bytes got $read_bytes"
-    }
-    $junk = unpack 'S',  $done;
-    $junk = pack   'S>', $junk;
-    $junk = unpack 'H*', $junk;
-    $result.= "$junk-";
-    $read_bytes = sysread ($fh, $done, 2);
-    if ($read_bytes != 2) {
-        die "sysread failed, want 2 bytes got $read_bytes"
-    }
-    $junk = unpack 'H*', $done;
-    $result.= "$junk-";
-    $read_bytes = sysread ($fh, $done, 6);
-    if ($read_bytes != 6) {
-        die "sysread failed, want 6 bytes got $read_bytes"
-    }
-    $junk = unpack 'H*', $done;
-    $result.= $junk;
-    close $fh;
-    return $result;
+    print "    --external-ip\n";
+    print "      print public external IPv4 address\n";
+    print "\n";
+    print "    --internal-ip\n";
+    print "      print private internal IPv4 address\n";
+    print "\n";
+    print "    --tag\n";
+    print "      print vhd disk tag stored in boot record\n";
+    print "\n";
+    print "  options\n";
+    print "    [ --device | -d <image file or disk device> ]\n";
+    print "      Specify device for tag discovery. Default device\n";
+    print "      is set to '/dev/sda'\n";
+    print "    [ --xml | -x ]\n";
+    print "      Wrap information in XML markup\n";
+    print "--\n";
 }
 
 sub writeMetaData {
-    my $data = shift;
+    my $json_data = shift;
     my $xmlFormat = shift;
     my $json_ref = JSON->new->allow_nonref;
-    my %json_data;
-    $json_data{billingTag} = $data->{tag};
     $json_ref -> pretty;
-    my $json_text = $json_ref ->encode( \%json_data );
+    my $json_text = $json_ref ->encode( $json_data );
     chomp $json_text;
     if ($xmlFormat) {
         return "<document>".$json_text."</document>";
@@ -117,11 +118,4 @@ sub writeMetaData {
     }
 }
 
-
-if ($tag && ! $device) {
-    print "Must specify device to read disk tag\n";
-    usage();
-    exit 1;
-}
-
-print writeMetaData( { tag => getVHDDiskTag($device) } , $xmlOut);
+main();
