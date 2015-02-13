@@ -44,7 +44,7 @@ sub main {
         );
         $data{internal_ip} = $ip;
     }
-    print writeMetaData(\%data, $options{xmlOut})
+    print writeMetaData(\%data, $options{output})
 }
 
 sub parse_options {
@@ -54,18 +54,21 @@ sub parse_options {
     my $tag;
     my $device;
     my $xmlOut;
+    my $bareOut;
     my $result = GetOptions(
         "external-ip|e" => \$external_ip,
         "internal-ip|i" => \$internal_ip,
         "tag|t"         => \$tag,
         "device|d=s"    => \$device,
-        "xml|x"         => \$xmlOut
+        "xml|x"         => \$xmlOut,
+        "bare|b"        => \$bareOut
     );
     $options{external_ip} = $external_ip;
     $options{internal_ip} = $internal_ip;
     $options{tag} = $tag;
     $options{device} = $device;
     $options{xmlOut} = $xmlOut;
+    $options{bareOut} = $bareOut;
     if ( $result != 1 ) {
         usage();
         die "invalid options";
@@ -80,19 +83,25 @@ sub parse_options {
     if (! $options{device}) {
         $options{device} = '/dev/sda';
     }
+    $options{output} = 'json';
+    if ($options{xmlOut}) {
+        $options{output} = 'xml';
+    } elsif ($options{bareOut}) {
+        $options{output} = 'bare';
+    }
     return %options;
 }
 
 sub usage {
     print "Usage:\n";
     print "  azuremetadata \n";
-    print "    --external-ip\n";
+    print "    --external-ip | -e\n";
     print "      print public external IPv4 address\n";
     print "\n";
-    print "    --internal-ip\n";
+    print "    --internal-ip | -i\n";
     print "      print private internal IPv4 address\n";
     print "\n";
-    print "    --tag\n";
+    print "    --tag | -t\n";
     print "      print vhd disk tag stored in boot record\n";
     print "\n";
     print "  options\n";
@@ -101,20 +110,28 @@ sub usage {
     print "      is set to '/dev/sda'\n";
     print "    [ --xml | -x ]\n";
     print "      Wrap information in XML markup\n";
+    print "    [ --bare | -b ]\n";
+    print "      Just print information without markup\n";
     print "--\n";
 }
 
 sub writeMetaData {
     my $json_data = shift;
-    my $xmlFormat = shift;
+    my $output_style = shift;
     my $json_ref = JSON->new->allow_nonref;
     $json_ref -> pretty;
     my $json_text = $json_ref ->encode( $json_data );
     chomp $json_text;
-    if ($xmlFormat) {
+    if ($output_style eq 'xml') {
         return "<document>".$json_text."</document>";
-    } else {
+    } elsif ($output_style eq 'json') {
         return $json_text;
+    } else {
+        my @result = ();
+        foreach my $value (values %{$json_data}) {
+            push @result, $value;
+        }
+        return join ':', @result;
     }
 }
 
