@@ -22,7 +22,7 @@ use XML::LibXML;
 use Getopt::Long;
 use JSON;
 
-use AzureAgent;
+use AzureNetwork;
 use AzureDisk;
 
 sub main {
@@ -33,14 +33,14 @@ sub main {
         $data{billingTag} = AzureDisk::getVHDDiskTag($options{device});
     } elsif ($options{external_ip}) {
         # Public External IP discovery
-        my $ip = AzureAgent::read_external_ip(
-            AzureAgent::import_config()
+        my $ip = AzureNetwork::read_external_ip(
+            AzureNetwork::import_config()
         );
         $data{external_ip} = $ip;
     } elsif ($options{internal_ip}) {
         # Private Internal IP discovery
-        my $ip = AzureAgent::read_internal_ip(
-            AzureAgent::import_config()
+        my $ip = AzureNetwork::read_internal_ip(
+            AzureNetwork::import_config()
         );
         $data{internal_ip} = $ip;
     }
