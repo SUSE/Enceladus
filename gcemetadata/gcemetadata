@@ -1,0 +1,173 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+#
+# This file is part of ec2metadata.
+#
+# ec2metadata is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+"""
+Query and display GCE metadata related to the instance
+
+If no options are specified, all will be displayed.
+"""
+
+
+import getopt
+import os
+import sys
+
+import gcemetadata
+
+generalOptions = ['api', 'help', 'listapis', 'output',
+                  'version', 'xml']
+
+def printOption(level, indent, options):
+    prefix = '--'
+    for opt in options.keys():
+        if type(options[opt]) == dict:
+            if opt == 'disks' or opt == 'network-interfaces':
+                # Figure out the ID
+                subOpts = options[opt].keys()
+                path = options[opt][subOpts[0]]
+                devID = path.split('/')[-2]
+                print >> sys.stdout, indent * level + prefix + opt
+                if opt == 'disks':
+                    info = indent * (level + 1) + prefix + 'diskid ' + devID
+                    print >> sys.stdout, info
+                else:
+                    info = indent * (level + 1) + prefix + 'netid ' + devID
+                    print >> sys.stdout, info
+                printOption(level + 2, indent, options[opt])
+            else:
+                printOption(level + 1, indent, options[opt])
+        print >> sys.stdout, indent * level + prefix + opt
+
+def usage(options, categories, e=None):
+    if e:
+        print >> sys.stderr, "Error:", e
+
+    print >> sys.stdout, "Syntax: %s [--options]" % sys.argv[0]
+    print >> sys.stdout, __doc__.strip()
+
+    print >> sys.stdout, "Options:"
+    indent = '    '
+    for cat in categories:
+        level = 1
+        print >> sys.stdout, indent + '--query ' + cat[:-1]
+        level += 1
+        printOption(level, indent, options[cat])
+
+    print >> sys.stdout, indent + 'General options:'
+    for item in generalOptions:
+        print >> sys.stdout, indent * 2 + '--' + item
+    if e:
+        sys.exit(1)
+
+def main():
+    api = None
+    apiArgPos = None
+    if '-a' in sys.argv:
+        apiArgPos = sys.argv.index('-a')
+    elif '--api' in sys.argv:
+        apiArgPos = sys.argv.index('--api')
+    if apiArgPos:
+        api = sys.argv[apiArgPos + 1].strip()
+        del sys.argv[apiArgPos + 1]
+        del sys.argv[apiArgPos]
+
+    meta = None
+    if api:
+        try:
+            meta = gcemetadata.GCEMetadata(api)
+        except gcemetadata.GCEMetadataException, e:
+            print >> sys.stderr, e
+            sys.exit(1)
+    else:
+        try:
+            meta = gcemetadata.GCEMetadata()
+        except gcemetadata.GCEMetadataException, e:
+            print >> sys.stderr, e
+            sys.exit(1)
+
+
+    try:
+        getopt_metaopts = meta.getMetaOptions()
+        for item in generalOptions:
+            getopt_metaopts.append(item)
+        getopt_metaopts.append('diskid')
+        getopt_metaopts.append('netid')
+        getopt_metaopts.append('query')
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'ahloqx', getopt_metaopts)
+    except getopt.GetoptError, e:
+        usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+
+#    if len(opts) == 0:
+#        gcemetautils.display(meta, meta.getMetaOptions(), prefix=True)
+#        return
+
+    metaopts = []
+    genXML = False
+    outFile = None
+    for opt, val in opts:
+        if opt in ('-h', '--help'):
+            usage(meta.getAPIMap(), meta.getOptionCategories())
+            sys.exit(0)
+        elif opt in ('-l','--listapis'):
+            apis = meta.getAvailableAPIVersions()
+            if apis:
+                print >> sys.stdout, 'Available APIs:'
+                for api in apis:
+                    print >> sys.stdout, '    %s' %api
+            else:
+                print >> sys.stdout, 'No APIs available'
+            sys.exit(0)
+        elif opt == '--diskid':
+            try:
+                meta.setDiskDevice(opt)
+            except gcemetadata.GCEMetadataException, e:
+                usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+        elif opt == '--netid':
+            try:
+                meta.setNetDevice(opt)
+            except gcemetadata.GCEMetadataException, e:
+                usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+        elif opt in ('-o', '--output'):
+            outFile = args[0]
+            continue
+        elif opt in ('-q', '--query'):
+            try:
+                meta.setDataCat(val)
+            except gcemetadata.GCEMetadataException, e:
+                usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+        elif opt in ('-v', '--version'):
+            if not os.path.exists('VERSION'):
+                print 'Cannot find version data file, please report a bug'
+                sys.exit(1)
+            print open('VERSION').read()
+        elif opt in ('-x', '--xml'):
+            genXML = True
+            continue
+            
+        metaopts.append(opt.replace('--', ''))
+
+#    if outFile:
+#        try:
+#            if genXML:
+#                gcemetautils.writeXMLfile(outFile, meta, metaopts)
+#            else: 
+#                gcemetautils.writefile(outFile, meta, metaopts, True)
+#        except IOError as e:
+#           print >> sys.stderr, e
+#           sys.exit(1)
+#    else:
+#        if genXML:
+#            gcemetautils.displayXML(meta, metaopts)
+#        else:
+#            gcemetautils.display(meta, metaopts)
+
+if __name__ == "__main__":
+   main()
