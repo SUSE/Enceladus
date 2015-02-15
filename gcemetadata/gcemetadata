@@ -144,10 +144,12 @@ def main():
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
         elif opt in ('-v', '--version'):
-            if not os.path.exists('VERSION'):
+            try:
+                print meta.getVersion()
+            except:
                 print 'Cannot find version data file, please report a bug'
                 sys.exit(1)
-            print open('VERSION').read()
+            sys.exit(0)
         elif opt in ('-x', '--xml'):
             genXML = True
             continue

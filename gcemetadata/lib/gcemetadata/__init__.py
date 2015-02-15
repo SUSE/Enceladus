@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with ec2metadata.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib2
+import os
 import socket
+import urllib2
 
 class GCEMetadataException(Exception):
     pass
@@ -142,6 +143,11 @@ class GCEMetadata:
     def getMetaOptions(self):
         """Return the available options for the current api and api version"""
         return []
+
+    def getVersion(self):
+        """Return the version string"""
+        verPath = os.path.dirname(__file__) + '/VERSION'
+        return open(verPath).read()
 
     def setAPIVersion(self, apiv):
         """Set the API Version to use for the query"""
