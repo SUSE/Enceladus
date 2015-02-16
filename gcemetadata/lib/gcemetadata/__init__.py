@@ -31,9 +31,11 @@ class GCEMetadata:
         # the "computeMetadata" API
         self.api            = 'computeMetadata'
         self.dataCategories = ['project/', 'instance/']
-        self.diskDevID      = '0'
+        self.defaultDiskID  = '0'
+        self.defaultNetID   = '0'
+        self.diskDevID      = -1
         self.header         = {'Metadata-Flavor' : 'Google'}
-        self.netDevID       = '0'
+        self.netDevID       = -1
         self.options        = {}
         self.server         = 'metadata.google.internal'
 
@@ -47,7 +49,8 @@ class GCEMetadata:
 
         self._createOptionsMap()
         # DEBUG print REMOVE
-        #print self.options
+#        print 'RJS debug: --- Options Dict ---'
+#        print self.options
         
         
     def _test_connectivity(self, addr, port):
@@ -62,7 +65,7 @@ class GCEMetadata:
 
         return False
 
-    def _addOptions(self, path):
+    def _addOptions(self, path, devID=None):
         """Collect all options in the given path"""
         options = {}
         value = self._get(self._buildFullURL(path))
@@ -71,17 +74,25 @@ class GCEMetadata:
         entries = value.split('\n')
         for item in entries:
             if item:
-                if item[-1] != '/':
+                if item[-1] != '/' and not item[0].isdigit():
                     options[item] = path
-                elif (item == 'disks/' or
-                      item == 'network-interfaces/' or
-                      item[-1].isdigit()):
+                elif item == 'disks/' or item == 'network-interfaces/':
                     options[item[:-1]] = self._addOptions(path + item)
                 else:
-                    nextLevel = self._addOptions(path + item)
+                    nextLevel = None
+                    if item[0].isdigit() and path.find('service-account') == -1:
+                        nextLevel = self._addOptions(path + item, item[0])
+                    elif devID:
+                        nextLevel = self._addOptions(path + item, devID)
+                    else:
+                        nextLevel = self._addOptions(path + item)
                     if nextLevel:
-                        options.update(nextLevel)
-
+                        if (item[0].isdigit()
+                            and item[0] != devID
+                            and path.find('service-account') == -1):
+                            options[item[0]] = nextLevel
+                        else:
+                            options.update(nextLevel)
         return options
 
     def _buildFullURL(self, uri):
@@ -115,6 +126,14 @@ class GCEMetadata:
         url = self._buildFUllURL('instance/' + deviceName)
         devIDs = self._get(url)
         return self._genList(devIDs)
+
+    def get(self, option):
+        """Get the data for the specified option"""
+        optMap = self.options[self.queryCat]
+        if not optMap.get(option, None):
+            return None
+        if option == 'disks' or option =='network-interfaces':
+            return self._getDevice
         
     def getAPIMap(self):
         """Retrun the map of all options including the access path"""
@@ -128,21 +147,17 @@ class GCEMetadata:
             apiVers = self._genList(value)
         return apiVers
 
-    def getDiskDevIDs(self):
-        """Return a list of available disk IDs"""
-        return self._getDevIDList('disks')
+    def getDiskOptions(self):
+        """Return a list of available query options for the selected disk"""
+        return 
 
-    def getNetDevIDs(self):
-        """Return a list of available disk IDs"""
-        return self._getDevIDList('network-interfaces')
+    def getNetOptions(self):
+        """Return a list of available query options for the selected device"""
+        return 
         
     def getOptionCategories(self):
         """Return the list of option categories"""
         return self.dataCategories
-
-    def getMetaOptions(self):
-        """Return the available options for the current api and api version"""
-        return []
 
     def getVersion(self):
         """Return the version string"""
@@ -173,7 +188,7 @@ class GCEMetadata:
 
     def setDiskDevice(devID):
         """Set the disk device ID to query"""
-        knownIDs = self.getDiskDevIDs()
+        knownIDs = self._getDevIDList('disks')
         if devID not in knownIDs:
             msg = 'Requested device "%s" not available for query. ' %devID
             msg += 'Available disks: %s' %knownIDs
@@ -182,7 +197,7 @@ class GCEMetadata:
 
     def setNetDevice(devID):
         """Set the network device ID to query"""
-        knownIDs = self.getNetDevIDs()
+        knownIDs = self._getDevIDList('network-interfaces')
         if devID not in knownIDs:
             msg = 'Requested device "%s" not available for query. ' %devID
             msg += 'Available network interfaces: %s' %knownIDs

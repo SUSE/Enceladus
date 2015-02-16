@@ -21,27 +21,38 @@ import os
 import sys
 
 import gcemetadata
+import gcemetadata.gcemetautils as gcemetautils
 
 generalOptions = ['api', 'help', 'listapis', 'output',
                   'version', 'xml']
 
+def genOptions(options):
+    """Create alist from all the keys in nexted dictionary"""
+    optLst = []
+    for opt in options.keys():
+        if type(options[opt]) == dict:
+            optLst += genOptions(options[opt])
+        optLst.append(opt)
+
+    return optLst
+                          
 def printOption(level, indent, options):
     prefix = '--'
     for opt in options.keys():
         if type(options[opt]) == dict:
             if opt == 'disks' or opt == 'network-interfaces':
                 # Figure out the ID
-                subOpts = options[opt].keys()
-                path = options[opt][subOpts[0]]
-                devID = path.split('/')[-2]
-                print >> sys.stdout, indent * level + prefix + opt
-                if opt == 'disks':
-                    info = indent * (level + 1) + prefix + 'diskid ' + devID
-                    print >> sys.stdout, info
-                else:
-                    info = indent * (level + 1) + prefix + 'netid ' + devID
-                    print >> sys.stdout, info
-                printOption(level + 2, indent, options[opt])
+                devIDs = options[opt].keys()
+                devIDs.sort()
+                for devID in devIDs:
+                    print >> sys.stdout, indent * level + prefix + opt
+                    if opt == 'disks':
+                        info = indent * (level + 1) + prefix + 'diskid ' + devID
+                        print >> sys.stdout, info
+                    else:
+                        info = indent * (level + 1) + prefix + 'netid ' + devID
+                        print >> sys.stdout, info
+                    printOption(level + 2, indent, options[opt][devID])
             else:
                 printOption(level + 1, indent, options[opt])
         print >> sys.stdout, indent * level + prefix + opt
@@ -95,9 +106,8 @@ def main():
 
 
     try:
-        getopt_metaopts = meta.getMetaOptions()
-        for item in generalOptions:
-            getopt_metaopts.append(item)
+        getopt_metaopts = genOptions(meta.getAPIMap())
+        getopt_metaopts += generalOptions
         getopt_metaopts.append('diskid')
         getopt_metaopts.append('netid')
         getopt_metaopts.append('query')
@@ -109,9 +119,9 @@ def main():
 #        gcemetautils.display(meta, meta.getMetaOptions(), prefix=True)
 #        return
 
+    genXML   = False
     metaopts = []
-    genXML = False
-    outFile = None
+    outFile  = None
     for opt, val in opts:
         if opt in ('-h', '--help'):
             usage(meta.getAPIMap(), meta.getOptionCategories())
@@ -130,11 +140,13 @@ def main():
                 meta.setDiskDevice(opt)
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+            continue
         elif opt == '--netid':
             try:
                 meta.setNetDevice(opt)
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+            continue
         elif opt in ('-o', '--output'):
             outFile = args[0]
             continue
@@ -143,6 +155,7 @@ def main():
                 meta.setDataCat(val)
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+            continue
         elif opt in ('-v', '--version'):
             try:
                 print meta.getVersion()
@@ -169,7 +182,7 @@ def main():
 #        if genXML:
 #            gcemetautils.displayXML(meta, metaopts)
 #        else:
-#            gcemetautils.display(meta, metaopts)
+#     gcemetautils.display(meta, metaopts)
 
 if __name__ == "__main__":
    main()
