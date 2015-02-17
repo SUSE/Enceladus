@@ -20,7 +20,7 @@ import getopt
 import os
 import sys
 
-import gcemetadata
+import gcemetadata.gcemetadata as gcemetadata
 import gcemetadata.gcemetautils as gcemetautils
 
 from gcemetadata.gcemetaExceptions import *
