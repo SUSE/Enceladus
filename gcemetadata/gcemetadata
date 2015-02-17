@@ -23,6 +23,8 @@ import sys
 import gcemetadata
 import gcemetadata.gcemetautils as gcemetautils
 
+from gcemetadata.gcemetaExceptions import *
+
 generalOptions = ['api', 'help', 'listapis', 'output=',
                   'version', 'xml']
 

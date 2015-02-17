@@ -19,8 +19,7 @@ import os
 import socket
 import urllib2
 
-class GCEMetadataException(Exception):
-    pass
+from gcemetaExceptions import *
 
 class GCEMetadata:
     """Class for interacting with the metadata from GCE"""
