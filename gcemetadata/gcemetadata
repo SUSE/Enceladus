@@ -2,9 +2,9 @@
 #
 # Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
-# This file is part of ec2metadata.
+# This file is part of gcemetadata.
 #
-# ec2metadata is free software; you can redistribute it and/or modify it
+# gcemetadata is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
 # option) any later version.
@@ -23,19 +23,9 @@ import sys
 import gcemetadata
 import gcemetadata.gcemetautils as gcemetautils
 
-generalOptions = ['api', 'help', 'listapis', 'output',
+generalOptions = ['api', 'help', 'listapis', 'output=',
                   'version', 'xml']
 
-def genOptions(options):
-    """Create alist from all the keys in nexted dictionary"""
-    optLst = []
-    for opt in options.keys():
-        if type(options[opt]) == dict:
-            optLst += genOptions(options[opt])
-        optLst.append(opt)
-
-    return optLst
-                          
 def printOption(level, indent, options):
     prefix = '--'
     for opt in options.keys():
@@ -74,6 +64,8 @@ def usage(options, categories, e=None):
 
     print >> sys.stdout, indent + 'General options:'
     for item in generalOptions:
+        if item[-1] == '=':
+            item = item[:-1]
         print >> sys.stdout, indent * 2 + '--' + item
     if e:
         sys.exit(1)
@@ -106,12 +98,15 @@ def main():
 
 
     try:
-        getopt_metaopts = genOptions(meta.getAPIMap())
+        getopt_metaopts = meta.getFlatenedOpts()
         getopt_metaopts += generalOptions
-        getopt_metaopts.append('diskid')
-        getopt_metaopts.append('netid')
-        getopt_metaopts.append('query')
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'ahloqx', getopt_metaopts)
+        getopt_metaopts.append('diskid=')
+        getopt_metaopts.append('netid=')
+        getopt_metaopts.append('query=')
+        opts, args = getopt.gnu_getopt(sys.argv[1:],
+                                       'hlo:vq:x',
+                                       getopt_metaopts
+        )
     except getopt.GetoptError, e:
         usage(meta.getAPIMap(), meta.getOptionCategories(), e)
 
@@ -119,6 +114,7 @@ def main():
 #        gcemetautils.display(meta, meta.getMetaOptions(), prefix=True)
 #        return
 
+    foundQuery = None
     genXML   = False
     metaopts = []
     outFile  = None
@@ -151,6 +147,7 @@ def main():
             outFile = args[0]
             continue
         elif opt in ('-q', '--query'):
+            foundQuery = 1
             try:
                 meta.setDataCat(val)
             except gcemetadata.GCEMetadataException, e:
@@ -166,9 +163,14 @@ def main():
         elif opt in ('-x', '--xml'):
             genXML = True
             continue
-            
+        
         metaopts.append(opt.replace('--', ''))
 
+    if not foundQuery:
+        print 'The use of --query is required.'
+        sys.exit(1)
+
+    gcemetautils.display(meta, metaopts)
 #    if outFile:
 #        try:
 #            if genXML:
@@ -182,7 +184,7 @@ def main():
 #        if genXML:
 #            gcemetautils.displayXML(meta, metaopts)
 #        else:
-#     gcemetautils.display(meta, metaopts)
+    
 
 if __name__ == "__main__":
    main()

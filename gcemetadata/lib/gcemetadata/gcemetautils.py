@@ -47,7 +47,11 @@ def display(metadata, metaopts, prefix=False):
     options = _cleanUpOptions(metadata, metaopts)
 
     for metaopt in options:
-        value = metadata.get(metaopt)
+        value = None
+        try:
+            value = metadata.get(metaopt)
+        except gcemetadata.GCEMetadataException, e:
+            print >> sys.stderr, "Error:", e
         if not value:
             value = "unavailable"
 

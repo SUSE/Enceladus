@@ -1,4 +1,4 @@
-# Copyright (c) 2015SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of gcemetadata.
 #
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with ec2metadata.  If not, see <http://www.gnu.org/licenses/>.
+# along with gcemetadata.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import socket
@@ -104,6 +104,18 @@ class GCEMetadata:
         for cat in self.dataCategories:
             self.options[cat] = self._addOptions(cat)
 
+    def _genFlatOptLst(self, optMap=None):
+        """Flatten the API map to generate a list of quesry options"""
+        optLst = []
+        if not optMap:
+            optMap = self.options
+        for opt in optMap:
+            if type(optMap[opt]) == dict:
+                optLst += self._genFlatOptLst(optMap[opt])
+        optLst.append(opt)
+
+        return optLst
+
     def _genList(self, valueStr):
         """Return a list from a new line separated string with no trailing /"""
         values = valueStr.split('\n')
@@ -113,7 +125,7 @@ class GCEMetadata:
         """Return the value for the requested uri"""
         req = urllib2.Request(url, headers=self.header)
         # DEBUG print REMOVE
-        #print 'Request URL: %s' %url
+        #print 'debug: Request URL: %s' %url
         try:
             value = urllib2.urlopen(req).read()
         except:
@@ -123,17 +135,62 @@ class GCEMetadata:
 
     def _getDevIDList(self, deviceName):
         """Return a list of device IDs for the given device name"""
-        url = self._buildFUllURL('instance/' + deviceName)
+        url = self._buildFullURL('instance/' + deviceName)
         devIDs = self._get(url)
         return self._genList(devIDs)
 
+    def _getDeviceOpts(self, devType):
+        """Return the available query options for the given device type"""
+        opts = []
+        data = self.options[self.queryCat][devType]
+        for dev in data.keys():
+            for opt in data[dev].keys():
+                if opt not in opts:
+                    opts.append(opt)
+        return opts
+
+    def _getPathFromSubOpt(self, option):
+        """Find the given option in a nested tree"""
+        diskOpts = self._getDeviceOpts('disks')
+        netOpts = self._getDeviceOpts('network-interfaces')
+        path = None
+        devID = None
+        if option in diskOpts:
+            if self.diskDevID == -1:
+                devID = self.defaultDiskID
+            else:
+                devID = self.diskDevID
+            path = self.options[self.queryCat]['disks'][devID].get(option, None)
+        elif option in netOpts:
+            if self.netDevID == -1:
+                devID = self.defaultNetID
+            else:
+                devID = self.netDevID
+            path = self.options[self.queryCat]['network-interfaces'][devID].get(option, None)
+
+        return path
+        
     def get(self, option):
         """Get the data for the specified option"""
-        optMap = self.options[self.queryCat]
-        if not optMap.get(option, None):
+        optMap = self._genFlatOptLst()
+        if not option in optMap:
             return None
         if option == 'disks' or option =='network-interfaces':
-            return self._getDevice
+            return self._getDevIDList(option)
+
+        path = None
+        if self.options[self.queryCat].has_key(option):
+            path = self.options[self.queryCat].get(option, None)
+        else:
+            path = self._getPathFromSubOpt(option)
+
+        if not path:
+            msg = 'No query path for option "%s", please file a bug' %option
+            raise GCEMetadataException(msg)
+
+        path += option
+
+        return self._get(self._buildFullURL(path))
         
     def getAPIMap(self):
         """Retrun the map of all options including the access path"""
@@ -149,11 +206,15 @@ class GCEMetadata:
 
     def getDiskOptions(self):
         """Return a list of available query options for the selected disk"""
-        return 
+        return self._getDeviceOpts('disks')
+
+    def getFlatenedOpts(self):
+        """Return a list for all query options"""
+        return self._genFlatOptLst()
 
     def getNetOptions(self):
         """Return a list of available query options for the selected device"""
-        return 
+        return self._getDeviceOpts('network-interfaces')
         
     def getOptionCategories(self):
         """Return the list of option categories"""
@@ -175,8 +236,10 @@ class GCEMetadata:
 
         self.apiv = apiv
 
-    def setDataCat(category):
+    def setDataCat(self, category):
         """Set the data category for this query"""
+        if category[-1] != '/':
+            category = category + '/'
         if category not in self.dataCategories:
             msg = 'Query option "%s" invalid, must be ' %category
             msg += 'one of %s' %self.dataCategories
@@ -186,7 +249,7 @@ class GCEMetadata:
 
         return 1
 
-    def setDiskDevice(devID):
+    def setDiskDevice(self, devID):
         """Set the disk device ID to query"""
         knownIDs = self._getDevIDList('disks')
         if devID not in knownIDs:
@@ -195,7 +258,7 @@ class GCEMetadata:
 
         self.diskDevID = devID
 
-    def setNetDevice(devID):
+    def setNetDevice(self, devID):
         """Set the network device ID to query"""
         knownIDs = self._getDevIDList('network-interfaces')
         if devID not in knownIDs:
