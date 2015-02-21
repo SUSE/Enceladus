@@ -111,7 +111,7 @@ class GCEMetadata:
         for opt in optMap:
             if type(optMap[opt]) == dict:
                 optLst += self._genFlatOptLst(optMap[opt])
-        optLst.append(opt)
+            optLst.append(opt)
 
         return optLst
 
@@ -207,9 +207,9 @@ class GCEMetadata:
         """Return a list of available query options for the selected disk"""
         return self._getDeviceOpts('disks')
 
-    def getFlatenedOpts(self):
+    def getFlatenedOpts(self, category=None):
         """Return a list for all query options"""
-        return self._genFlatOptLst()
+        return self._genFlatOptLst(category)
 
     def getNetOptions(self):
         """Return a list of available query options for the selected device"""
