@@ -22,6 +22,7 @@ unnecessary state out of the metadata class
 """
 
 import gcemetadata
+import sys
 
 def _cleanUpOptions(metadata, options):
     """Removes options with overloaded semantics is a suboption is provided"""
@@ -40,7 +41,27 @@ def _cleanUpOptions(metadata, options):
 
     return options
         
-
+def displayAll(metadata):
+    """Display all metdata values"""
+    apiMap = metadata.getAPIMap()
+    categories = metadata.getOptionCategories()
+    categories.sort()
+    for cat in categories:
+        metadata.setDataCat(cat)
+        for option in apiMap[cat].keys():
+            if option != 'disks' and option != 'network-interfaces':
+                display(metadata, [option], True)
+            else:
+                ids = apiMap[cat][option].keys()
+                for devID in ids:
+                    if option == 'disks':
+                        metadata.setDiskDevice(devID)
+                    else:
+                        metadata.setNetDevice(devID)
+                    for entry in apiMap[cat][option][devID]:
+                        display(metadata, [entry], True)
+                            
+    
 def display(metadata, metaopts, prefix=False):
     """primitive: display metaopts (list) values with optional prefix"""
 

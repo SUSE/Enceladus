@@ -112,9 +112,9 @@ def main():
     except getopt.GetoptError, e:
         usage(meta.getAPIMap(), meta.getOptionCategories(), e)
 
-#    if len(opts) == 0:
-#        gcemetautils.display(meta, meta.getMetaOptions(), prefix=True)
-#        return
+    if len(opts) == 0:
+        gcemetautils.displayAll(meta)
+        return
 
     foundQuery = None
     genXML   = False
