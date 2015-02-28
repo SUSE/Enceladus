@@ -7,7 +7,7 @@ files = Makefile README.md LICENSE ec2deprecateimg setup.py
 
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
 verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
-verSrc = $(shell cat VERSION)
+verSrc = $(shell cat lib/ec2utils/VERSION)
 ifneq "$(verSpec)" "$(verSrc)"
 $(error "Version mismatch, will not take any action")
 endif
@@ -21,4 +21,5 @@ tar:
 install:
 	python setup.py install --prefix="$(PREFIX)" --root="$(DESTDIR)"
 	install -d -m 755 "$(DESTDIR)"/"$(MANDIR)"/man1
-	install -m 644 man/man1/ec2deprecateimg.1.gz "$(DESTDIR)"/"$(MANDIR)"/man1
+	install -m 644 man/man1/ec2deprecateimg.1 "$(DESTDIR)"/"$(MANDIR)"/man1
+	gzip "$(DESTDIR)"/"$(MANDIR)"/man1/ec2deprecateimg.1
