@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Setup module for gcemetadata"""
 
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2015 SUSE LLC
 #
 # This file is part of gcemetadata.
 #
@@ -33,8 +33,8 @@ if __name__ == '__main__':
             'Command-line tool to collect GCE instance meta data'),
         url='https://github.com/SUSE/Enceladus',
         license='GPL-3.0+',
-        author='Robert Schweikert',
-        author_email='rjschwei@suse.com',
+        author='SUSE',
+        author_email='public-cloud-dev@susecloud.net',
         version=version,
         packages=setuptools.find_packages('lib'),
         package_data={'gcemetadata' : ['VERSION']},
