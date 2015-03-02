@@ -2,8 +2,8 @@ ec2utils
 ========
 
 A collection of utilities that makes managing images in Amazon EC2 easier.
-All utilities utilize the same configuration file, ec2utils.conf that contains
-account and region configuration options.
+All utilities utilize the same configuration file, ~/.ec2utils.conf that
+contains account and region configuration options.
 
 # ec2deprecateimg
 
