@@ -80,9 +80,12 @@ Guest registration plugin for Google Compute Engine
 %setup -q
 
 %build
+python setup.py build
 
 %install
-%make_install PREFIX=%{_prefix}
+cp -r etc %{buildroot}
+cp -r usr %{buildroot}
+python setup.py install --prefix=%{_prefix}  --root=%{buildroot}
 %if 0%{?suse_version} < 1140
     rm -rf %{buildroot}/usr/lib/systemd
     pushd %{buildroot}
@@ -141,9 +144,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%dir %{python_sitelib}/cloudregister-6.0.0-py%{py_ver}.egg-info
+%dir %{python_sitelib}/cloudregister-6.3.12-py%{py_ver}.egg-info
 %dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-6.0.0-py%{py_ver}.egg-info/*
+%{python_sitelib}/cloudregister-6.3.12-py%{py_ver}.egg-info/*
 %{python_sitelib}/cloudregister/*
 
 %changelog
