@@ -52,6 +52,25 @@ def checkRegistration(smtServerName):
     return None
 
 #==============================================================================
+def cleanHostsFile(domainName):
+    """Remove the smt server entry from the /etc/hosts file"""
+    newHostContent = []
+    content = open('/etc/hosts', 'r').readlines()
+    smtAnnounceFound = None
+    for entry in content:
+        if entry.find('Added by SMT') != -1:
+            smtAnnounceFound = True
+            continue
+        if smtAnnounceFound and entry.find(domainName) != -1:
+            smtAnnounceFound = False
+            continue
+        newHostContent.append(entry)
+
+    hostsFile = open('/etc/hosts', 'w')
+    for entry in newHostContent:
+        hostsFile.write(entry)
+    hostsFile.close()
+#==============================================================================
 def hasCredentials():
     """Check if a credentials file exists."""
     if (os.path.exists('/etc/zypp/credentials.d/NCCcredentials') or
@@ -69,6 +88,18 @@ def hasRepos(smtServerName):
 
     return None
 
+#==============================================================================
+def killZypper():
+    """We need to make sure zypper is not running"""
+    zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
+    zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
+    pidData = zyppPID.communicate()
+    pid = pidData[0]
+    if pid != '':
+        os.system('kill -9 %s' %pid.strip())
+
+    return 1
+    
 #==============================================================================
 def removeCredentials():
     """Remove the server generated credentials"""
@@ -91,6 +122,17 @@ def removeRepos(smtServerName):
     for repo in repos:
         logging.info('Removing repo: %s' %repo)
         os.unlink(repo)
+
+    return 1
+
+#==============================================================================
+def removeService(smtServerName):
+    """Remove the service for the given SMT server"""
+    repoSrvName = smtServerName.replace('.','_')
+    srvs = glob.glob('/etc/zypp/services.d/*%s*' %repoSrvName)
+    for srv in srvs:
+        logging.info('Removing service: %s' %srv)
+        os.unlink(srv)
 
     return 1
 
@@ -191,12 +233,16 @@ def getSMTCert(smtServer, retries=3):
 
 
     return cert
-    
+
 #==============================================================================
-# Support custom logfile with -f command line option
+# Support custom config file with -f command line option
 if '-f' in sys.argv:
     idx = sys.argv.index('-f')
     configFile = sys.argv[idx+1]
+
+forceNewRegistration = None
+if '--force-new' in sys.argv:
+    forceNewRegistration = True
 
 # Read the configuration
 cfg = ConfigParser.RawConfigParser()
@@ -223,6 +269,9 @@ try:
 except IOError:
     print 'Could not open log file ', logFile, ' for writing.'
     sys.exit(1)
+
+if forceNewRegistration:
+    logging.info('Forced new registration')
 
 # Get the configured region servers
 regionsrvs = cfg.get('server', 'regionsrv')
@@ -286,6 +335,7 @@ if not response.status_code == 200:
     sys.exit(1)
 
 # Parse the response to form the arguments for SMT server registration
+domainName = None
 serverIP = None
 serverName = None
 serverFingerprint = None
@@ -297,6 +347,7 @@ for child in root:
     alive = getSMTCert(serverIP)
     if alive and alive.status_code == 200:
         serverName = child.attrib['SMTserverName']
+        domainName = serverName.split('.', 1)[-1]
         serverFingerprint = child.attrib['fingerprint']
         # Use the first server that responds
         break
@@ -305,6 +356,12 @@ if not serverFingerprint:
     logging.error('None response from: %s' %testedServers)
     sys.exit(1)
 
+if forceNewRegistration:
+    cleanHostsFile(domainName)
+    removeRepos(serverName)
+    removeCredentials()
+    removeService(serverName)
+    
 # Handle hosts file to avoid DNS lookup
 knownHosts = open('/etc/hosts', 'r').readlines()
 serverKnown = None
@@ -317,9 +374,11 @@ for entry in knownHosts:
         if knownSrvIP != serverIP:
             # same host name but different IP
             updateIP = knownSrvIP
+smtAnnounceComment = '\n# Added by SMT registration do not remove, '
+smtAnnounceComment += 'retain comment as well\n'
 if not serverKnown:
     hosts = open('/etc/hosts', 'a')
-    hosts.write('\n# Added by SMT registration do not remove\n')
+    hosts.write(smtAnnounceComment)
     entry = '%s\t%s\t%s\n' %(serverIP, serverName, serverName.split('.')[0])
     hosts.write(entry)
     hosts.close()
@@ -367,6 +426,7 @@ if cfg.has_section('instance'):
                 msg = 'Configured dataProvider "%s" is not executable' %cmd
                 logging.error(msg)
 
+killZypper()
 
 register11 = '/usr/lib/suseRegister/bin/clientSetup4SMT.sh'
 register12 = '/usr/sbin/SUSEConnect'
@@ -378,6 +438,9 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
 
     if os.path.exists(instDataFile):
         cmd += '--regdata %s' %instDataFile
+
+    if forceNewRegistration:
+        cmd += ' > /dev/null 2>&1'
 
     logging.info('Registration: %s' %cmd)
     res = os.system(cmd)
