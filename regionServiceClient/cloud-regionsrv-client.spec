@@ -144,9 +144,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%dir %{python_sitelib}/cloudregister-6.3.12-py%{py_ver}.egg-info
+%dir %{python_sitelib}/cloudregister-6.3.13-py%{py_ver}.egg-info
 %dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-6.3.12-py%{py_ver}.egg-info/*
+%{python_sitelib}/cloudregister-6.3.13-py%{py_ver}.egg-info/*
 %{python_sitelib}/cloudregister/*
 
 %changelog
