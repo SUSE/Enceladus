@@ -18,6 +18,8 @@
 use strict;
 use warnings;
 
+use lib '/usr/sbin';
+
 use XML::LibXML;
 use Getopt::Long;
 use JSON;

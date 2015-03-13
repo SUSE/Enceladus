@@ -42,7 +42,7 @@ sub import_config {
 
 sub read_internal_ip {
     my $xml = shift;
-    my $metadata = __read_metadata_node($xml);
+    my $metadata = __read_instance_node($xml);
     if (! $metadata) {
         return;
     }
@@ -51,7 +51,7 @@ sub read_internal_ip {
 
 sub read_external_ip {
     my $xml = shift;
-    my $metadata = __read_metadata_node($xml);
+    my $metadata = __read_instance_node($xml);
     my $endpoints = $metadata->getElementsByTagName('Endpoint');
     my $address;
     for (my $i=1;$i<= $endpoints->size();$i++) {
@@ -68,17 +68,10 @@ sub read_external_ip {
     return $address;
 }
 
-sub __read_metadata_node {
+sub __read_instance_node {
     my $xml = shift;
     my $instances = $xml->getElementsByTagName('Instance');
-    for (my $i=1;$i<= $instances->size();$i++) {
-        my $instance = $instances->get_node($i);
-        my $id = $instance->getAttribute('id');
-        if ($id eq 'metadata') {
-            return $instance;
-        }
-    }
-    return;
+    return $instances->get_node(1);
 }
 
 1;
