@@ -51,7 +51,7 @@ popd
 
 %files
 %defattr(-,root,root,-)
-%doc README
+%doc README.md
 %{_sbindir}/azureMetaData
 %{_sbindir}/azuremetadata
 %{_sbindir}/AzureNetwork.pm
