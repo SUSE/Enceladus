@@ -1,6 +1,6 @@
 DESTDIR=
 dirs = usr
-files = Makefile README
+files = Makefile README.md
 
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}' *.spec)
 
