@@ -1,0 +1,5 @@
+Makefile.PL
+MANIFEST
+lib/AzureMetadata/AzureDisk.pm
+lib/AzureMetadata/AzureNetwork.pm
+usr/sbin/azuremetadata

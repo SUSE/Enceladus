@@ -18,14 +18,13 @@
 use strict;
 use warnings;
 
-use lib '/usr/sbin';
-
 use XML::LibXML;
 use Getopt::Long;
 use JSON;
 
-use AzureNetwork;
-use AzureDisk;
+use AzureMetadata::AzureDisk;
+use AzureMetadata::AzureNetwork;
+
 
 sub main {
     my %options = parse_options();

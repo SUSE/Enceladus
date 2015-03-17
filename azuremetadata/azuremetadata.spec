@@ -20,7 +20,7 @@ Name:           azuremetadata
 # For compatibility, remove provides 11/11/2015
 Provides:       azureMetaData
 Obsoletes:      azureMetaData <= 2.0.1
-Version:        3.1.0
+Version:        3.1.1
 Release:        0
 License:        GPL-3.0+
 Summary:        Collect instance metadata in Azure
@@ -30,6 +30,7 @@ Source0:        %{name}-%{version}.tar.bz2
 Requires:       perl
 Requires:       perl-JSON
 Requires:       perl-XML-LibXML
+BuildRequires:  perl
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildArch:      noarch
@@ -41,21 +42,24 @@ Collect instance metadada for the running instance in Azure
 %setup -q
 
 %build
+%{__perl} Makefile.PL INSTALLDIRS=vendord INST_SCRIPT=%{buildroot}%{_sbindir}
 
 %install
-%make_install
+mkdir -p %{buildroot}/%{_sbindir}
+%perl_make_install
 pushd %{buildroot}/%{_sbindir}
 # link retained for backward compatibility remove on or after 11/11/15
 ln -s azuremetadata azureMetaData
 popd
+%perl_process_packlist
+%perl_gen_filelist
+rm %{buildroot}/%{_sbindir}/.exists
 
-%files
+%files -f %{name}.files
 %defattr(-,root,root,-)
 %doc README.md
 %{_sbindir}/azureMetaData
 %{_sbindir}/azuremetadata
-%{_sbindir}/AzureNetwork.pm
-%{_sbindir}/AzureDisk.pm
 
 %changelog
 

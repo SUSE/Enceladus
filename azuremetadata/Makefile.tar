@@ -1,0 +1,18 @@
+dirs = usr
+files = MANIFEST Makefile.PL Makefile.tar README.md
+moduledir = lib
+
+nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}' *.spec)
+verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
+verSrc = $(shell grep VERSION Makefile.PL | cut -d"'" -f2)
+
+ifneq "$(verSpec)" "$(verSrc)"
+$(error "Version mismatch, will not take any action")
+endif
+
+tar:
+	mkdir "$(nv)"
+	cp -r $(dirs) $(files) $(moduledir) "$(nv)"
+	tar -cjf "$(nv).tar.bz2" "$(nv)"
+	rm -rf "$(nv)"
+
