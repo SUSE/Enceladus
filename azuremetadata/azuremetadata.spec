@@ -20,7 +20,7 @@ Name:           azuremetadata
 # For compatibility, remove provides 11/11/2015
 Provides:       azureMetaData
 Obsoletes:      azureMetaData <= 2.0.1
-Version:        3.0.0
+Version:        3.1.0
 Release:        0
 License:        GPL-3.0+
 Summary:        Collect instance metadata in Azure
