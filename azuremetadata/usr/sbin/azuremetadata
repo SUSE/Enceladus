@@ -24,6 +24,7 @@ use JSON;
 
 use AzureMetadata::AzureDisk;
 use AzureMetadata::AzureNetwork;
+use AzureMetadata::AzureGeneral;
 
 
 sub main {
@@ -43,6 +44,11 @@ sub main {
             AzureNetwork::import_config()
         );
         $data{external_ip} = $ip;
+    } elsif ($options{instanceID}) {
+        my $id = AzureGeneral::get_instance_id(
+            AzureNetwork::import_config()
+        );
+        $data{instanceID} = $id;
     } elsif ($options{internal_ip}) {
         # Private Internal IP discovery
         my $ip = AzureNetwork::read_internal_ip(
@@ -59,6 +65,7 @@ sub parse_options {
     my $cloudServiceName;
     my $device;    
     my $external_ip;
+    my $instanceID;
     my $internal_ip;
     my $tag;
     my $xmlOut;
@@ -67,6 +74,7 @@ sub parse_options {
         "cloudservice|c" => \$cloudServiceName,
         "device|d=s"     => \$device,
         "external-ip|e"  => \$external_ip,
+        "instance-id|I"  => \$instanceID,
         "internal-ip|i"  => \$internal_ip,
         "tag|t"          => \$tag,
         "xml|x"          => \$xmlOut
@@ -75,6 +83,7 @@ sub parse_options {
     $options{cloudServiceName} = $cloudServiceName;
     $options{device}           = $device;
     $options{external_ip}      = $external_ip;
+    $options{instanceID}       = $instanceID;
     $options{internal_ip}      = $internal_ip;
     $options{tag}              = $tag;
     $options{xmlOut}           = $xmlOut;
@@ -84,6 +93,7 @@ sub parse_options {
     }
     if ((! $options{cloudServiceName}) &&
         (! $options{external_ip}) &&
+        (! $options{instanceID})  &&
         (! $options{internal_ip}) &&
         (! $options{tag})
     ) {
@@ -110,6 +120,9 @@ sub usage {
     print "\n";
     print "    --external-ip | -e\n";
     print "      print public external IPv4 address\n";
+    print "\n";
+    print "    --instance-id | -I\n";
+    print "      print the instance identifier\n";
     print "\n";
     print "    --internal-ip | -i\n";
     print "      print private internal IPv4 address\n";

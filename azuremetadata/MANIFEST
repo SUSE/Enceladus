@@ -1,5 +1,6 @@
 Makefile.PL
 MANIFEST
 lib/AzureMetadata/AzureDisk.pm
+lib/AzureMetadata/AzureGeneral.pm
 lib/AzureMetadata/AzureNetwork.pm
 usr/sbin/azuremetadata
