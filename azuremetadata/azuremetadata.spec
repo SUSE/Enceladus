@@ -20,7 +20,7 @@ Name:           azuremetadata
 # For compatibility, remove provides 11/11/2015
 Provides:       azureMetaData
 Obsoletes:      azureMetaData <= 2.0.1
-Version:        3.0.0
+Version:        3.2.1
 Release:        0
 License:        GPL-3.0+
 Summary:        Collect instance metadata in Azure
@@ -30,6 +30,7 @@ Source0:        %{name}-%{version}.tar.bz2
 Requires:       perl
 Requires:       perl-JSON
 Requires:       perl-XML-LibXML
+BuildRequires:  perl
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildArch:      noarch
@@ -41,22 +42,32 @@ Collect instance metadada for the running instance in Azure
 %setup -q
 
 %build
+%{__perl} Makefile.PL INSTALLDIRS=vendord
+#INST_SCRIPT=%{buildroot}%{_sbindir}
 
 %install
-%make_install
+mkdir -p %{buildroot}/%{_sbindir}
+%perl_make_install
+# unconditional move the INST_SCRIPT setting is not reliable accross
+# perl versions
+mv  %{buildroot}/%{_bindir}/azuremetadata %{buildroot}/%{_sbindir}
 pushd %{buildroot}/%{_sbindir}
 # link retained for backward compatibility remove on or after 11/11/15
 ln -s azuremetadata azureMetaData
 popd
+%perl_process_packlist
+%if 0%{?suse_version} <= 1130
+rm -rf %{buildroot}/%perl_vendorarch/*
+rm %{buildroot}/var/adm/perl-modules/azuremetadata
+%endif
 
 %files
 %defattr(-,root,root,-)
 %doc README.md
+%dir %perl_vendorlib/AzureMetadata
 %{_sbindir}/azureMetaData
 %{_sbindir}/azuremetadata
-%{_sbindir}/AzureNetwork.pm
-%{_sbindir}/AzureDisk.pm
-
+%perl_vendorlib/AzureMetadata/*
 %changelog
 
 

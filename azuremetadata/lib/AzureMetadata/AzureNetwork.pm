@@ -21,10 +21,19 @@ use FileHandle;
 
 our @ISA    = qw (Exporter);
 our @EXPORT_OK = qw (
+    get_cloudservice_name
     import_config
     read_internal_ip
     read_external_ip
 );
+
+sub get_cloudservice_name {
+    my $xml = shift;
+    my @services = $xml->getElementsByTagName('Service');
+    my $serviceName = $services[0]->getAttribute('name');
+    $serviceName .= '.cloudapp.net';
+    return $serviceName;
+}
 
 sub import_config {
     my $config_file = shift;
