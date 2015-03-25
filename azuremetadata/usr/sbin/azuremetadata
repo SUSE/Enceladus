@@ -19,7 +19,7 @@ use strict;
 use warnings;
 
 use XML::LibXML;
-use Getopt::Long;
+use Getopt::Long qw(:config no_ignore_case);
 use JSON;
 
 use AzureMetadata::AzureDisk;
@@ -63,7 +63,7 @@ sub parse_options {
     my %options;
     my $bareOut;
     my $cloudServiceName;
-    my $device;    
+    my $device;
     my $external_ip;
     my $instanceID;
     my $internal_ip;
