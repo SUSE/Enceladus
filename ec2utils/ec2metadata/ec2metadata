@@ -62,11 +62,13 @@ def main():
             sys.exit(1)
     try:
         getopt_metaopts = meta.getMetaOptions()
+        getopt_metaopts.append('api')
         getopt_metaopts.append('help')
         getopt_metaopts.append('listapis')
         getopt_metaopts.append('output')
         getopt_metaopts.append('xml')
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlox', getopt_metaopts)
+        getopt_metaopts.sort()
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlo:x', getopt_metaopts)
     except getopt.GetoptError, e:
         usage(getopt_metaopts, e)
 
@@ -96,6 +98,8 @@ def main():
             
         metaopts.append(opt.replace('--', ''))
 
+    if len(metaopts) == 0:
+        metaopts = meta.getMetaOptions()
     if outFile:
         try:
             if genXML:

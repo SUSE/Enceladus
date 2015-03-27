@@ -18,13 +18,13 @@
 
 %define upstream_name ec2metadata
 Name:           python-ec2metadata
-Version:        1.5.2
+Version:        1.5.3
 Release:        0
 Summary:        Collect instance metadata in EC2
 License:        GPL-3.0+
 Group:          System/Management
-Url:            https://github.com/rjschwei/ec2metadata/releases
-Source0:        %{upstream_name}-%{version}.tar.gz
+Url:            https://github.com/SUSE/Enceladus
+Source0:        %{upstream_name}-%{version}.tar.bz2
 Requires:       python
 BuildRequires:  python-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -49,7 +49,7 @@ python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc COPYING
+%doc README.md LICENSE
 %dir %{python_sitelib}/%{upstream_name}
 %dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
 %{_bindir}/*
