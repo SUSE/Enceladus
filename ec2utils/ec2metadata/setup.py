@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Setup module for ec2metadata"""
 
-# Copyright (c) 2014 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of ec2metadata.
 #
@@ -24,16 +24,18 @@ except ImportError:
     sys.stderr.write('Python setuptools required, please install.')
     sys.exit(1)
 
+version = open('lib/ec2metadata/VERSION').read().strip()
+
 if __name__ == '__main__':
     setuptools.setup(
         name='ec2metadata',
         description=(
             'Command-line tool to collect EC2 instance meta data'),
-        url='https://github.com/turnkeylinux/ec2metadata',
+        url='https://github.com/SUSE/Enceladus',
         license='GPL-3.0+',
-        author='Alon Swartz, Robert Schweikert',
-        author_email='alon@turnkeylinux.org, rjschwei@suse.com',
-        version='1.5.2',
+        author='Alon Swartz, SUSE',
+        author_email='alon@turnkeylinux.org, public-cloud-dev@susecloud.net',
+        version=version,
         packages=setuptools.find_packages('lib'),
         package_dir={
             '': 'lib',
