@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv-client
-Version:        6.3.14
+Version:        6.3.15
 Release:        0
 License:        LGPL-3.0
 Summary:        Cloud Environment Guest Registration
