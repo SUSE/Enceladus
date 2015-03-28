@@ -28,6 +28,7 @@ import random
 import requests
 import subprocess
 import sys
+import time
 import base64
 
 from lxml import etree
@@ -91,11 +92,23 @@ def hasRepos(smtServerName):
 #==============================================================================
 def killZypper():
     """We need to make sure zypper is not running"""
-    zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
-    zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
-    pidData = zyppPID.communicate()
-    pid = pidData[0]
-    if pid != '':
+    cnt = 0
+    zypperIsDead = False
+    pid = 99999999
+    while cnt < 5:
+        zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
+        zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
+        pidData = zyppPID.communicate()
+        pid = pidData[0]
+        if pid != '':
+            os.system('kill -15 %s' %pid.strip())
+        else:
+            zypperIsDead = True
+            cnt = 5
+        cnt += 1
+        time.sleep(cnt)
+
+    if not zypperIsDead:
         os.system('kill -9 %s' %pid.strip())
 
     return 1
