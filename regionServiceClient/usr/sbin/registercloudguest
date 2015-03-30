@@ -21,6 +21,7 @@
    etc/regionserverclnt.cfg"""
 
 import ConfigParser
+import base64
 import glob
 import logging
 import os
@@ -28,7 +29,8 @@ import random
 import requests
 import subprocess
 import sys
-import base64
+import time
+import uuid
 
 from lxml import etree
 from M2Crypto import X509
@@ -91,11 +93,23 @@ def hasRepos(smtServerName):
 #==============================================================================
 def killZypper():
     """We need to make sure zypper is not running"""
-    zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
-    zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
-    pidData = zyppPID.communicate()
-    pid = pidData[0]
-    if pid != '':
+    cnt = 0
+    zypperIsDead = False
+    pid = 99999999
+    while cnt < 5:
+        zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
+        zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
+        pidData = zyppPID.communicate()
+        pid = pidData[0]
+        if pid != '':
+            os.system('kill -15 %s' %pid.strip())
+        else:
+            zypperIsDead = True
+            cnt = 5
+        cnt += 1
+        time.sleep(cnt)
+
+    if not zypperIsDead:
         os.system('kill -9 %s' %pid.strip())
 
     return 1
@@ -401,7 +415,10 @@ if isRegistered:
     sys.exit(0)
 
 # Check if we need to send along any instance data
-instDataFile = '/tmp/instanceData.txt'
+if not os.path.exists('/var/lib/cloudregister'):
+    os.system('mkdir -p /var/lib/cloudregister')
+
+instDataFilePath = '/var/lib/cloudregister/' + str(uuid.uuid4())
 if cfg.has_section('instance'):
     if cfg.has_option('instance', 'dataProvider'):
         cmdLn = cfg.get('instance', 'dataProvider')
@@ -421,7 +438,7 @@ if cfg.has_section('instance'):
             if os.access(cmd, os.X_OK):
                 # There is nothing secret about the instace data
                 # It is expected to be signed such that it cannot be altered
-                os.system("%s > %s" %(cmdLn, instDataFile))
+                os.system("%s > %s" %(cmdLn, instDataFilePath))
             else:
                 msg = 'Configured dataProvider "%s" is not executable' %cmd
                 logging.error(msg)
@@ -436,8 +453,8 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
     cmd += '--fingerprint %s ' %serverFingerprint
     cmd += '--yes '
 
-    if os.path.exists(instDataFile):
-        cmd += '--regdata %s' %instDataFile
+    if os.path.exists(instDataFilePath):
+        cmd += '--regdata %s' %instDataFilePath
 
     if forceNewRegistration:
         cmd += ' > /dev/null 2>&1'
@@ -481,9 +498,9 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
 
     # Register the base product first
     cmd = [register12, '--url', 'https://%s ' %serverName]
-    if os.path.exists(instDataFile):
+    if os.path.exists(instDataFilePath):
         cmd.append(' --instance-data')
-        cmd.append(instDataFile)
+        cmd.append(instDataFilePath)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res = p.communicate()
     for entry in res:
@@ -496,8 +513,8 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         cmd = register12
         cmd += ' --url https://%s ' %serverName
         cmd += ' --product %s ' %product
-        if os.path.exists(instDataFile):
-            cmd += ' --instance-data %s ' %instDataFile
+        if os.path.exists(instDataFilePath):
+            cmd += ' --instance-data %s ' %instDataFilePath
 
         logging.info('Registration: %s' %cmd)
         res = os.system(cmd)
@@ -509,3 +526,5 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
 else:
     logging.error('No registration executable found')
     sys.exit(1)
+
+os.unlink(instDataFilePath)
