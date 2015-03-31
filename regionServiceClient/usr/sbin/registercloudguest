@@ -72,6 +72,7 @@ def cleanHostsFile(domainName):
     for entry in newHostContent:
         hostsFile.write(entry)
     hostsFile.close()
+
 #==============================================================================
 def hasCredentials():
     """Check if a credentials file exists."""
@@ -91,28 +92,17 @@ def hasRepos(smtServerName):
     return None
 
 #==============================================================================
-def killZypper():
-    """We need to make sure zypper is not running"""
-    cnt = 0
-    zypperIsDead = False
-    pid = 99999999
-    while cnt < 5:
-        zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
-        zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
-        pidData = zyppPID.communicate()
-        pid = pidData[0]
-        if pid != '':
-            os.system('kill -15 %s' %pid.strip())
-        else:
-            zypperIsDead = True
-            cnt = 5
-        cnt += 1
-        time.sleep(cnt)
+def isZypperRunning():
+    """Check if zypper is running"""
+    # Zypper doesn't remove it's pid file, need to consult the process table
+    zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
+    zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
+    pidData = zyppPID.communicate()
+    pid = pidData[0]
+    if pid != '':
+        return True
 
-    if not zypperIsDead:
-        os.system('kill -9 %s' %pid.strip())
-
-    return 1
+    return False
     
 #==============================================================================
 def removeCredentials():
@@ -371,6 +361,13 @@ if not serverFingerprint:
     sys.exit(1)
 
 if forceNewRegistration:
+    if isZypperRunning():
+        msg = 'zypper is running: Registration with the update '
+        msg += 'infrastructure is only possible if zypper is not running.\n'
+        msg += 'Please re-run the force registration process after zypper '
+        msg += 'has completed'
+        print msg
+        sys.exit(1)
     cleanHostsFile(domainName)
     removeRepos(serverName)
     removeCredentials()
@@ -436,14 +433,10 @@ if cfg.has_section('instance'):
                     errMsg = 'Could not find configured dataProvider: %s' %cmd
                     logging.error(errMsg)
             if os.access(cmd, os.X_OK):
-                # There is nothing secret about the instace data
-                # It is expected to be signed such that it cannot be altered
                 os.system("%s > %s" %(cmdLn, instDataFilePath))
             else:
                 msg = 'Configured dataProvider "%s" is not executable' %cmd
                 logging.error(msg)
-
-killZypper()
 
 register11 = '/usr/lib/suseRegister/bin/clientSetup4SMT.sh'
 register12 = '/usr/sbin/SUSEConnect'
