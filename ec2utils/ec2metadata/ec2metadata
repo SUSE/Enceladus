@@ -66,9 +66,10 @@ def main():
         getopt_metaopts.append('help')
         getopt_metaopts.append('listapis')
         getopt_metaopts.append('output')
+        getopt_metaopts.append('version')
         getopt_metaopts.append('xml')
         getopt_metaopts.sort()
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlo:x', getopt_metaopts)
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'hlo:vx', getopt_metaopts)
     except getopt.GetoptError, e:
         usage(getopt_metaopts, e)
 
@@ -92,6 +93,9 @@ def main():
         elif opt in ('-o', '--output'):
             outFile = args[0]
             continue
+        elif opt in ('-v', '--version'):
+            ec2metautils.showVersion()
+            sys.exit(0)
         elif opt in ('-x', '--xml'):
             genXML = True
             continue
