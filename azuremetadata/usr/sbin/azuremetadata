@@ -89,7 +89,8 @@ sub parse_options {
     $options{xmlOut}           = $xmlOut;
     if ( $result != 1 ) {
         usage();
-        die "invalid options";
+        print STDERR "An invalid option was specified.";
+        exit 1;
     }
     if ((! $options{cloudServiceName}) &&
         (! $options{external_ip}) &&
@@ -98,7 +99,8 @@ sub parse_options {
         (! $options{tag})
     ) {
         usage();
-        die "no command given";
+        print STDERR "Please provide a query option.";
+        exit 1;
     }
     if (! $options{device}) {
         $options{device} = '/dev/sda';
