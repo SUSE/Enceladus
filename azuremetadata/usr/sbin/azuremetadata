@@ -99,7 +99,7 @@ sub parse_options {
         (! $options{tag})
     ) {
         usage();
-        print STDERR "Please provide a query option."
+        print STDERR "Please provide a query option.";
         exit 1;
     }
     if (! $options{device}) {
