@@ -4,5 +4,5 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     EXE_FILES => ['usr/sbin/azuremetadata'],
     NAME      => 'AzureMetadata',
-    VERSION   => '3.2.1'
+    VERSION   => '4.0.0'
 );

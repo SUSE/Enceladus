@@ -20,13 +20,13 @@ use warnings;
 use XML::LibXML;
 
 our @ISA    = qw (Exporter);
-our @EXPORT_OK = qw (get_instance_id);
+our @EXPORT_OK = qw (get_instance_name);
 
-sub get_instance_id {
+sub get_instance_name {
     my $xml = shift;
-    my @instances = $xml->getElementsByTagName('Instance');
-    my $id = $instances[0]->getAttribute('id');
-    return $id;
+    my @instance = $xml->getElementsByTagName('Incarnation');
+    my $name = $instance[0]->getAttribute('instance');
+    return $name;
 }
 
 1;
