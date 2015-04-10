@@ -21,6 +21,7 @@
 Utilities to implement convenience functionality. Also allows us to keep
 unnecessary state out of the metadata class
 """
+import os
 import sys
 
 import ec2metadata
@@ -53,20 +54,16 @@ def display(metadata, metaopts, prefix=False):
     """primitive: display metaopts (list) values with optional prefix"""
 
     writefile(sys.stdout, metadata, metaopts, prefix)
-#    for metaopt in metaopts:
-#        value = metadata.get(metaopt)
-#        if not value:
-#            value = "unavailable"
-#
-#        if prefix:
-#            print "%s: %s" % (metaopt, value)
-#        else:
-#            print value
 
 def displayXML(metadata, metaopts):
     """Collect the requested data and display it as XML"""
     data = _genXML(metadata, metaopts)
     print data
+
+def showVersion():
+    """Print the version"""
+    verPath = os.path.dirname(__file__) + '/VERSION'
+    print open(verPath).read()
 
 def writefile(filePath, metadata, metaopts, prefix=False):
     """Collect the requested data and write it to the given file."""

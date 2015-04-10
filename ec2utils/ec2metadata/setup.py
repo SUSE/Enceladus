@@ -37,6 +37,7 @@ if __name__ == '__main__':
         author_email='alon@turnkeylinux.org, public-cloud-dev@susecloud.net',
         version=version,
         packages=setuptools.find_packages('lib'),
+        package_data={'ec2metadata' : ['VERSION']},
         package_dir={
             '': 'lib',
         },
