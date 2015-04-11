@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv-client
-Version:        6.3.16
+Version:        6.3.17
 Release:        0
 License:        LGPL-3.0
 Summary:        Cloud Environment Guest Registration
@@ -144,9 +144,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%dir %{python_sitelib}/cloudregister-6.3.16-py%{py_ver}.egg-info
+%dir %{python_sitelib}/cloudregister-6.3.17-py%{py_ver}.egg-info
 %dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-6.3.16-py%{py_ver}.egg-info/*
+%{python_sitelib}/cloudregister-6.3.17-py%{py_ver}.egg-info/*
 %{python_sitelib}/cloudregister/*
 
 %changelog
