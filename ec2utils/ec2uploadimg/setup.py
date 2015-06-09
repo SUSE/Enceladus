@@ -24,7 +24,7 @@ except ImportError:
     sys.stderr.write('Python setuptools required, please install.')
     sys.exit(1)
 
-version = open('lib/ec2utils/VERSION').read().strip()
+version = open('lib/ec2utils/upload_VERSION').read().strip()
 
 if __name__ == '__main__':
     setuptools.setup(
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         author_email='rjschwei@suse.com',
         version=version,
         packages=setuptools.find_packages('lib'),
-        package_data={'ec2utils'  : ['VERSION']},
+        package_data={'ec2utils'  : ['upload_VERSION']},
         package_dir={
             '': 'lib',
         },

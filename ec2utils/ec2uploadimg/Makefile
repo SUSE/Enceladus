@@ -7,7 +7,7 @@ files = Makefile README.md LICENSE ec2uploadimg setup.py
 
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
 verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
-verSrc = $(shell cat lib/ec2utils/VERSION)
+verSrc = $(shell cat lib/ec2utils/upload_VERSION)
 ifneq "$(verSpec)" "$(verSrc)"
 $(error "Version mismatch, will not take any action")
 endif
