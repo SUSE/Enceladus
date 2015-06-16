@@ -1,5 +1,5 @@
 #
-# spec file for package python-ec2utilsbase
+# spec file for package python-ec2uploadimg
 #
 # Copyright (c) 2015 SUSE LINUX Products GmbH, Nuernberg, Germany.
 #
@@ -16,16 +16,18 @@
 #
 
 
-%define upstream_name ec2utilsbase
-Name:           python-ec2utilsbase
+%define upstream_name ec2uploadimg
+Name:           python-ec2uploadimg
 Version:        0.2.0
 Release:        0
-Summary:        Tag image as deprected in EC2
+Summary:        Upload an image to EC2
 License:        GPL-3.0+
 Group:          System/Management
 Url:            https://github.com/SUSE/Enceladus
 Source0:        %{upstream_name}-%{version}.tar.bz2
 Requires:       python
+Requires:       python-boto
+Requires:       python-ec2utilsbase >= 0.2.0
 BuildRequires:  python-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
@@ -36,8 +38,8 @@ BuildArch:      noarch
 %endif
 
 %description
-Deprecate images owned by the specified account by adding tags named
-"Deprecated on", "Removal date", and "Replacement image"
+Upload a compressed .raw disk image to Amazoon EC2 and create a snapshot
+or register and AMI
 
 %prep
 %setup -q -n %{upstream_name}-%{version}
@@ -47,13 +49,19 @@ python setup.py build
 
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
-
+install -d -m 755 %{buildroot}/%{_mandir}/man1
+install -m 644 man/man1/ec2uploadimg.1 %{buildroot}/%{_mandir}/man1
+gzip %{buildroot}/%{_mandir}/man1/ec2uploadimg.1
+# __init__ provided by ec2utilsbase
+rm %{buildroot}/%{python_sitelib}/ec2utils/__init__.*
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
+%doc %{_mandir}/*
 %dir %{python_sitelib}/ec2utils
 %dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
 %{python_sitelib}/*
+%{_bindir}/*
 
 %changelog
