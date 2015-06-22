@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # ec2deprecateimg is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ec2deprecateimg. If not, see <http://www.gnu.org/licenses/>.
 
@@ -22,165 +22,129 @@ import datetime
 import dateutil.relativedelta
 import re
 
-import ec2utils.ec2utilsbase as base
-from ec2utils.ec2UtilsExceptions import *
+from .ec2utils import EC2Utils
+from .ec2UtilsExceptions import *
 
-class EC2DeprecateImg:
+
+class EC2DeprecateImg(EC2Utils):
     """Deprecate EC2 image(s) by tagging the image with 3 tags, Deprecated on,
        Removal date, and Replacement image."""
 
-    def __init__(self,account,
-                 depPeriod=6,
-                 configFilePath=None,
-                 depImgID=None,
-                 depImgName=None,
-                 depImgNameFrag=None,
-                 depImgNameMatch=None,
-                 publicOnly=None,
-                 region=None,
-                 replImgID=None,
-                 replImgName=None,
-                 replImgNameFrag=None,
-                 replImgNameMatch=None,
-                 verbose=None,
-                 virtType=None):
+    def __init__(
+            self,
+            access_key=None,
+            deprecation_period=6,
+            deprecation_image_id=None,
+            deprecation_image_name=None,
+            deprecation_image_name_fragment=None,
+            deprecation_image_name_match=None,
+            force=None,
+            image_virt_type=None,
+            public_only=None,
+            replacement_image_id=None,
+            replacement_image_name=None,
+            replacement_image_name_fragment=None,
+            replacement_image_name_match=None,
+            secret_key=None,
+            verbose=None):
+        EC2Utils.__init__(self)
 
-        self.account        = 'account-' + account
-        self.depPeriod      = depPeriod
-        self.configFilePath = configFilePath
-        self.config         = base.getConfig(self.configFilePath)
+        self.access_key = access_key
+        self.deprecation_period = deprecation_period
+        self.deprecation_image_id = deprecation_image_id
+        self.deprecation_image_name = deprecation_image_name
+        self.deprecation_image_name_fragment = deprecation_image_name_fragment
+        self.deprecation_image_name_match = deprecation_image_name_match
+        self.force = force
+        self.image_virt_type = image_virt_type
+        self.public_only = public_only
+        self.replacement_image_id = replacement_image_id
+        self.replacement_image_name = replacement_image_name
+        self.replacement_image_name_fragment = replacement_image_name_fragment
+        self.replacement_image_name_match = replacement_image_name_match
+        self.secret_key = secret_key
+        self.verbose = verbose
 
-        self._verifyAccount()
+        self._set_deprecation_date()
+        self._set_deletion_date()
 
-        self.accessKey, self.secretKey = self._getAccessKeys()
+        self.replacement_image_tag = None
 
-        self.depImgID         = depImgID
-        self.depImgName       = depImgName
-        self.depImgNameFrag   = depImgNameFrag
-        self.depImgNameMatch  = depImgNameMatch
-        self.publicOnly       = publicOnly
-        self.region           = region
-        self.replImgID        = replImgID
-        self.replImgName      = replImgName
-        self.replImgNameFrag  = replImgNameFrag
-        self.replImgNameMatch = replImgNameMatch
-        self.verbose          = verbose
-
-        self.virtType = None
-        if virtType:
-            if virtType[0:3] == 'par':
-                self.virtType = 'paravirtual'
-            else:
-                self.virtType = 'hvm'
-            
-
-        self._setDeprecationDate()
-        self._setDeleteDate()
-        self.ec2 = None
-        if self.region:
-            self._connect()
-        self.replacementImageID = None
-        self.replacementImageTag = None
-        if self.ec2:
-            self._setReplacementImageInfo()
-
-    #----------------------------------------------------------------------
-    def _connect(self):
-        """Connect to EC2"""
-        if self.ec2:
-            return True
-
-        if self.region:
-            self.ec2 = boto.ec2.connect_to_region(
-                self.region,
-                aws_access_key_id=self.accessKey,
-                aws_secret_access_key=self.secretKey
-            )
-        if not self.ec2:
-            msg = 'Could not connect to region: %s ' %self.region
-            raise EC2DeprecateImgException(msg)
-
-        if self.verbose:
-            print 'Connected to region: ', self.region
-
-        self._setReplacementImageInfo()
-
-        return True
-
-    #----------------------------------------------------------------------
-    def _disconnect(self):
-        """Disconnect from EC2"""
-        if self.ec2:
-            self.ec2.close()
-            self.ec2 = None
-            self.replacementImageID = None
-            self.replacementImageTag = None
-
-    #----------------------------------------------------------------------
-    def _findImagesByID(self, imgID, filterReplImg=None):
+    # ---------------------------------------------------------------------
+    def _find_images_by_id(self, image_id, filter_replacement_image=None):
         """Find images by ID match"""
         images = []
-        myImages = self._getAllTypeMatchImages(filterReplImg)
-        for img in myImages:
-            if imgID == img.id:
-                images.append(img)
+        my_images = self._get_all_type_match_images(filter_replacement_image)
+        for image in my_images:
+            if image_id == image.id:
+                images.append(image)
                 # The framework guarantees unique image IDs
                 return images
 
-    #----------------------------------------------------------------------
-    def _findImagesByName(self, imgName, filterReplImg=None):
+    # ---------------------------------------------------------------------
+    def _find_images_by_name(self, image_name, filter_replacement_image=None):
         """Find images by exact name match"""
         images = []
-        myImages = self._getAllTypeMatchImages(filterReplImg)
-        for img in myImages:
-            if not img.name:
-                if filterReplImg:
+        my_images = self._get_all_type_match_images(filter_replacement_image)
+        for image in my_images:
+            if not image.name:
+                if filter_replacement_image:
                     msg = 'WARNING: Found image with no name, ignoring for '
-                    msg += 'deprecation search. Image ID: %s' %img.id
+                    msg += 'deprecation search. Image ID: %s' % image.id
                     print msg
                 continue
-            if imgName == img.name:
-                images.append(img)
+            if image_name == image.name:
+                images.append(image)
 
         return images
 
-    #----------------------------------------------------------------------
-    def _findImagesByNameFragment(self, nameFragment, filterReplImg=None):
+    # ---------------------------------------------------------------------
+    def _find_images_by_name_fragment(
+            self,
+            name_fragment,
+            filter_replacement_image=None):
         """Find images by string matching of the fragment with the name"""
         images = []
-        myImages = self._getAllTypeMatchImages(filterReplImg)
-        for img in myImages:
-            if not img.name:
-                if filterReplImg:
+        my_images = self._get_all_type_match_images(filter_replacement_image)
+        for image in my_images:
+            if not image.name:
+                if filter_replacement_image:
                     msg = 'WARNING: Found image with no name, ignoring for '
-                    msg += 'deprecation search. Image ID: %s' %img.id
+                    msg += 'deprecation search. Image ID: %s' % image.id
                     print msg
                 continue
-            if img.name.find(nameFragment) != -1:
-                images.append(img)
+            if image.name.find(name_fragment) != -1:
+                images.append(image)
 
         return images
 
-    #----------------------------------------------------------------------
-    def _findImagesByNameRegexMatch(self, expression, filterReplImg=None):
+    # ---------------------------------------------------------------------
+    def _find_images_by_name_regex_match(
+            self,
+            expression,
+            filter_replacement_image=None):
         """Find images by match the name with the given regular expression"""
         images = []
-        myImages = self._getAllTypeMatchImages(filterReplImg)
-        match = re.compile(expression)
-        for img in myImages:
-            if not img.name:
-                if filterReplImg:
+        my_images = self._get_all_type_match_images(filter_replacement_image)
+        try:
+            match = re.compile(expression)
+        except:
+            msg = 'Unable to complie regular expression "%s"' % expression
+            raise EC2DeprecateImgException(msg)
+        for image in my_images:
+            if not image.name:
+                if filter_replacement_image:
                     msg = 'WARNING: Found image with no name, ignoring for '
-                    msg += 'deprecation search. Image ID: %s' %img.id
+                    msg += 'deprecation search. Image ID: %s' % image.id
                     print msg
                 continue
-            if match.match(img.name):
-                images.append(img)
+            if match.match(image.name):
+                images.append(image)
 
         return images
 
-    #----------------------------------------------------------------------
-    def _formatDate(self, date):
+    # ---------------------------------------------------------------------
+    def _format_date(self, date):
         """Format the date to YYYYMMDD"""
         year = date.year
         month = date.month
@@ -188,74 +152,59 @@ class EC2DeprecateImg:
         date = '%s' % year
         for item in [month, day]:
             if item > 9:
-                date += '%s' %item
+                date += '%s' % item
             else:
-                date += '0%s' %item
+                date += '0%s' % item
 
         return date
 
-    #----------------------------------------------------------------------
-    def _getAccessKeys(self):
-        """Get the access keys for the account from the configuration"""
-	if not self.config.has_option(self.account, 'access_key_id'):
-	    msg = 'No access_key_id option found for %s' %self.account
-	    raise EC2DeprecateImgException(msg)
-	if not self.config.has_option(self.account, 'secret_access_key'):
-	    msg = 'No secret_access_key option found for %s' %self.acount
-	    raise EC2DeprecateImgException(msg)
-
-	accessKey = self.config.get(self.account, 'access_key_id')
-	secretKey = self.config.get(self.account, 'secret_access_key')
-
-        return accessKey, secretKey
-        
-    #----------------------------------------------------------------------
-    def _getAllTypeMatchImages(self, filterReplImg=None):
+    # ---------------------------------------------------------------------
+    def _get_all_type_match_images(self, filter_replacement_image=None):
         """Get all images that match thespecified virtualization type.
            All images owned by the account if not type is specified."""
         images = []
-        myImages = self.ec2.get_all_images(owners='self')
-        for img in myImages:
-            if filterReplImg:
-                if img.id == self.replacementImageID:
+        my_images = self.ec2.get_all_images(owners='self')
+        for image in my_images:
+            if filter_replacement_image:
+                if image.id == self.replacement_image_id:
                     if self.verbose:
                         msg = 'Ignore replacement image as potential target '
                         msg += 'for deprecation.'
                         print msg
                     continue
-            if self.virtType:
-                if self.virtType == img.virtualization_type:
+            if self.image_virt_type:
+                if self.image_virt_type == image.virtualization_type:
                     images.append(img)
                 else:
                     continue
-            if self.publicOnly:
-                launchPerm = img.get_launch_permissions().get('groups', None)
+            if self.public_only:
+                launchPerm = image.get_launch_permissions().get('groups', None)
                 if launchPerm:
                     for item in launchPerm:
                         if item == 'all':
-                            images.append(img)
+                            images.append(image)
                             break
                 continue
-            images.append(img)
+            images.append(image)
 
         return images
 
-    #----------------------------------------------------------------------
-    def _getImagesToDeprecate(self):
+    # ---------------------------------------------------------------------
+    def _get_images_to_deprecate(self):
         """Find images to deprecate"""
-        if not self.hasConnection():
-            self._connect()
         images = None
         condition = None
-        if self.depImgID:
-            images = self._findImagesByID(self.depImgID, True)
-        elif self.depImgName:
-            images = self._findImagesByName(self.depImgName, True)
-        elif self.depImgNameFrag:
-            images = self._findImagesByNameFragment(self.depImgNameFrag, True)
-        elif self.depImgNameMatch:
-            images = self._findImagesByNameRegexMatch(
-                self.depImgNameMatch, True)
+        if self.deprecation_image_id:
+            images = self._find_images_by_id(self.deprecation_image_id, True)
+        elif self.deprecation_image_name:
+            images = self._find_images_by_name(
+                self.deprecation_image_name, True)
+        elif self.deprecation_image_name_fragment:
+            images = self._find_images_by_name_fragment(
+                self.deprecation_image_name_fragment, True)
+        elif self.deprecation_image_name_match:
+            images = self._find_images_by_name_regex_match(
+                self.deprecation_image_name_match, True)
         else:
             msg = 'No deprecation image condition set. Should not reach '
             msg += 'this point.'
@@ -263,127 +212,98 @@ class EC2DeprecateImg:
 
         return images
 
-    #----------------------------------------------------------------------
-    def _setDeleteDate(self):
+    # ---------------------------------------------------------------------
+    def _set_deletion_date(self):
         """Set the date when the deprecation perios expires"""
         now = datetime.datetime.now()
         expire = now + dateutil.relativedelta.relativedelta(
-            months=+self.depPeriod)
-        self.delDate = self._formatDate(expire)
+            months=+self.deprecation_period)
+        self.deletion_date = self._format_date(expire)
 
-    #----------------------------------------------------------------------
-    def _setDeprecationDate(self):
+    # ---------------------------------------------------------------------
+    def _set_deprecation_date(self):
         """Set the deprecation day in the YYYYMMDD format"""
         now = datetime.datetime.now()
-        self.depDate = self._formatDate(now)
+        self.deprecation_date = self._format_date(now)
 
-    #----------------------------------------------------------------------
-    def _setReplacementImageInfo(self):
+    # ---------------------------------------------------------------------
+    def _set_replacement_image_info(self):
         """Find the replacement image information and create an identifier"""
-        if not self.hasConnection():
-            self._connect()
         images = None
         condition = None
-        if self.replImgID:
-            condition = self.replImgID
-            images = self._findImagesByID(condition)
-        elif self.replImgName:
-            condition = self.replImgName
-            images = self._findImagesByName(condition)
-        elif self.replImgNameFrag:
-            condition = self.replImgNameFrag
-            images = self._findImagesByNameFragment(condition)
-        elif self.replImgNameMatch:
-            condition = self.replImgNameMatch
-            images = self._findImagesByNameRegexMatch(condition)
+        if self.replacement_image_id:
+            condition = self.replacement_image_id
+            images = self._find_images_by_id(condition)
+        elif self.replacement_image_name:
+            condition = self.replacement_image_name
+            images = self._find_images_by_name(condition)
+        elif self.replacement_image_name_fragment:
+            condition = self.replacement_image_name_fragment
+            images = self._find_images_by_name_fragment(condition)
+        elif self.replacement_image_name_match:
+            condition = self.replacement_image_name_match
+            images = self._find_images_by_name_regex_match(condition)
         else:
             msg = 'No replacement image condition set. Should not reach '
             msg += 'this point.'
             raise EC2DeprecateImgException(msg)
 
         if not images:
-            msg = 'Replacement image not found, "%s" ' %condition
+            msg = 'Replacement image not found, "%s" ' % condition
             msg += 'did not match any image.'
             raise EC2DeprecateImgException(msg)
-        
+
         if len(images) > 1:
             msg = 'Replacement image ambiguity, the specified condition '
-            msg += '"%s" return multiple replacement image options' %condition
+            msg += '"%s" return multiple replacement image options' % condition
             raise EC2DeprecateImgException(msg)
 
-        img = images[0]
-        self.replacementImageID = img.id
-        self.replacementImageTag = '%s -- %s' %(img.id, img.name)
+        image = images[0]
+        self.replacement_image_id = image.id
+        self.replacement_image_tag = '%s -- %s' % (image.id, image.name)
 
-    #----------------------------------------------------------------------
-    def _verifyAccount(self):
-        """Verify that the specified account exists in the configuration"""
-        if not self.config.has_section(self.account):
-	    msg = 'Could not find account specification for '
-            msg += self.account.split('account')[-1][1:]
-	    msg += ' in config file '
-            msg += self.configFilePath
-	    raise EC2DeprecateImgException(msg)
-
-    #----------------------------------------------------------------------
-    def deprecate(self):
+    # ---------------------------------------------------------------------
+    def deprecate_images(self):
         """Deprecate images in the connected region"""
-        self._setReplacementImageInfo()
-        images = self._getImagesToDeprecate()
+        self._connect()
+        self._set_replacement_image_info()
+        images = self._get_images_to_deprecate()
         if not images:
             if self.verbose:
                 print 'No images to deprecate found'
             return False
         if self.verbose:
             print 'Deprecating images in region: ', self.region
-            print '\tDeprecated on', self.depDate
-            print 'Removal date', self.delDate
-            print 'Replacement image', self.replacementImageTag
-        for img in images:
-            if img.tags.get('Deprecated on', None):
+            print '\tDeprecated on', self.deprecation_date
+            print 'Removal date', self.deletion_date
+            print 'Replacement image', self.replacement_image_tag
+        for image in images:
+            if not self.force and image.tags.get('Deprecated on', None):
                 if self.verbose:
-                    print '\t\tImage %s already tagged, skipping' %img.id
+                    print '\t\tImage %s already tagged, skipping' % image.id
                 continue
-            img.add_tag('Deprecated on', self.depDate)
-            img.add_tag('Removal date', self.delDate)
-            img.add_tag('Replacement image', self.replacementImageTag)
+            image.add_tag('Deprecated on', self.deprecation_date)
+            image.add_tag('Removal date', self.deletion_date)
+            image.add_tag('Replacement image', self.replacement_image_tag)
             if self.verbose:
-                print '\t\ttagged:%s\t%s' %(img.id, img.name)
+                print '\t\ttagged:%s\t%s' % (image.id, image.name)
 
-    #----------------------------------------------------------------------
-    def hasConnection(self):
-        """Return true if he object is connected to EC2"""
-        if self.ec2:
-            return True
-
-        return False
-
-    #----------------------------------------------------------------------
-    def printDeprecationInfo(self):
+    # ---------------------------------------------------------------------
+    def print_deprecation_info(self):
         """Print information about the images that would be deprecated."""
-        self._setReplacementImageInfo()
-        images = self._getImagesToDeprecate()
+        self._connect()
+        self._set_replacement_image_info()
+        images = self._get_images_to_deprecate()
         if not images:
             print 'No images to deprecate found'
             return True
 
         print 'Would deprecate images in region: ', self.region
-        print '\tDeprecated on', self.depDate
-        print '\tRemoval date', self.delDate
-        print '\tReplacement image', self.replacementImageTag
+        print '\tDeprecated on', self.deprecation_date
+        print '\tRemoval date', self.deletion_date
+        print '\tReplacement image', self.replacement_image_tag
         print '\tImages to deprecate:\n\t\tID\t\t\t\tName'
-        for img in images:
-            print '\t\t%s\t%s' %(img.id, img.name)
+        for image in images:
+            print '\t\t%s\t%s' % (image.id, image.name)
 
         return True
-    #----------------------------------------------------------------------
-    def setRegion(self, region):
-        """Set the regionthat should be used."""
-        if self.region and self.region == region:
-            return True
-        
-        self._disconnect()
-        self.region = region
-
-        return True
-
