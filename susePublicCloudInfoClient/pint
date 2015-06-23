@@ -1,0 +1,37 @@
+#!/usr/bin/python
+
+"""
+usage: pint -h | --help
+       pint (amazon|google|hp|microsoft) servers
+          [ --filter=<filter> ]
+          [ --json | --xml ]
+          [ --region=<region> ]
+          [ --smt | --regionserver ]
+       pint (amazon|google|hp|microsoft) images
+          [ --active | --deleted | --deprecated ]
+          [ --filter=<filter> ]
+          [ --json | --xml ]
+          [ --region=<region> ]
+       pint -v | --version
+
+options:
+   -h --help
+       Show help
+   --filter=<filter>
+       Comma separated list of available attributes
+   --json
+       Output data in JSON format
+   --region=<region>
+       Provide information for regions given in comma separated list,
+       if omitted all regions are included
+   --regionserver
+       Provide only Region Server information
+   --smt
+       Provide only SMT Server information
+   --xml
+       Output data in XML format
+   -v --version
+       Show program version
+"""
+
+from docopt import docopt
