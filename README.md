@@ -25,6 +25,12 @@ client is used in all SUSE released on demand images and is recommended for
 any Cloud Service Provider that is interested in providing SUSE Linux
 Enterprise in their Public Cloud offering.
 
+# susePublicCloudInfoClient
+
+The client using the REST API of the SUSE Public Cloud Information Service.
+The SUSE Public Cloud Information Service provides information about
+images released by SUSE and servers operated and maintained by SUSE in the
+Public Cloud.
 
 ## Contributing
 
