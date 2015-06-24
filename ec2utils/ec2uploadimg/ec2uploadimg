@@ -117,6 +117,12 @@ argparse.add_argument(
     required=True
 )
 argparse.add_argument(
+    '--root-volume-size',
+    dest='rootVolSize',
+    help='Size of root volume for new image (Optional)',
+    metavar='ROOT_VOLUME_SIZE',
+)
+argparse.add_argument(
     '--ssh-key-pair',
     dest='sshName',
     help='AWS SSH key pair name (Optional)',
@@ -164,6 +170,13 @@ argparse.add_argument(
     metavar='AWS_INSTANCE_USER'
 )
 argparse.add_argument(
+    '--use-root-swap',
+    action='store_true',
+    default=False,
+    dest='rootSwapMethod',
+    help='Use the root swap method to create the new image'
+)
+argparse.add_argument(
     '-V', '--virt-type',
     default='para',
     dest='virtType',
@@ -177,8 +190,25 @@ argparse.add_argument(
     dest='verbose',
     help='Enable verbose output'
 )
+argparse.add_argument(
+    '--version',
+    action='store_true',
+    default=False,
+    dest='version',
+    help='Program version'
+)
 
-args = argparse.parse_args()
+
+
+if '--version' in sys.argv:
+    import ec2utils
+    version_file_name = 'upload_VERSION'
+    base_path = os.path.dirname(ec2utils.__file__)
+    version = open(base_path + os.sep + version_file_name, 'r').read()
+    print version
+    sys.exit(0)
+    
+args = argparse.parse_args()    
 config_file = args.configFilePath
 config = None
 if not os.path.isfile(config_file):
@@ -222,6 +252,10 @@ if sriov_type and virtualization_type != 'hvm':
     print >> sys.sdterr, 'SRIOV support is only possible with HVM images'
     sys.exit(1)
 
+root_volume_size = 10
+if args.rootVolSize:
+    root_volume_size = args.rootVolSize
+    
 try:
     for region in args.regions.split(','):
         ami_id = args.amiID
@@ -308,6 +342,7 @@ try:
                           launch_ami=ami_id,
                           launch_inst_type=inst_type,
                           operation_timeout=args.timeout,
+                          root_volume_size=root_volume_size,
                           secret_key=secret_key,
                           sriov_type=sriov_type,
                           ssh_key_pair_name=key_pair_name,
@@ -319,6 +354,9 @@ try:
         if args.snapOnly:
             snapshot = uploader.create_snapshot(args.source)
             print 'Created snapshot: ', snapshot.id
+        elif args.rootSwapMethod:
+            ami = uploader.create_image_use_root_swap(args.source)
+            print 'Created image: ', ami
         else:
             ami = uploader.create_image(args.source)
             print 'Created image: ', ami

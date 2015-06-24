@@ -43,6 +43,7 @@ class EC2ImageUploader(EC2Utils):
                  launch_ami=None,
                  launch_inst_type='m1.small',
                  operation_timeout=300,
+                 root_volume_size=10,
                  secret_key=None,
                  sriov_type=None,
                  ssh_key_pair_name=None,
@@ -62,6 +63,7 @@ class EC2ImageUploader(EC2Utils):
         self.launch_ami = launch_ami
         self.launch_ins_type = launch_inst_type
         self.operation_timeout = operation_timeout
+        self.root_volume_size=int(root_volume_size)
         self.secret_key = secret_key
         self.sriov_type = sriov_type
         self.ssh_key_pair_name = ssh_key_pair_name
@@ -77,11 +79,13 @@ class EC2ImageUploader(EC2Utils):
         self.percent_transferred = 0
         self.region = None
         self.ssh_client = None
+        self.storage_volume_size = 2 * self.root_volume_size
 
     # ---------------------------------------------------------------------
-    def _attach_volume(self, instance, volume):
+    def _attach_volume(self, instance, volume, device=None):
         """Attach the given volume to the given instance"""
-        device = self._get_next_disk_id()
+        if not device:
+            device = self._get_next_disk_id()
         volume.attach(instance_id=instance.id, device=device)
         if self.verbose:
             print 'Wait for volume attachment'
@@ -154,7 +158,7 @@ class EC2ImageUploader(EC2Utils):
         block_device_type = boto.ec2.blockdevicemapping.EBSBlockDeviceType(
             delete_on_termination=True,
             snapshot_id=snapshot.id,
-            size=10,  # 10 GB root device
+            size=self.root_device_size,
             volume_type=backing_store
         )
         block_device_map = boto.ec2.blockdevicemapping.BlockDeviceMapping()
@@ -162,6 +166,32 @@ class EC2ImageUploader(EC2Utils):
 
         return block_device_map
 
+    # ---------------------------------------------------------------------
+    def _create_image_root_volume(self, source):
+        """Create a root volume from the image"""
+        self._connect_to_ec2()
+        self._check_image_exists()
+        helper_instance = self._launch_helper_instance()
+        self.helper_instance = helper_instance
+        store_volume = self._create_storge_volume()
+        store_device_id = self._attach_volume(helper_instance, store_volume)
+        target_root_volume = self._create_target_root_volume()
+        target_root_device_id = self._attach_volume(helper_instance,
+                                             target_root_volume)
+        self._establish_ssh_connection(helper_instance)
+        self._format_storage_volume(store_device_id)
+        self._create_storage_filesystem(store_device_id)
+        mount_point = self._mount_storage_volume(store_device_id)
+        self._change_mount_point_permissions(mount_point, '777')
+        image_filename = self._upload_image(mount_point, source)
+        raw_image_filename = self._unpack_image(mount_point, image_filename)
+        self._dump_root_fs(mount_point, raw_image_filename,
+                           target_root_device_id)
+        self._end_ssh_session()
+        self._detach_volume(target_root_volume)
+
+        return target_root_volume
+    
     # ---------------------------------------------------------------------
     def _create_snapshot(self, volume):
         """Create a snapshot from a volume"""
@@ -196,13 +226,13 @@ class EC2ImageUploader(EC2Utils):
     def _create_storge_volume(self):
         """Create the volume that will be used to store the image before
            dumping it to the new root volume"""
-        return self._create_volume('20')
+        return self._create_volume('%s' % self.storage_volume_size)
 
     # ---------------------------------------------------------------------
     def _create_target_root_volume(self):
         """Create the volume that will be used as the root volume for
            the image we are creating."""
-        return self._create_volume('10')
+        return self._create_volume('%s' % self.root_volume_size)
 
     # ---------------------------------------------------------------------
     def _create_volume(self, size):
@@ -507,6 +537,7 @@ class EC2ImageUploader(EC2Utils):
             percent_complete = (float(transferred_bytes) / total_bytes) * 100
             if percent_complete - self.percent_transferred >= 10:
                 print '.',
+                sys.stdout.flush()
                 self.percent_transferred = percent_complete
 
         return 1
@@ -525,6 +556,9 @@ class EC2ImageUploader(EC2Utils):
         elif image_filename[-2:] == 'xz':
             files = [image_filename]
 
+        if type(files) == type(' '):
+            files = [files]
+            
         raw_image_file = None
         if files:
             # Find the disk image
@@ -579,28 +613,62 @@ class EC2ImageUploader(EC2Utils):
         return ami
 
     # ---------------------------------------------------------------------
+    def create_image_use_root_swap(self, source):
+        """Creae an AMI (Amazon Machine Image) from the given source using
+           the root swap method"""
+
+        target_root_volume = self._create_image_root_volume(source)
+        self.ec2.stop_instances(instance_ids=self.instance_ids)
+        if self.verbose:
+            print 'Waiting for helper instance to stop'
+        wait_status = self._wait(self.helper_instance, 'stopped')
+        if not wait_status:
+            print
+            self._clean_up()
+            msg = 'Instance did not stop within allotted time'
+            raise EC2UploadImgException(msg)
+
+        # Find the current root volume
+        my_volumes = self.ec2.get_all_volumes()
+        current_root_volume = None
+        device_id = None
+        for volume in my_volumes:
+            if volume.attach_data.instance_id == self.helper_instance.id:
+                current_root_volume = volume
+                device_id = volume.attach_data.device
+                break
+
+        self._detach_volume(current_root_volume)
+        self._attach_volume(self.helper_instance, target_root_volume, device_id)
+        if self.verbose:
+            print 'Creating new image'
+        ami = self.helper_instance.create_image(
+            name=self.image_name,
+            description=self.image_description,
+            no_reboot=True)
+
+        new_image = self.ec2.get_all_images(image_ids=[ami])[0]
+        if self.verbose:
+            print 'Waiting for new image creation'
+        wait_status = self._wait(new_image, 'available')
+        skip_cleanup = None
+        if not wait_status:
+            print
+            msg = 'Image creation did not complete within allotted time '
+            msg += 'skipping clean up'
+            print msg
+            skip_cleanup = True
+        if not skip_cleanup:
+            self._clean_up()
+
+        return ami
+        
+    # ---------------------------------------------------------------------
     def create_snapshot(self, source):
         """Create a snapshot from the given source"""
         if self.verbose:
             print
-        self._connect_to_ec2()
-        self._check_image_exists()
-        helper_instance = self._launch_helper_instance()
-        store_volume = self._create_storge_volume()
-        store_device_id = self._attach_volume(helper_instance, store_volume)
-        target_root_volume = self._create_target_root_volume()
-        root_device_id = self._attach_volume(helper_instance,
-                                             target_root_volume)
-        self._establish_ssh_connection(helper_instance)
-        self._format_storage_volume(store_device_id)
-        self._create_storage_filesystem(store_device_id)
-        mount_point = self._mount_storage_volume(store_device_id)
-        self._change_mount_point_permissions(mount_point, '777')
-        image_filename = self._upload_image(mount_point, source)
-        raw_image_filename = self._unpack_image(mount_point, image_filename)
-        self._dump_root_fs(mount_point, raw_image_filename, root_device_id)
-        self._end_ssh_session()
-        self._detach_volume(target_root_volume)
-        snapshot = self._create_snapshot(target_root_volume)
+        root_volume = self._create_image_root_volume(source)
+        snapshot = self._create_snapshot(root_volume)
         self._clean_up(False)
         return snapshot
