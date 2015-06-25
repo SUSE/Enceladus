@@ -16,7 +16,7 @@
 #
 
 
-%define upstream_name ec2uploadimg
+%define upstream_name susepubcloudinfo
 Name:           python-susepubcloudinfo
 Version:        0.0.1
 Release:        0

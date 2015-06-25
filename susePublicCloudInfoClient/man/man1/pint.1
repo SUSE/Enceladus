@@ -1,0 +1,39 @@
+.\" Process this file with
+.\" groff -man -Tascii pint.1
+.\"
+.TH pint.1
+.SH NAME
+pint \- Public-cloud INformation Tracker
+.SH SYNOPSIS
+.B pint [option]
+.SH DESCRIPTION
+.B pint
+A client for the SUSE Public Cloud Information service
+.I https://susepubliccloudinfo.suse.com/v1/<framework>/<data-type>
+where
+.I <framework>
+is one of
+.I amazon, google, hp, microsoft
+and
+.I <data-type>
+is one of
+.I servers, images.
+The SUSE Public Cloud Information service provides information about
+the SUSE maintained and operated update infrastructure as well as the SUSE
+published guest images in our partner Public Cloud frameworks. The information
+service provides a REST API at
+.I https://susepubliccloudinfo.suse.com/v1/
+that includes filtering of the information at the API level.
+
+
+
+region
+-- /v1/microsoft/West US/images/.json - Images in Azure's 'West US' region
+server class
+-- v1/amazon/servers/smt.json - All EC2 SMT servers
+-- v1/amazon/us-east-1/servers/regionserver.json - EC2 region servers in 'us-east-1'
+image class
+-- v1/google/images/active.json - Active images in Google.
+-- v1/amazon/us-east-1/images/deprecated.json deprecated images in EC2's 'us-east-2' region
+XML format
+-- v1/hp/servers.xml - All HP servers in XML (instead of JSON)
