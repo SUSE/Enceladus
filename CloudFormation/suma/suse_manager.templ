@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "SUSE Manager",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair"
+    },
+    "ServerInstanceType" : {
+      "Description" : "Server EC2 instance type",
+      "Type" : "String",
+      "Default" : "m4.xlarge",
+      "AllowedValues" : [ "t2.medium", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge"  ],
+      "ConstraintDescription" : "must be a valid EC2 instance type"
+    },
+    "Hostname" : {
+      "Description" : "FQDN of the SUSE Manager appliance",
+      "Type" : "String"
+    },
+    "VolumeSize" : {
+      "Description" : "Volume size of SUSE Manager repositories and data base (use 25G per channel)",
+      "Type" : "Number",
+      "MinValue" : "15",
+      "Default"  : "200"
+    },
+    "SecurityGroups" : {
+      "Description" : "EC2 SecurityGroups for SUSE Manager instance",
+      "Type" : "List<AWS::EC2::SecurityGroup::GroupName>",
+      "ConstraintDescription" : "must be an existing SecurityGroup"
+    }
+  },
+
+  "Mappings" : {
+    "AWSRegion2AMI" : {
+      "us-east-1"      : { "HVM64": "ami-b86955d0" },
+      "us-west-1"      : { "HVM64": "ami-01ec0145" },
+      "us-west-2"      : { "HVM64": "ami-c7a99cf7" },
+      "eu-central-1"   : { "HVM64": "ami-88b98595" },
+      "eu-west-1"      : { "HVM64": "ami-a5f497d2" },
+      "ap-southeast-1" : { "HVM64": "ami-12f6cb40" },
+      "ap-southeast-2" : { "HVM64": "ami-1da0dd27" },
+      "ap-northeast-1" : { "HVM64": "ami-bcb374bc" },
+      "sa-east-1"      : { "HVM64": "ami-5307824e" }
+    }
+  },
+
+  "Resources" : {
+    "ServerInstance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "InstanceType"   : { "Ref" : "ServerInstanceType" },
+        "SecurityGroups" : { "Ref" : "SecurityGroups" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
+        "BlockDeviceMappings" : [
+        {
+          "DeviceName" : "/dev/sda1",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : "20"
+          }
+        },
+        {
+          "DeviceName" : "/dev/xvdd",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : { "Ref" : "VolumeSize" } 
+          }
+        }
+        ],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash\n",
+          "set -e\n",
+          "sed -r -i -e 's/DHCLIENT_SET_HOSTNAME=\"yes\"/DHCLIENT_SET_HOSTNAME=\"no\"/' /etc/sysconfig/network/dhcp\n",
+          "hostname $(echo ",
+          { "Ref" : "Hostname" },
+          " | cut -d. -f1)\n",
+          "echo \"$(ec2metadata --local-ipv4) ",
+          { "Ref" : "Hostname" },
+          " $(echo ",
+          { "Ref" : "Hostname" },
+          " | cut -d. -f1)\" >> /etc/hosts\n",
+          "echo \"$(ec2metadata --public-ipv4) ",
+          { "Ref" : "Hostname" },
+          " $(echo ",
+          { "Ref" : "Hostname" },
+          " | cut -d. -f1)\" >> /etc/hosts\n",
+          "/usr/bin/suma-storage /dev/xvdd\n",
+          "echo \"/dev/xvdd1 /manager_storage xfs defaults 1 1\" >> /etc/fstab\n",
+          "" ]] }
+        }
+      }
+    }
+  },
+
+  "Outputs" : {
+    "HostIP" : {
+      "Description" : "Server public IP address",
+      "Value" : { "Fn::GetAtt" : [ "ServerInstance", "PublicIp" ] }
+    },
+    "ImageID" : {
+      "Description" : "ID of the AMI used",
+      "Value" : { "Fn::FindInMap" : [ "AWSRegion2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] }
+    },
+    "Notes" : {
+      "Description" : "Setup notes",
+      "Value" : "To set up SUSE Manager in your instance, ssh into it and run 'sudo /sbin/yast2 susemanager_setup'." }
+  }
+}
+
