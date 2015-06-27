@@ -5,35 +5,174 @@
 .SH NAME
 pint \- Public-cloud INformation Tracker
 .SH SYNOPSIS
-.B pint [option]
+.B pint amazon|google|hp|microsoft images|servers [option]
 .SH DESCRIPTION
 .B pint
-A client for the SUSE Public Cloud Information service
-.I https://susepubliccloudinfo.suse.com/v1/<framework>/<data-type>
-where
-.I <framework>
-is one of
-.I amazon, google, hp, microsoft
-and
-.I <data-type>
-is one of
-.I servers, images.
+A client for the SUSE Public Cloud Information service at
+.I https://susepubliccloudinfo.suse.com/v1/
 The SUSE Public Cloud Information service provides information about
 the SUSE maintained and operated update infrastructure as well as the SUSE
-published guest images in our partner Public Cloud frameworks. The information
-service provides a REST API at
-.I https://susepubliccloudinfo.suse.com/v1/
-that includes filtering of the information at the API level.
+published guest images in Public Cloud provider frameworks.
+.P
+The information service provides a REST API using the general format as
+follows:
+.IP https://susepubliccloudinfo.suse.com/v1/
+.IP <framework>
+.IP [<region>]/
+.IP <data-selector>/
+.IP <data-target>.<format>
+.P
+For example:
+.IP https://susepubliccloudinfo.suse.com/v1/amazon/servers.json
+Provides information about all servers part of the SUSE update infrastructure
+in Amazon Web Services EC2 in JSON format.
+.IP https://susepubliccloudinfo.suse.com/v1/google/images/active.json
+Provides information about all the active images in Google Compute images
+in JSON format.
+.IP https://susepubliccloudinfo.suse.com/v1/microsoft/West US/images/active.xml
+Provides information about all active images in Microsoft Azure in the US-West
+region.
+.P
+The
+.I pint
+command line client provides a convenience tool to access the information
+provided by the information service and provides additional filtering
+capabilities.
+.SH ARGUMENTS
+.IP "<framework>"
+One of the supported cloud frameworks,
+.I amazon,
+.I google,
+.I hp,
+or
+.I microsoft.
+The
+.I <framework>
+argument specifies for which cloud provider the information should be retrieved.
+.IP "<data-selector>"
+One of the supported information types,
+.I images
+or
+.I servers.
+The
+.I <data-selector>
+argument specifies the type of the information of interest. With the
+.I images
+argument information about the SUSE published images in the given framework
+is retrieved. When the
+.I servers
+argument is provided information about the SUSE operated servers in the
+SUSE maintained update infrastructure is retrieved.
+.SH OPTIONS
+.IP "--active"
+The
+.I active
+option is only valid when used with the
+.I images
+argument. It provides information about the latest published images.
+The latest published images are the only images considered
+.I active
+while all images released prior to the current images are considered
+deprecated even if some of the previously released images may still be
+available for launch.
+.IP "--deleted"
+The
+.I deleted
+option is only valid when used with the
+.I images
+argument. It provides information about deleted images. Deleted images
+are images that were previously published but have been superceded by newer
+images and have surpassed the deprecation period of 6 months.
+.IP "--deprecated"
+The
+.I deprecated
+option is only valid when used with the
+.I images
+argument. It provides information about images that can still be launched but
+are considered deprecated. The SUSE deprecation period is 6 months.
+.IP "--filter"
+Filter the information based on the given value(s). If the information is
+to be filtered on more than one entry type provide a comma separated
+list. The output id the union of the filters. The filter option
+specifies one or more of the valid data entries for the chosen
+.I <data-selector>
+and is a valid option for the
+.I images
+and
+.I servers
+arguments.
+Valid filter values for
+.I images
+are:
 
+.B deletedon,
 
+.B deprecatedon,
 
-region
--- /v1/microsoft/West US/images/.json - Images in Azure's 'West US' region
-server class
--- v1/amazon/servers/smt.json - All EC2 SMT servers
--- v1/amazon/us-east-1/servers/regionserver.json - EC2 region servers in 'us-east-1'
-image class
--- v1/google/images/active.json - Active images in Google.
--- v1/amazon/us-east-1/images/deprecated.json deprecated images in EC2's 'us-east-2' region
-XML format
--- v1/hp/servers.xml - All HP servers in XML (instead of JSON)
+.B name,
+
+.B publishedon,
+
+.B replacementid,
+
+.B replacementname.
+
+.B Note
+that not all filters will be populated for all images in all frameworks.
+
+Valid filter values for
+.I servers
+are:
+.B ip,
+
+.B name.
+
+.B Note
+that the name for all update servers (SMT servers) is the same in each
+cloud framework. For example
+.I smt-hp.susecloud.net
+in the HP Helion Public Cloud framework. The names are not resolvable via
+DNS lookup. The name for all region servers are the same,
+.I regionserver
+across all cloud frameworks.
+.IP "-h --help"
+Print a help message.
+.IP "--json"
+Set the output format to JSON format. The option is mutually exclusive with
+the
+.I --xml
+option. If neither option is specified plain text information is provided.
+.IP "--region"
+Specify the region for which the information is supposed to be retrieved.
+If no information is specified information for all regions in the given
+framework is retrieved.
+.IP "--regionserver"
+The
+.I regionserver
+option is only valid when used with the
+.I servers
+argument. It provides information about the regionservers in the given
+framework. Region servers are systems operated and maintained by SUSE
+that associate your instance in the given region with the region local
+SMT (update) servers.
+.IP "--smt"
+The
+.I smt
+option is only valid when used with the
+.I servers
+argument. It provides information about the SMT (update) servers operated
+and maintained by SUSE.
+.IP "-v --version"
+Print the current version of the program
+.SH EXAMPLE
+.B pint google servers --smt --jason
+
+Will provide information about all SMT servers running in Google Compute
+Engine in JSON format.
+
+.B pint amazon images --region us-west-2 --active --xml
+
+Will provide information about the active images in Amazon Web Services EC2
+in the us-west-2 region (Oregon).
+.SH AUTHOR
+Robert Schweikert (rjschwei@suse.com)
