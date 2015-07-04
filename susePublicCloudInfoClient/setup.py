@@ -24,7 +24,13 @@ except ImportError:
     sys.stderr.write('Python setuptools required, please install.')
     sys.exit(1)
 
-version = open('lib/susepubliccloudinfoclient/VERSION').read().strip()
+import os
+import sys
+this_path = os.path.dirname(os.path.abspath(__file__))
+mod_path = this_path + os.sep + 'lib/susepubliccloudinfoclient'
+sys.path.insert(0, mod_path)
+import version
+src_version = version.VERSION
 
 description = 'Command-line tool to access SUSE Public Cloud Information '
 description += 'Service'
@@ -32,16 +38,15 @@ description += 'Service'
 if __name__ == '__main__':
     setuptools.setup(
         name='susepubliccloudinfoclient',
-        description=(description)
+        description=(description),
         url='https://github.com/SUSE/Enceladus',
         license='GPL-3.0+',
         author='SUSE Public Cloud Team',
         author_email='public-cloud-dev@susecloud.net',
-        version=version,
+        version=src_version,
         packages=setuptools.find_packages('lib'),
-        package_data={'susepubliccloudinfoclient'  : ['VERSION']},
         package_dir={
             '': 'lib',
         },
-        scripts=['ec2uploadimg']
+        scripts=['pint']
     )
