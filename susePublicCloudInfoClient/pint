@@ -1,5 +1,23 @@
 #!/usr/bin/python
-
+#
+# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+#
+# This file is part of susePublicCloudInfoClient
+#
+# susePublicCloudInfoClient is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# susePublicCloudInfoClientis is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with susePublicCloudInfoClient. If not, see
+# <http://www.gnu.org/licenses/>.
+#
 """
 usage: pint -h | --help
        pint (amazon|google|hp|microsoft) servers
@@ -34,4 +52,53 @@ options:
        Show program version
 """
 
+import sys
+
 from docopt import docopt
+
+import infoserverrequests
+import version
+
+command_args = docopt(__doc__, version=version.VERSION)
+
+framework = None
+cloud_providers = ['amazon', 'google', 'hp', 'microsoft']
+for csp in cloud_providers:
+    if command_args[csp]:
+        framework = csp
+        break
+
+image_state = None
+image_states = ('active', 'deleted', 'deprecated')
+for state in image_states:
+    if command_args['--%s' % state]:
+        image_state = state
+        break
+
+output_format = 'plain'
+output_options = ('json', 'xml')
+for out in output_options:
+    if command_args['--%s' % out]:
+        output_format = out
+        break
+
+region = 'all'
+if command_args['--region']:
+    region = command_args['--region']
+
+server_type = command_args['--regionserver'] or command_args['--smt']
+
+if command_args['images']:
+    print infoserverrequests.get_image_data(
+        framework,
+        image_state,
+        output_format,
+        region,
+        command_args['--filter'])
+else:
+    print infoserverrequests.get_server_data(
+        framework,
+        server_type,
+        output_format,
+        region,
+        command_args['--filter'])

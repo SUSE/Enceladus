@@ -53,9 +53,8 @@ gzip %{buildroot}/%{_mandir}/man1/pint.1
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
-%doc %{_mandir}/*
+%{_mandir}/man1/*
 %dir %{python_sitelib}/susepubliccloudinfoclient
-%dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
 %{python_sitelib}/*
 %{_bindir}/*
 
