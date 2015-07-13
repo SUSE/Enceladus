@@ -481,7 +481,7 @@ for srv in regionServers:
             logging.error('=' *20)
     except:
         logging.error('No response from: %s' %srvName)
-        if srv == servers[-1]:
+        if srv == regionServers[-1]:
             logging.error('None of the servers responded')
             logging.error('\tAttemted: %s' %servers)
             logging.error('Exiting without registration')
