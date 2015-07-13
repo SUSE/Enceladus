@@ -16,8 +16,9 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+%define base_version 6.3.18
 Name:           cloud-regionsrv-client
-Version:        6.3.17
+Version:        %{base_version}
 Release:        0
 License:        LGPL-3.0
 Summary:        Cloud Environment Guest Registration
@@ -44,6 +45,7 @@ Requires:       suseRegister
 BuildRequires:  python
 BuildRequires:  python-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
+
 
 %if 0%{?suse_version} && 0%{?suse_version} <= 1110
 %{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
@@ -144,9 +146,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%dir %{python_sitelib}/cloudregister-6.3.17-py%{py_ver}.egg-info
+%dir %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info
 %dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-6.3.17-py%{py_ver}.egg-info/*
+%{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info/*
 %{python_sitelib}/cloudregister/*
 
 %changelog
