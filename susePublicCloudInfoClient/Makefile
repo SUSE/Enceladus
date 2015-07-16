@@ -8,7 +8,7 @@ files = Makefile README.md LICENSE pint setup.py
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
 verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
 verSrc = $(shell cat lib/susepubliccloudinfoclient/version.py | \
-	grep __version__ | awk -F\' '{ print $$2 }' | tr -d '\n')
+	grep VERSION | awk -F\' '{ print $$2 }' | tr -d '\n')
 
 ifneq "$(verSpec)" "$(verSrc)"
 $(error "Version mismatch, will not take any action")
