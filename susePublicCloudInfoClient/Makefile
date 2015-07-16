@@ -29,3 +29,18 @@ install:
 pep8:
 	tools/run-pep8
 
+.PHONY: test
+test:
+	nosetests --with-coverage --cover-erase --cover-package=lib.susepubliccloudinfoclient --cover-xml
+	tools/coverage-check
+
+coverage:
+	nosetests --with-coverage --cover-erase --cover-package=lib.susepubliccloudinfoclient --cover-xml
+	mv test/unit/coverage.xml test/unit/coverage.reference.xml
+
+list_tests:
+	@for i in test/unit/*_test.py; do basename $$i;done | sort
+
+%.py:
+	nosetests $@
+
