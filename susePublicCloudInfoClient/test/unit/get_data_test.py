@@ -19,23 +19,20 @@
 # <http://www.gnu.org/licenses/>.
 #
 
+import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
 import os
 import sys
-
 from nose.tools import *
 
-this_path = os.path.dirname(os.path.abspath(__file__))
-mod_path = this_path + os.sep + '../../lib/susepubliccloudinfoclient'
-sys.path.insert(0, mod_path)
-
-import infoserverrequests as ifsrequest
 
 def test_api_version():
     assert_equals('v1', ifsrequest.__get_api_version())
 
+
 def test_get_base_url():
     expected = 'https://susepubliccloudinfo.suse.com'
     assert_equals(expected, ifsrequest.__get_base_url())
+
 
 def test_form_url_servers_all_json():
     """Form the URL for all servers in JSON format"""
@@ -43,11 +40,13 @@ def test_form_url_servers_all_json():
     expected = 'https://susepubliccloudinfo.suse.com/v1/amazon/servers.json'
     assert_equals(expected, url)
 
+
 def test_form_url_servers_smt_xml():
     """Form the URL for all SMT servers in XML"""
     url = ifsrequest.__form_url('hp', 'servers', server_type='smt')
     expected = 'https://susepubliccloudinfo.suse.com/v1/hp/servers/smt.xml'
     assert_equals(expected, url)
+
 
 def test_form_url_images_active_region_json():
     """Form the URL for active images in JSON format in a given region"""
@@ -61,10 +60,9 @@ def test_form_url_images_active_region_json():
     expected += 'amazon/us-east-1/images/active.json'
     assert_equals(expected, url)
 
+
 def test_form_url_images_all_xml():
     """Form URL for all images in XML format"""
     url = ifsrequest.__form_url('google', 'images')
     expected = 'https://susepubliccloudinfo.suse.com/v1/google/images.xml'
     assert_equals(expected, url)
-
-
