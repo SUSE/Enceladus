@@ -25,3 +25,7 @@ install:
 	install -d -m 755 "$(DESTDIR)"/"$(MANDIR)"/man1
 	install -m 644 man/man1/pint.1 "$(DESTDIR)"/"$(MANDIR)"/man1
 	gzip "$(DESTDIR)"/"$(MANDIR)"/man1/pint.1
+	
+pep8:
+	tools/run-pep8
+
