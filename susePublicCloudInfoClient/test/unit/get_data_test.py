@@ -25,7 +25,7 @@ import sys
 from nose.tools import *
 
 this_path = os.path.dirname(os.path.abspath(__file__))
-mod_path = this_path + os.sep + '../lib/susepubliccloudinfoclient'
+mod_path = this_path + os.sep + '../../lib/susepubliccloudinfoclient'
 sys.path.insert(0, mod_path)
 
 import infoserverrequests as ifsrequest
