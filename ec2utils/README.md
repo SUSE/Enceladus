@@ -12,3 +12,10 @@ A tool to deprecate images. Images are tagged with:
 - Removal date      -> today's date plus the deprecation period specified
 - Replacement image -> The AMI ID and name of the replacement image
 
+# ec2publishimg
+
+A tool to set an image to public or private
+
+# ec2uploadimg
+
+A tool to upload a compressed raw file and create an ECS back AMI
