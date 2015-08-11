@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: susepubliccloudinfoclient
+Version: 0.0.1
+Summary: Command-line tool to access SUSE Public Cloud Information Service
+Home-page: https://github.com/SUSE/Enceladus
+Author: SUSE Public Cloud Team
+Author-email: public-cloud-dev@susecloud.net
+License: GPL-3.0+
+Description: UNKNOWN
+Platform: UNKNOWN

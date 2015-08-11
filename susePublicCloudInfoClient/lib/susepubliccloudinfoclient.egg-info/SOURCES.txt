@@ -1,0 +1,10 @@
+pint
+setup.cfg
+setup.py
+lib/susepubliccloudinfoclient/__init__.py
+lib/susepubliccloudinfoclient/infoserverrequests.py
+lib/susepubliccloudinfoclient/version.py
+lib/susepubliccloudinfoclient.egg-info/PKG-INFO
+lib/susepubliccloudinfoclient.egg-info/SOURCES.txt
+lib/susepubliccloudinfoclient.egg-info/dependency_links.txt
+lib/susepubliccloudinfoclient.egg-info/top_level.txt
