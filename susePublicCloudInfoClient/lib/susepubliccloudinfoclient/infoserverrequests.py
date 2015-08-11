@@ -19,7 +19,57 @@
 # <http://www.gnu.org/licenses/>.
 #
 
+import json
+import re
 import requests
+import sys
+import xml.etree.ElementTree as ET
+
+
+def __apply_filters(superset, filters):
+    result_set = superset
+    for a_filter in filters:
+        if a_filter['operator'] is '=':
+            result_set = __filter_exact(
+                result_set,
+                a_filter['attr'],
+                a_filter['value']
+            )
+        elif a_filter['operator'] is '~':
+            result_set = __filter_instr(
+                result_set,
+                a_filter['attr'],
+                a_filter['value']
+            )
+        elif a_filter['operator'] is '>':
+            result_set = __filter_greater_than(
+                result_set,
+                a_filter['attr'],
+                a_filter['value']
+            )
+        elif a_filter['operator'] is '<':
+            result_set = __filter_less_than(
+                result_set,
+                a_filter['attr'],
+                a_filter['value']
+            )
+    return result_set
+
+
+def __filter_exact(items, attr, value):
+    return [item for item in items if item[attr] == value]
+
+
+def __filter_instr(items, attr, value):
+    return [item for item in items if value in item[attr]]
+
+
+def __filter_less_than(items, attr, value):
+    return [item for item in items if int(item[attr]) < int(value)]
+
+
+def __filter_greater_than(items, attr, value):
+    return [item for item in items if int(item[attr]) > int(value)]
 
 
 def __form_url(
@@ -63,6 +113,68 @@ def __get_data(url):
     return response.text
 
 
+def __get_and_filter_data(url, filter_arg):
+    response = __get_data(url)
+    if response:
+        filters = __parse_filter(filter_arg)
+        result_set = __parse_response(response)
+        item_type = result_set.keys()[0]
+        return {item_type: __apply_filters(result_set[item_type], filters)}
+
+
+def __inflect(plural):
+    inflections = {'images': 'image', 'servers': 'server'}
+    return inflections[plural]
+
+
+def __parse_filter(arg):
+    """Break down the filter arg into a usable dictionary"""
+    valid_filters = {
+        'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
+        'replacementid': '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
+        'name': '^(?P<attr>name)(?P<operator>[~])(?P<value>.+)$',
+        'replacementname': '(?P<attr>replacementname)(?P<operator>[~])(?P<value>.+)$',
+        'publishedon': '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'deprecatedon': '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$'
+    }
+    filters = []
+    for entry in arg.split(','):
+        valid = False
+        for attr, regex in valid_filters.iteritems():
+            match = re.match(regex, entry)
+            if match:
+                valid = True
+                filters.append(match.groupdict())
+                break
+        if not valid:
+            __warn("Invalid filter phrase '%s' will be ignored." % entry)
+    return filters
+
+
+def __parse_response(response, fmt='json'):
+    if fmt is 'json':
+        return json.loads(response)
+    elif fmt is 'xml':
+        root = ET.fromstring(response)
+        return {root.tag: [child.attrib for child in root]}
+
+
+def __reformat(result_set, result_format):
+    if result_format == 'json':
+        return json.dumps(result_set)
+    elif result_format == 'xml':
+        root_tag = result_set.keys()[0]
+        root = ET.Element(root_tag)
+        for item in result_set[root_tag]:
+            ET.SubElement(root, __inflect(root_tag), item)
+        return ET.tostring(root, 'UTF-8', 'xml')
+
+
+def __warn(str, out=sys.stdout):
+    out.write("Warning: %s" % str)
+
+
 def get_image_data(
         framework,
         image_state,
@@ -82,7 +194,10 @@ def get_image_data(
         result_format,
         region,
         image_state)
-    return __get_data(url)
+    if data_filter:
+        __reformat(__get_and_filter_data(url, data_filter), result_format)
+    else:
+        return __get_data(url)
 
 
 def get_server_data(
@@ -104,4 +219,7 @@ def get_server_data(
         result_format,
         region,
         server_type=server_type)
-    return __get_data(url)
+    if data_filter:
+        __reformat(__get_and_filter_data(url, data_filter), result_format)
+    else:
+        return __get_data(url)
