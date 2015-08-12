@@ -27,32 +27,22 @@ import xml.etree.ElementTree as ET
 
 
 def __apply_filters(superset, filters):
+    # map operators to filter functions
+    filter_operations = {
+        '=': __filter_exact,
+        '~': __filter_instr,
+        '>': __filter_greater_than,
+        '<': __filter_less_than
+    }
+    # prepopulate the result set with all the items
     result_set = superset
+    # run through the filters, allowing each to reduce the result set...
     for a_filter in filters:
-        if a_filter['operator'] is '=':
-            result_set = __filter_exact(
-                result_set,
-                a_filter['attr'],
-                a_filter['value']
-            )
-        elif a_filter['operator'] is '~':
-            result_set = __filter_instr(
-                result_set,
-                a_filter['attr'],
-                a_filter['value']
-            )
-        elif a_filter['operator'] is '>':
-            result_set = __filter_greater_than(
-                result_set,
-                a_filter['attr'],
-                a_filter['value']
-            )
-        elif a_filter['operator'] is '<':
-            result_set = __filter_less_than(
-                result_set,
-                a_filter['attr'],
-                a_filter['value']
-            )
+        result_set = filter_operations[a_filter['operator']](
+            result_set,
+            a_filter['attr'],
+            a_filter['value']
+        )    
     return result_set
 
 
