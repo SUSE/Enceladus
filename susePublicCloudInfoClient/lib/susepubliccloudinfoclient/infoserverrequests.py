@@ -158,6 +158,7 @@ def __parse_filter(arg):
     valid_filters = {
         'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
         'replacementid': '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
+        'ip': '^(?P<attr>ip)(?P<operator>[=])(?P<value>\d+\.\d+\.\d+.\d+)$',
         'name': '^(?P<attr>name)(?P<operator>[~])(?P<value>.+)$',
         'replacementname': '(?P<attr>replacementname)(?P<operator>[~])(?P<value>.+)$',
         'publishedon': '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
@@ -166,14 +167,12 @@ def __parse_filter(arg):
     }
     filters = []
     for entry in arg.split(','):
-        valid = False
         for attr, regex in valid_filters.iteritems():
             match = re.match(regex, entry)
             if match:
-                valid = True
                 filters.append(match.groupdict())
                 break
-        if not valid:
+        else:
             __warn("Invalid filter phrase '%s' will be ignored." % entry)
     return filters
 

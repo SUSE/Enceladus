@@ -83,7 +83,8 @@ def test_warn_includes_warning():
     assert('Warning:' in out.getvalue())
 
 
-def test_valid_keys_from_filter():
+@patch('lib.susepubliccloudinfoclient.infoserverrequests.__warn')
+def test_valid_image_keys_from_filter(mock_warn):
     """Find all valid attributes in the `filter` flag"""
     # image attributes
     filter_arg = (
@@ -103,11 +104,18 @@ def test_valid_keys_from_filter():
 
     ]
     assert_equals(expected.sort(), [item['attr'] for item in filters].sort())
+    assert_false(mock_warn.called, "warn() should not be called") 
+
+
+@patch('lib.susepubliccloudinfoclient.infoserverrequests.__warn')
+def test_valid_server_keys_from_filter(mock_warn):
+    """Find all valid attributes in the `filter` flag"""
     # server attributes
-    filter_arg = 'name~foo,ip=54.197.240.216'
+    filter_arg = 'name~foo,ip=0.0.0.0'
     filters = ifsrequest.__parse_filter(filter_arg)
     expected = ['name', 'ip']
     assert_equals(expected.sort(), [item['attr'] for item in filters].sort())
+    assert_false(mock_warn.called, "warn() should not be called") 
 
 
 @patch('lib.susepubliccloudinfoclient.infoserverrequests.__warn')
