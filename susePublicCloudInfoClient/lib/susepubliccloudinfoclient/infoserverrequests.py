@@ -47,19 +47,55 @@ def __apply_filters(superset, filters):
 
 
 def __filter_exact(items, attr, value):
-    return [item for item in items if item[attr] == value]
+    """select from items list where the attribute is an exact match to 'value'"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if item[attr] == value:
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
 
 
 def __filter_substring(items, attr, value):
-    return [item for item in items if value in item[attr]]
+    """select from items list where 'value' is a substring of the attribute"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if value in item[attr]:
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
 
 
 def __filter_less_than(items, attr, value):
-    return [item for item in items if int(item[attr]) < int(value)]
+    """select from items list where the attribute is less than 'value' as integers"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if int(item[attr]) < int(value):
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
 
 
 def __filter_greater_than(items, attr, value):
-    return [item for item in items if int(item[attr]) > int(value)]
+    """select from items list where the attribute is greater than 'value' as integers"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if int(item[attr]) > int(value):
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
 
 
 def __form_url(
