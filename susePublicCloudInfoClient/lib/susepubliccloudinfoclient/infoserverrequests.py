@@ -30,7 +30,7 @@ def __apply_filters(superset, filters):
     # map operators to filter functions
     filter_operations = {
         '=': __filter_exact,
-        '~': __filter_instr,
+        '~': __filter_substring,
         '>': __filter_greater_than,
         '<': __filter_less_than
     }
@@ -50,7 +50,7 @@ def __filter_exact(items, attr, value):
     return [item for item in items if item[attr] == value]
 
 
-def __filter_instr(items, attr, value):
+def __filter_substring(items, attr, value):
     return [item for item in items if value in item[attr]]
 
 

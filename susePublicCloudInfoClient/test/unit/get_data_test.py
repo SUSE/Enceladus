@@ -303,11 +303,11 @@ def test_filter_exact():
     assert_equals(expected, filtered_result)
 
 
-def test_filter_instr():
+def test_filter_substring():
     """should only return results with substring match in attribute"""
     with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
         images = json.load(fixture)['images']
-    filtered_result = ifsrequest.__filter_instr(
+    filtered_result = ifsrequest.__filter_substring(
         images,
         'name',
         '11-sp4-byos'
