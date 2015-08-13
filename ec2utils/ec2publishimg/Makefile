@@ -3,7 +3,7 @@ MANPATH=/usr/share/man
 PREFIX=/usr
 NAME=ec2publishimg
 dirs = lib man
-files = Makefile README.md LICENSE ec2publish setup.py
+files = Makefile README.md LICENSE ec2publishimg setup.py
 
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
 verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
