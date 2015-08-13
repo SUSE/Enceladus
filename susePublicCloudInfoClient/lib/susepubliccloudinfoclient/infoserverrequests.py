@@ -23,7 +23,9 @@ import json
 import re
 import requests
 import sys
+import urllib
 import xml.etree.ElementTree as ET
+
 
 
 def __apply_filters(superset, filters):
@@ -101,24 +103,28 @@ def __filter_greater_than(items, attr, value):
 def __form_url(
         framework,
         info_type,
-        data_format='xml',
-        region=None,
+        result_format='xml',
+        region='all',
         image_state=None,
-        server_type=None):
+        server_type=None,
+        apply_filters=None):
     """Form the URL for the request"""
     url_components = []
     url_components.append(__get_base_url())
     url_components.append(__get_api_version())
     url_components.append(framework)
+    if region == 'all':
+        region = None
     if region:
-        url_components.append(region)
+        url_components.append(urllib.quote(region))
     url_components.append(info_type)
     doc_type = image_state or server_type
+    server_format = __select_server_format(result_format, apply_filters)
     if doc_type:
-        doc_type += '.' + data_format
+        doc_type += '.' + server_format
         url_components.append(doc_type)
     else:
-        url_components[-1] = url_components[-1] + '.' + data_format
+        url_components[-1] = url_components[-1] + '.' + server_format
     url = '/'
     return url.join(url_components)
 
@@ -136,16 +142,9 @@ def __get_base_url():
 def __get_data(url):
     """Make the request and return the data or None in case of failure"""
     response = requests.get(url)
+    print url
+    assert response.text, "No data was returned by the server!"
     return response.text
-
-
-def __get_and_filter_data(url, filter_arg):
-    response = __get_data(url)
-    if response:
-        filters = __parse_filter(filter_arg)
-        result_set = __parse_response(response)
-        item_type = result_set.keys()[0]
-        return {item_type: __apply_filters(result_set[item_type], filters)}
 
 
 def __inflect(plural):
@@ -153,8 +152,8 @@ def __inflect(plural):
     return inflections[plural]
 
 
-def __parse_filter(arg):
-    """Break down the filter arg into a usable dictionary"""
+def __parse_command_arg_filter(command_arg_filter = None):
+    """Break down the --filter argument into a list of filters"""
     valid_filters = {
         'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
         'replacementid': '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
@@ -165,39 +164,65 @@ def __parse_filter(arg):
         'deprecatedon': '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
         'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$'
     }
+    # start with empty result set
     filters = []
-    for entry in arg.split(','):
-        for attr, regex in valid_filters.iteritems():
-            match = re.match(regex, entry)
-            if match:
-                filters.append(match.groupdict())
-                break
-        else:
-            __warn("Invalid filter phrase '%s' will be ignored." % entry)
+    # split the argument into a comma-separated list if supplied...
+    if command_arg_filter:
+        for phrase in command_arg_filter.split(','):
+            # compare each comma-separated 'phrase' against the valid filters
+            # defined by regular expressions
+            for attr, regex in valid_filters.iteritems():
+                match = re.match(regex, phrase)
+                if match:
+                    filters.append(match.groupdict())
+                    break
+            else:
+                # if we can't break out with a valid filter, warn the user
+                __warn("Invalid filter phrase '%s' will be ignored." % phrase)
+    # return any valid filters we found
     return filters
 
 
-def __parse_response(response, fmt='json'):
-    if fmt is 'json':
-        return json.loads(response)
-    elif fmt is 'xml':
-        root = ET.fromstring(response)
-        return {root.tag: [child.attrib for child in root]}
+def __parse_server_response_data(server_response_data, info_type):
+    return json.loads(server_response_data)[info_type]
 
 
-def __reformat(result_set, result_format):
-    if result_format == 'json':
-        return json.dumps(result_set)
-    elif result_format == 'xml':
-        root_tag = result_set.keys()[0]
-        root = ET.Element(root_tag)
-        for item in result_set[root_tag]:
-            ET.SubElement(root, __inflect(root_tag), item)
+def __reformat(items, info_type, result_format):
+    if result_format == 'json':        
+        return json.dumps({info_type: items})
+    # default to XML output (until we have a plain formatter)
+    else:
+    # elif result_format == 'xml':
+        root = ET.Element(info_type)
+        for item in items:
+            ET.SubElement(root, __inflect(info_type), item)
         return ET.tostring(root, 'UTF-8', 'xml')
 
 
+def __select_server_format(result_format, apply_filters=False):
+    if apply_filters:
+        return 'json'
+    elif result_format == 'plain':
+        return 'xml'
+    else:
+        return result_format
+ 
+
 def __warn(str, out=sys.stdout):
     out.write("Warning: %s" % str)
+
+
+def __process(url, info_type, command_arg_filter, result_format):
+    # where the magic happens
+    """given a URL, the type of information, maybe some filters, and an expected format, do the right thing"""
+    server_response_data = __get_data(url)
+    if command_arg_filter:
+        filters = __parse_command_arg_filter(command_arg_filter)
+        superset = __parse_server_response_data(server_response_data, info_type)
+        filtered_items = __apply_filters(superset, filters)
+        return __reformat(filtered_items, info_type, result_format)
+    else:
+        return server_response_data
 
 
 def get_image_data(
@@ -205,24 +230,18 @@ def get_image_data(
         image_state,
         result_format='plain',
         region='all',
-        data_filter=None):
+        command_arg_filter=None):
     """Return the requested image information"""
-    generate_plain_text = False
-    if result_format == 'plain':
-        generate_plain_text = True
-        result_format = 'xml'
-    if region == 'all':
-        region = None
+    info_type = 'images'
     url = __form_url(
         framework,
-        'images',
+        info_type,
         result_format,
         region,
-        image_state)
-    if data_filter:
-        __reformat(__get_and_filter_data(url, data_filter), result_format)
-    else:
-        return __get_data(url)
+        image_state,
+        apply_filters=command_arg_filter
+    )
+    return __process(url, info_type, command_arg_filter, result_format)
 
 
 def get_server_data(
@@ -230,21 +249,16 @@ def get_server_data(
         server_type,
         result_format='plain',
         region='all',
-        data_filter=None):
+        command_arg_filter=None):
     """Return the requested server information"""
-    generate_plain_text = False
-    if result_format == 'plain':
-        generate_plain_text = True
-        result_format = 'xml'
-    if region == 'all':
-        region = None
+    info_type = 'servers'
     url = __form_url(
         framework,
-        'servers',
+        info_type,
         result_format,
         region,
-        server_type=server_type)
-    if data_filter:
-        __reformat(__get_and_filter_data(url, data_filter), result_format)
-    else:
-        return __get_data(url)
+        server_type=server_type,
+        apply_filters=command_arg_filter
+    )
+    return __process(url, info_type, command_arg_filter, result_format)
+
