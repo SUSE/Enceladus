@@ -142,7 +142,6 @@ def __get_base_url():
 def __get_data(url):
     """Make the request and return the data or None in case of failure"""
     response = requests.get(url)
-    print url
     assert response.text, "No data was returned by the server!"
     return response.text
 
