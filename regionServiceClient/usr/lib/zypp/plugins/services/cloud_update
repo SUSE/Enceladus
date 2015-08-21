@@ -1,0 +1,69 @@
+#!/usr/bin/python
+
+# Copyright (c) 2015, SUSE LLC, All rights reserved.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 3.0 of the License, or (at your option) any later version.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library.
+
+"""This script verifies the access to the registered SMT server. If the
+   server cannot be reached an attempt is made to switch the configured
+   server to another known server that was previously provided by the
+   region server.
+
+   The configuration is in ini format and is located in
+   /etc/regionserverclnt.cfg"""
+
+import logging
+import sys
+
+import cloudregister.registerutils as utils
+
+utils.start_logging()
+
+current_smt = utils.get_current_smt()
+if not current_smt:
+    logging.info('[Service] No SMT server found, nothing to do')
+    sys.exit()
+
+if utils.is_registered(current_smt):
+    cert = utils.get_smt_cert(current_smt)
+    if cert:
+        msg = '[Service] Current SMT (%s) ' % current_smt.get_ip()
+        msg += 'server will be refreshed'
+        logging.info(msg)
+    else:
+        # If the configured smt server is not responsive we need to switch
+        # to another server
+        available_servers = utils.get_available_smt_servers()
+        for smt in available_servers:
+            if smt.get_ip() == current_smt.get_ip():
+                continue
+            cert = get_smt_cert(smt)
+            if cert:
+                if utils.servers_are_equivalent(current_smt, smt):
+                    msg = '[Service] Switching to alternate SMT server: '
+                    msg += smt.get_ip()
+                    logging.info(msg)
+                    utils.replace_hosts_entry(current_smt, smt)
+                    break
+        else:
+            msg = '[Service] Could not find an equivalent SMT server, '
+            msg += 'forcing a new registration'
+            zypper_pid = utils.get_zypper_pid()
+            # At this point zypper is only refreshing the service
+            # and it is safe to kill it. We need to re-register
+            # the system anyway.
+            cnt = 1
+            while zypper_pid != '' and cnt < 5:
+                cnt += 1
+                os.system('kill -9 %s' % zypper_pid.strip())
+                zypper_pid = utils.get_zypper_pid()
+                os.system('/usr/sbin/registercloudguest --force-new')
