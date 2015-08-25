@@ -56,8 +56,8 @@ import sys
 
 from docopt import docopt
 
-import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
-import lib.susepubliccloudinfoclient.version as version
+import susepubliccloudinfoclient.infoserverrequests as ifsrequest
+import susepubliccloudinfoclient.version as version
 
 command_args = docopt(__doc__, version=version.VERSION)
 
