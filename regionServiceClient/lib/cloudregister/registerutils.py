@@ -16,6 +16,10 @@
 import glob
 import logging
 import os
+import pickle
+import requests
+import stat
+import subprocess
 import sys
 
 from cloudregister import smt
@@ -30,7 +34,7 @@ def check_registration(smt_server_name):
     """Check if the instance is already registerd"""
     credentials_exist = has_credentials()
     repos_exist = has_repos(smt_server_name)
-    if repos_exist and credExist:
+    if repos_exist and credentials_exist:
         return 1
     elif repos_exist and not credentials_exist:
         remove_repos(smt_server_name)
@@ -49,10 +53,10 @@ def clean_hosts_file(domain_name):
     content = open('/etc/hosts', 'r').readlines()
     smt_announce_found = None
     for entry in content:
-        if entry.find('Added by SMT') != -1:
+        if '# Added by SMT' in entry:
             smt_announce_found = True
             continue
-        if smt_announce_found and domain_nae in entry.:
+        if smt_announce_found and domain_name in entry:
             smt_announce_found = False
             continue
         new_hosts_content.append(entry)
@@ -61,6 +65,19 @@ def clean_hosts_file(domain_name):
     for entry in new_hosts_content:
         hosts_file.write(entry)
     hosts_file.close()
+
+
+# ----------------------------------------------------------------------------
+def get_available_smt_servers():
+    """Return a list of available SMT servers"""
+    availabe_smt_servers = []
+    if not os.path.exists(REGISTRATION_DATA_DIR):
+        return availabe_smt_servers
+    smt_data_files = glob.glob(REGISTRATION_DATA_DIR + 'availableSMTInfo*')
+    for smt_data in smt_data_files:
+        availabe_smt_servers.append(get_smt_from_store(smt_data))
+
+    return availabe_smt_servers
 
 
 # ----------------------------------------------------------------------------
@@ -77,7 +94,7 @@ def get_registered_smt_file_path():
 
 
 # ----------------------------------------------------------------------------
-def get_smt_cert(smt, retries=3):
+def get_smt_cert(smt_ip, retries=3):
     """Return the response object or none if the request fails."""
 
     cert = None
@@ -85,12 +102,12 @@ def get_smt_cert(smt, retries=3):
     while attempts < retries:
         attempts += 1
         try:
-            cert = requests.get('http://%s/smt.crt' % smt)
+            cert = requests.get('http://%s/smt.crt' % smt_ip)
         except:
             # No response from server
             logging.error('=' * 20)
             logging.error('Attempt %s of %s' % (attempts, retries))
-            logging.error('Server %s is unreachable' % smt.get_ip())
+            logging.error('Server %s is unreachable' % smt_ip)
 
     return cert
 
@@ -115,13 +132,25 @@ def get_smt_from_store(smt_store_file_path):
 
 
 # ----------------------------------------------------------------------------
+def get_zypper_command():
+    """Returns the command line for zypper if zypper is running"""
+    zypper_pid = get_zypper_pid()
+    zypper_cmd = None
+    if zypper_pid:
+        zypper_cmd = open('/proc/%s/cmdline' % zypper_pid, 'r').read()
+        zypper_cmd = zypper_cmd.replace('\x00', ' ')
+
+    return zypper_cmd
+
+
+# ----------------------------------------------------------------------------
 def get_zypper_pid():
     """Return the PID of zypper if it is running"""
     zyppPIDCmd = ['ps', '-C', 'zypper', '-o', 'pid=']
     zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
     pidData = zyppPID.communicate()
 
-    return pidData[0]
+    return pidData[0].strip()
 
 
 # ----------------------------------------------------------------------------
@@ -170,11 +199,11 @@ def remove_credentials():
 
 
 # ----------------------------------------------------------------------------
-def remove_service(smtServerName):
+def remove_service(smt_server_name):
     """Remove the service for the given SMT server"""
-    repoSrvName = smtServerName.replace('.', '_')
-    srvs = glob.glob('/etc/zypp/services.d/*%s*' % repoSrvName)
-    for srv in srvs:
+    repo_service_name = smt_server_name.replace('.', '_')
+    zypp_services = glob.glob('/etc/zypp/services.d/*%s*' % repo_service_name)
+    for srv in zypp_services:
         logging.info('Removing service: %s' % srv)
         os.unlink(srv)
 
@@ -199,7 +228,7 @@ def remove_registration_data(smt_servers):
 # ----------------------------------------------------------------------------
 def remove_repos(smt_server_name):
     """Remove the repositories for the given server"""
-    repo_name = smtServerName.replace('.', '_')
+    repo_name = smt_server_name.replace('.', '_')
     repos = glob.glob('/etc/zypp/repos.d/*%s*' % repo_name)
     for repo in repos:
         logging.info('Removing repo: %s' % repo)
@@ -232,7 +261,7 @@ def smt_servers_are_equivalent(smt_1, smt_2):
     """When 2 SMT servers have the same cert fingerprint and their
        FQDN is the same they are equivalent."""
     if (
-            smt_1.get_FQDN() == smt_2.FQDN() and
+            smt_1.get_FQDN() == smt_2.get_FQDN() and
             smt_1.get_fingerprint() == smt_2.get_fingerprint()):
         return 1
 
@@ -240,7 +269,7 @@ def smt_servers_are_equivalent(smt_1, smt_2):
 
 
 # ----------------------------------------------------------------------------
-def start_looging():
+def start_logging():
     """Set up logging"""
     log_filename = '/var/log/cloudregister'
     try:
