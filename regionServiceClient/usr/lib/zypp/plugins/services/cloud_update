@@ -22,7 +22,10 @@
    /etc/regionserverclnt.cfg"""
 
 import logging
+import os
+import subprocess
 import sys
+import time
 
 import cloudregister.registerutils as utils
 
@@ -34,7 +37,7 @@ if not current_smt:
     sys.exit()
 
 if utils.is_registered(current_smt):
-    cert = utils.get_smt_cert(current_smt)
+    cert = utils.get_smt_cert(current_smt.get_ip())
     if cert:
         msg = '[Service] Current SMT (%s) ' % current_smt.get_ip()
         msg += 'server will be refreshed'
@@ -46,9 +49,9 @@ if utils.is_registered(current_smt):
         for smt in available_servers:
             if smt.get_ip() == current_smt.get_ip():
                 continue
-            cert = get_smt_cert(smt)
+            cert = utils.get_smt_cert(smt.get_ip())
             if cert:
-                if utils.servers_are_equivalent(current_smt, smt):
+                if utils.smt_servers_are_equivalent(current_smt, smt):
                     msg = '[Service] Switching to alternate SMT server: '
                     msg += smt.get_ip()
                     logging.info(msg)
@@ -57,13 +60,30 @@ if utils.is_registered(current_smt):
         else:
             msg = '[Service] Could not find an equivalent SMT server, '
             msg += 'forcing a new registration'
+            logging.info(msg)
+            zypper_cmd = utils.get_zypper_command()
+            # TODO sort out a way how to get this messge to the user
+            # or add --execut option to registercloudguest and pass
+            # the zypper command.
+            # It would still be awkward as the user will see the message
+            # from zypper that it is exiting
+            #print 'Unable to refresh the current update service.'
+            #print 'Attempting to switch to a new update server.'
+            #print 'Please execute "%s" again in 10 seconds' % zypper_cmd
+            #print 'zypper will exit momentarily'
             zypper_pid = utils.get_zypper_pid()
             # At this point zypper is only refreshing the service
             # and it is safe to kill it. We need to re-register
             # the system anyway.
             cnt = 1
+            new_registration_initiated = False
             while zypper_pid != '' and cnt < 5:
+                if not new_registration_initiated:
+                    pipe = subprocess.Popen(
+                        ['/usr/sbin/registercloudguest',
+                         '--force-new',
+                         '--delay 2'])
+                    new_registration_initiated = True
                 cnt += 1
-                os.system('kill -9 %s' % zypper_pid.strip())
+                os.system('kill -15 %s > /dev/null 2>&1' % zypper_pid.strip())
                 zypper_pid = utils.get_zypper_pid()
-                os.system('/usr/sbin/registercloudguest --force-new')
