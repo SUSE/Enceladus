@@ -1,7 +1,7 @@
 #
-# spec file for package python-ec2utilsbase
+# spec file for package python-ec2publishimg
 #
-# Copyright (c) 2015 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# Copyright (c) 2015 SUSE Linux GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -16,9 +16,9 @@
 #
 
 
-%define upstream_name ec2utilsbase
-Name:           python-ec2utilsbase
-Version:        0.3.0
+%define upstream_name ec2publishimg
+Name:           python-ec2publishimg
+Version:        0.1.0
 Release:        0
 Summary:        Tag image as deprected in EC2
 License:        GPL-3.0+
@@ -26,6 +26,9 @@ Group:          System/Management
 Url:            https://github.com/SUSE/Enceladus
 Source0:        %{upstream_name}-%{version}.tar.bz2
 Requires:       python
+Requires:       python-boto
+Requires:       python-dateutil
+Requires:       python-ec2utilsbase >= 0.3.0
 BuildRequires:  python-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
@@ -36,8 +39,8 @@ BuildArch:      noarch
 %endif
 
 %description
-Deprecate images owned by the specified account by adding tags named
-"Deprecated on", "Removal date", and "Replacement image"
+Publish images owned by the specified account by adding tags named
+"Publishd on", "Removal date", and "Replacement image"
 
 %prep
 %setup -q -n %{upstream_name}-%{version}
@@ -47,13 +50,19 @@ python setup.py build
 
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
-
+# __init__.py is supplied by the base package, remove it to avoid
+# file conflicts during install
+rm %{buildroot}/%{python_sitelib}/ec2utils/__init__.*
+install -d -m 755 %{buildroot}/%{_mandir}/man1
+install -m 644 man/man1/ec2publishimg.1 %{buildroot}/%{_mandir}/man1
+gzip %{buildroot}/%{_mandir}/man1/ec2publishimg.1
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
-%dir %{python_sitelib}/ec2utils
-%dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
-%{python_sitelib}/*
+%{_mandir}/man*/*
+%{python_sitelib}/ec2utils
+%{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
+%{_bindir}/*
 
 %changelog

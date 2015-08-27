@@ -20,6 +20,10 @@ class EC2AccountException(Exception):
     pass
 
 
+class EC2ConfigFileParseException(Exception):
+    pass
+
+
 class EC2ConnectionException(Exception):
     pass
 
@@ -28,9 +32,9 @@ class EC2DeprecateImgException(Exception):
     pass
 
 
-class EC2UploadImgException(Exception):
+class EC2PublishImgException(Exception):
     pass
 
 
-class EC2UtilsConfigFileParseException(Exception):
+class EC2UploadImgException(Exception):
     pass
