@@ -18,4 +18,19 @@
 # along with susePublicCloudInfoClient. If not, see
 # <http://www.gnu.org/licenses/>.
 #
-VERSION = '0.1.0'
+
+import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
+
+import os
+import sys
+
+from nose.tools import *
+from StringIO import StringIO
+
+
+def test_warn_includes_warning():
+    """The point of warn is to say so"""
+
+    out = StringIO()
+    ifsrequest.__warn("test", out)
+    assert('Warning:' in out.getvalue())

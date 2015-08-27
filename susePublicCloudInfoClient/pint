@@ -56,8 +56,8 @@ import sys
 
 from docopt import docopt
 
-import infoserverrequests
-import version
+import susepubliccloudinfoclient.infoserverrequests as ifsrequest
+import susepubliccloudinfoclient.version as version
 
 command_args = docopt(__doc__, version=version.VERSION)
 
@@ -89,14 +89,14 @@ if command_args['--region']:
 server_type = command_args['--regionserver'] or command_args['--smt']
 
 if command_args['images']:
-    print infoserverrequests.get_image_data(
+    print ifsrequest.get_image_data(
         framework,
         image_state,
         output_format,
         region,
         command_args['--filter'])
 else:
-    print infoserverrequests.get_server_data(
+    print ifsrequest.get_server_data(
         framework,
         server_type,
         output_format,

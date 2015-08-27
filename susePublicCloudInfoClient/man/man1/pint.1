@@ -41,11 +41,11 @@ capabilities.
 .SH ARGUMENTS
 .IP "<framework>"
 One of the supported cloud frameworks,
-.I amazon,
-.I google,
-.I hp,
+.IR amazon ,
+.IR google ,
+.IR hp ,
 or
-.I microsoft.
+.IR microsoft .
 The
 .I <framework>
 argument specifies for which cloud provider the information should be retrieved.
@@ -53,7 +53,7 @@ argument specifies for which cloud provider the information should be retrieved.
 One of the supported information types,
 .I images
 or
-.I servers.
+.IR servers .
 The
 .I <data-selector>
 argument specifies the type of the information of interest. With the
@@ -101,21 +101,39 @@ and is a valid option for the
 and
 .I servers
 arguments.
+Name filters (
+.BR name ,
+.B replacementname
+) are partial string matches.
+Date filters (
+.BR deletedon ,
+.BR deprecatedon ,
+.BR publishedon
+) can be less than, equal or greater than a specified date, in the format
+.IR yyyymmdd .
 Valid filter values for
 .I images
 are:
 
-.B deletedon,
+.BR deletedon> ,
+.BR deletedon= ,  
+.BR deletedon< ,
 
-.B deprecatedon,
+.BR deprecatedon> , 
+.BR deprecatedon= , 
+.BR deprecatedon< ,
 
-.B name,
+.BR id= ,
 
-.B publishedon,
+.BR name~ ,
 
-.B replacementid,
+.BR publishedon> ,
+.BR publishedon= , 
+.BR publishedon< ,
 
-.B replacementname.
+.BR replacementid= ,
+
+.BR replacementname~ .
 
 .B Note
 that not all filters will be populated for all images in all frameworks.
@@ -123,9 +141,10 @@ that not all filters will be populated for all images in all frameworks.
 Valid filter values for
 .I servers
 are:
-.B ip,
 
-.B name.
+.BR ip= ,
+
+.BR name~ .
 
 .B Note
 that the name for all update servers (SMT servers) is the same in each
@@ -135,6 +154,13 @@ in the HP Helion Public Cloud framework. The names are not resolvable via
 DNS lookup. The name for all region servers are the same,
 .I regionserver
 across all cloud frameworks.
+.RS
+.P
+For example:
+.IP --filter="publishedon>20150101,name~11-sp3"
+Filters images to a subset with a name containing "11-sp3" and published after 
+Jan 1, 2015.
+.RE
 .IP "-h --help"
 Print a help message.
 .IP "--json"
@@ -165,7 +191,7 @@ and maintained by SUSE.
 .IP "-v --version"
 Print the current version of the program
 .SH EXAMPLE
-.B pint google servers --smt --jason
+.B pint google servers --smt --json
 
 Will provide information about all SMT servers running in Google Compute
 Engine in JSON format.
@@ -174,5 +200,5 @@ Engine in JSON format.
 
 Will provide information about the active images in Amazon Web Services EC2
 in the us-west-2 region (Oregon).
-.SH AUTHOR
-Robert Schweikert (rjschwei@suse.com)
+.SH AUTHORS
+Robert Schweikert (rjschwei@suse.com), James Mason (jmason@suse.com)

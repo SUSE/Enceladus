@@ -20,8 +20,12 @@
 #
 
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
+
+import mock
 import os
 import sys
+
+from mock import patch
 from nose.tools import *
 
 
@@ -53,7 +57,7 @@ def test_form_url_images_active_region_json():
     url = ifsrequest.__form_url(
         'amazon',
         'images',
-        data_format='json',
+        result_format='json',
         region='us-east-1',
         image_state='active')
     expected = 'https://susepubliccloudinfo.suse.com/v1/'
@@ -66,3 +70,31 @@ def test_form_url_images_all_xml():
     url = ifsrequest.__form_url('google', 'images')
     expected = 'https://susepubliccloudinfo.suse.com/v1/google/images.xml'
     assert_equals(expected, url)
+
+
+def test_region_is_url_quoted():
+    """Region may contain spaces; it should be URL quoted"""
+    url = ifsrequest.__form_url('microsoft', 'images', region='West US')
+    expected = (
+        'https://susepubliccloudinfo.suse.com'
+        '/v1/microsoft/West%20US/images.xml'
+    )
+    assert_equals(expected, url)    
+    
+
+def case_select_server_format(result_format, apply_filters, expected):
+    message = "select_server_format() should be '%s' when format is '%s' and filters are %sapplied" % (
+        expected, 
+        result_format, 
+        '' if apply_filters else 'not '
+    )
+    result = ifsrequest.__select_server_format(result_format, apply_filters)
+    assert_equals(expected, result, message)
+
+
+def test_select_server_format():
+    """Finite states for server format"""
+    case_select_server_format('any', True, 'json')
+    case_select_server_format('xml', False, 'xml')
+    case_select_server_format('json', False, 'json')
+    case_select_server_format('plain', False, 'xml')
