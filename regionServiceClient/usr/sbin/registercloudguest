@@ -67,6 +67,21 @@ def add_region_server_args_to_URL(api, cfg):
 
 
 # ----------------------------------------------------------------------------
+def find_equivalent_smt_server(configured_smt, known_smt_servers):
+    """Find an SMT server that is equivalent to the currently configured
+       SMT server, only consider responsive servers"""
+    for smt in known_smt_servers:
+        if smt.get_ip() == configured_smt.get_ip():
+            continue
+        if smt.is_equivalent(configured_smt):
+            cert = utils.get_smt_cert(smt.get_ip())
+            if cert:
+                return smt
+
+    return None
+
+
+# ----------------------------------------------------------------------------
 def get_config(configFile=None):
     """Read configuration file and return a config object"""
     if not configFile:
@@ -95,7 +110,7 @@ def get_configured_smt(smt_servers, known_hosts):
         smt_ip = smt.get_ip()
         smt_fqdn = smt.get_FQDN()
         for entry in known_hosts:
-            if entry.find(smt_ip) != -1 and entry.find(smt_fqdn) != -1:
+            if smt_ip in entry and smt_fqdn in entry:
                 return smt
 
     return None
@@ -179,23 +194,6 @@ def is_zypper_running():
 
 
 # ----------------------------------------------------------------------------
-def update_hosts_entry(smt_servers):
-    """If we can find a matching server modify the entry in /etc/hosts"""
-    current_smt = utils.get_current_smt()
-    if not current_smt:
-        return None
-
-    for smt in smt_servers:
-        if smt.get_ip() == current_smt.get_ip():
-            continue
-        if current_smt.is_equivalent(smt):
-            utils.replace_hosts_entry(current_smt, smt)
-            return smt
-
-    return None
-
-
-# ----------------------------------------------------------------------------
 def is_x509_fingerprint_valid(smtCA_request, fingerprint):
     try:
         x509 = X509.load_cert_string(str(smtCA_request.text))
@@ -219,7 +217,7 @@ if '-f' in sys.argv:
     idx = sys.argv.index('-f')
     configFile = sys.argv[idx+1]
 
-force_new_registration = None
+force_new_registration = False
 if '--force-new' in sys.argv:
     force_new_registration = True
 
@@ -314,20 +312,19 @@ if configured_smt_server:
             sys.exit(0)
         else:
             # The configured server is not resposive, lets check if we can
-            # find a server that matches.
-            new_target = update_hosts_entry(known_smt_servers)
-            alive = None
+            # find another server
+            new_target = find_equivalent_smt_server(
+                configured_smt_server,
+                known_smt_servers)
             if new_target:
-                alive = utils.get_smt_cert(new_target.get_ip())
-            if alive and alive.status_code == 200:
-                utils.store_smt_data(
-                    utils.get_registered_smt_file_path(),
-                    new_target)
-                msg = 'Instance is registered, switched to new SMT server: '
-                msg += new_target.get_ip()
-                logging.info(msg)
-                sys.exit(0)
+                msg = 'Configured SMT unresponsive, switching to equivalent '
+                msg += 'SMT server with ip %s' % new_target.get_ip()
+                utils.replace_hosts_entry(configured_smt_server, new_target)
             else:
+                force_new_registration = True
+                msg = 'Configured SMT unresponsive, could not find '
+                msg += 'equivalent SMT, forcing new registration'
+                logging.info(msg)
                 utils.remove_registration_data(known_smt_servers)
     else:
         # We are in a weird state with remnants in /etc/hosts but
