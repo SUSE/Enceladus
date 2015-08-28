@@ -188,7 +188,7 @@ def update_hosts_entry(smt_servers):
     for smt in smt_servers:
         if smt.get_ip() == current_smt.get_ip():
             continue
-        if utils.smt_servers_are_equivalent(current_smt, smt):
+        if current_smt.is_equivalent(smt):
             utils.replace_hosts_entry(current_smt, smt)
             return smt
 

@@ -46,3 +46,14 @@ class SMT:
     def get_ip(self):
         """Return the IP address"""
         return self.IP
+
+    # --------------------------------------------------------------------
+    def is_equivalent(self, smt_server):
+        """When 2 SMT servers have the same cert fingerprint and their
+           FQDN is the same they are equivalent."""
+        if (
+                self.get_FQDN() == smt_server.get_FQDN() and
+                self.get_fingerprint() == smt_server.get_fingerprint()):
+            return 1
+
+    return None

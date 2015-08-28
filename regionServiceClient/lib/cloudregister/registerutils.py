@@ -257,18 +257,6 @@ def replace_hosts_entry(current_smt, new_smt):
 
 
 # ----------------------------------------------------------------------------
-def smt_servers_are_equivalent(smt_1, smt_2):
-    """When 2 SMT servers have the same cert fingerprint and their
-       FQDN is the same they are equivalent."""
-    if (
-            smt_1.get_FQDN() == smt_2.get_FQDN() and
-            smt_1.get_fingerprint() == smt_2.get_fingerprint()):
-        return 1
-
-    return None
-
-
-# ----------------------------------------------------------------------------
 def start_logging():
     """Set up logging"""
     log_filename = '/var/log/cloudregister'
