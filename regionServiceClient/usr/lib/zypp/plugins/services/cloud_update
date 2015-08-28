@@ -51,7 +51,7 @@ if utils.is_registered(current_smt):
                 continue
             cert = utils.get_smt_cert(smt.get_ip())
             if cert:
-                if utils.smt_servers_are_equivalent(current_smt, smt):
+                if current_smt.is_equivalent(smt):
                     msg = '[Service] Switching to alternate SMT server: '
                     msg += smt.get_ip()
                     logging.info(msg)
