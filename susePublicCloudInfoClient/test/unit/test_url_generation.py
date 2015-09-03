@@ -79,13 +79,13 @@ def test_region_is_url_quoted():
         'https://susepubliccloudinfo.suse.com'
         '/v1/microsoft/West%20US/images.xml'
     )
-    assert_equals(expected, url)    
-    
+    assert_equals(expected, url)
+
 
 def case_select_server_format(result_format, apply_filters, expected):
     message = "select_server_format() should be '%s' when format is '%s' and filters are %sapplied" % (
-        expected, 
-        result_format, 
+        expected,
+        result_format,
         '' if apply_filters else 'not '
     )
     result = ifsrequest.__select_server_format(result_format, apply_filters)

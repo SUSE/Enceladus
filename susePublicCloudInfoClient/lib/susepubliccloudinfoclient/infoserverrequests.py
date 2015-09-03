@@ -27,7 +27,6 @@ import urllib
 import xml.etree.ElementTree as ET
 
 
-
 def __apply_filters(superset, filters):
     # map operators to filter functions
     filter_operations = {
@@ -44,7 +43,7 @@ def __apply_filters(superset, filters):
             result_set,
             a_filter['attr'],
             a_filter['value']
-        )    
+        )
     return result_set
 
 
@@ -151,7 +150,7 @@ def __inflect(plural):
     return inflections[plural]
 
 
-def __parse_command_arg_filter(command_arg_filter = None):
+def __parse_command_arg_filter(command_arg_filter=None):
     """Break down the --filter argument into a list of filters"""
     valid_filters = {
         'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
@@ -187,11 +186,11 @@ def __parse_server_response_data(server_response_data, info_type):
 
 
 def __reformat(items, info_type, result_format):
-    if result_format == 'json':        
+    if result_format == 'json':
         return json.dumps({info_type: items})
     # default to XML output (until we have a plain formatter)
     else:
-    # elif result_format == 'xml':
+        # elif result_format == 'xml':
         root = ET.Element(info_type)
         for item in items:
             ET.SubElement(root, __inflect(info_type), item)
@@ -205,7 +204,7 @@ def __select_server_format(result_format, apply_filters=False):
         return 'xml'
     else:
         return result_format
- 
+
 
 def __warn(str, out=sys.stdout):
     out.write("Warning: %s" % str)
@@ -260,4 +259,3 @@ def get_server_data(
         apply_filters=command_arg_filter
     )
     return __process(url, info_type, command_arg_filter, result_format)
-

@@ -53,7 +53,7 @@ def test_valid_image_keys_from_filter(mock_warn):
 
     ]
     assert_equals(expected.sort(), [item['attr'] for item in filters].sort())
-    assert_false(mock_warn.called, "warn() should not be called") 
+    assert_false(mock_warn.called, "warn() should not be called")
 
 
 @patch('lib.susepubliccloudinfoclient.infoserverrequests.__warn')
@@ -64,7 +64,7 @@ def test_valid_server_keys_from_filter(mock_warn):
     filters = ifsrequest.__parse_command_arg_filter(filter_arg)
     expected = ['name', 'ip']
     assert_equals(expected.sort(), [item['attr'] for item in filters].sort())
-    assert_false(mock_warn.called, "warn() should not be called") 
+    assert_false(mock_warn.called, "warn() should not be called")
 
 
 @patch('lib.susepubliccloudinfoclient.infoserverrequests.__warn')
