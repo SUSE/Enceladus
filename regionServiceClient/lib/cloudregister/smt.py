@@ -14,38 +14,67 @@
 """Class to hold the information we need to connect and identify an SMT
    server."""
 
+import logging
+import requests
+
+from M2Crypto import X509
 
 class SMT:
     """Store smt information"""
     def __init__(self, smtXMLNode):
-        self.IP = smtXMLNode.attrib['SMTserverIP']
-        self.FQDN = smtXMLNode.attrib['SMTserverName']
-        self.fingerprint = smtXMLNode.attrib['fingerprint']
+        self._ip = smtXMLNode.attrib['SMTserverIP']
+        self._fqdn = smtXMLNode.attrib['SMTserverName']
+        self._fingerprint = smtXMLNode.attrib['fingerprint']
+        self._cert = None
 
+
+    # --------------------------------------------------------------------
+    def get_cert(self):
+        """Return the CA certificate for the SMT server"""
+        if not self._cert:
+            attempts = 0
+            retries = 3
+            while attempts < retries:
+                attempts += 1
+                try:
+                    cert_rq = requests.get('http://%s/smt.crt' % self.get_ip())
+                except:
+                    # No response from server
+                    logging.error('=' * 20)
+                    logging.error('Attempt %s of %s' % (attempts, retries))
+                    logging.error('Server %s is unreachable' % self.get_ip())
+                if cert_rq.status_code == 200:
+                    cert = cert_rq.text
+                    if self.__is_cert_valid(cert):
+                        self._cert = cert
+                    attempts = retries
+
+        return self._cert
+            
     # --------------------------------------------------------------------
     def get_domain_name(self):
         """Return the domain name for the server."""
-        return self.FQDN.split('.', 1)[-1]
+        return self._fqdn.split('.', 1)[-1]
 
     # --------------------------------------------------------------------
     def get_fingerprint(self):
         """Return the fingerprint of the cert"""
-        return self.fingerprint
+        return self._fingerprint
 
     # --------------------------------------------------------------------
     def get_FQDN(self):
         """Return the fully qualified domain name"""
-        return self.FQDN
+        return self._fqdn
 
     # --------------------------------------------------------------------
     def get_name(self):
         """Return the name"""
-        return self.FQDN.split('.', 1)[0]
+        return self._fqdn.split('.', 1)[0]
 
     # --------------------------------------------------------------------
     def get_ip(self):
         """Return the IP address"""
-        return self.IP
+        return self._ip
 
     # --------------------------------------------------------------------
     def is_equivalent(self, smt_server):
@@ -57,3 +86,23 @@ class SMT:
             return 1
 
         return None
+
+    # Private
+    # --------------------------------------------------------------------
+    def __is_cert_valid(cert):
+        """Verfify that the fingerprint of the given cert matches the
+           expected fingerprint"""
+        try:
+            x509 = X509.load_cert_string(str(cert))
+            x509_fingerprint = x509.get_fingerprint('sha1')
+        except:
+            errMsg = 'Could not read X509 fingerprint from cert'
+            logging.error(errMsg)
+            return False
+        
+        if x509_fingerprint != self.get_fingerprint().replace(':', ''):
+            errMsg = 'Fingerprint could not be verified'
+            logging.error(errMsg)
+            return  False
+
+        return True
