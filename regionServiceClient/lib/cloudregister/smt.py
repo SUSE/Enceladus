@@ -56,4 +56,4 @@ class SMT:
                 self.get_fingerprint() == smt_server.get_fingerprint()):
             return 1
 
-    return None
+        return None

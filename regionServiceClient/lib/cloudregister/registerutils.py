@@ -13,6 +13,7 @@
 
 """Utility functions for the cloud guest registration"""
 
+import base64
 import glob
 import logging
 import os
@@ -23,6 +24,7 @@ import subprocess
 import sys
 
 from cloudregister import smt
+from M2Crypto import X509
 
 REGISTRATION_DATA_DIR = '/var/lib/cloudregister/'
 REGISTERED_SMT_SERVER_DATA_FILE_NAME = 'currentSMTInfo.obj'
@@ -65,6 +67,22 @@ def clean_hosts_file(domain_name):
     for entry in new_hosts_content:
         hosts_file.write(entry)
     hosts_file.close()
+
+
+# ----------------------------------------------------------------------------
+def exec_subprocess(cmd):
+    """Execute the given command as a subprocess (blocking)"""
+    try:
+        cmd = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        cmd.communicate()
+    except:
+        return 0
+
+    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -175,12 +193,88 @@ def has_repos(smt_server_name):
 
 
 # ----------------------------------------------------------------------------
+def import_smtcert_11(smtCA_request):
+    """Import the SMT certificate on SLES 11"""
+    key_chain = '/etc/ssl/certs'
+    if not write_cert(key_chain, smtCA_request):
+        return 0
+    if not update_ca_chain(['c_rehash', key_chain]):
+        return 0
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
+def import_smtcert_12(smtCA_request):
+    """Import the SMT certificate on SLES 12"""
+    key_chain = '/usr/share/pki/trust/anchors'
+    if not write_cert(key_chain, smtCA_request):
+        return 0
+    if not update_ca_chain(['update-ca-certificates']):
+        return 0
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
+def import_smt_cert(smt):
+    """Import the SMT certificate for the given server"""
+    smtCA_request = get_smt_cert(smt.get_FQDN())
+    if not smtCA_request:
+        return None
+    if not is_x509_fingerprint_valid(smtCA_request, smt):
+        logging.error('SMT certificate fingerprint verification failed')
+        return None
+    import_result = None
+    if is_sles11():
+        import_result = import_smtcert_11(smtCA_request)
+    else:
+        import_result = import_smtcert_12(smtCA_request)
+    if not import_result:
+        logging.error('SMT certificate import failed')
+        return None
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
 def is_registered(smt):
     """Firgure out if any of the servers is known and this instan"""
     if check_registration(smt.get_FQDN()):
         return 1
 
     return None
+
+
+# ----------------------------------------------------------------------------
+def is_sles11():
+    """Return true if this is SLES 11"""
+    if os.path.exists('/etc/SuSE-release'):
+        content = open('/etc/SuSE-release', 'r').readlines()
+        for ln in content:
+            if 'SUSE Linux Enterprise Server 11' in ln:
+                return True
+
+    return False
+
+
+# ----------------------------------------------------------------------------
+def is_x509_fingerprint_valid(smtCA_request, smt):
+    """Check if the fingerprint from the certificate in the request
+       is the same as the fingerprint of the given SMT server."""
+    try:
+        x509 = X509.load_cert_string(str(smtCA_request.text))
+        x509_fingerprint = x509.get_fingerprint('sha1')
+    except:
+        errMsg = 'Could not read X509 fingerprint from cert'
+        logging.error(errMsg)
+        return None
+    if x509_fingerprint != smt.get_fingerprint().replace(':', ''):
+        errMsg = 'Fingerprint could not be verified'
+        logging.error(errMsg)
+        return None
+
+    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -279,3 +373,30 @@ def store_smt_data(smt_data_file_path, smt):
     p = pickle.Pickler(smt_data)
     p.dump(smt)
     smt_data.close()
+
+
+# ----------------------------------------------------------------------------
+def update_ca_chain(cmd_w_args_lst):
+    """Update the CA chain using the given command with arguments"""
+    logging.info('Updating CA certificates: %s' % cmd_w_args_lst[0])
+    if not exec_subprocess(cmd_w_args_lst):
+        errMsg = 'Certificate update failed'
+        logging.error(errMsg)
+        return 0
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
+def write_cert(target_dir, smtCA_request):
+    """Write the certificat to the given location"""
+    logging.info('Writing SMT rootCA: %s' % target_dir)
+    ca_file_path = target_dir + '/registration_server.pem'
+    try:
+        smt_ca_file = open(ca_file_path, 'w')
+        smt_ca_file.write(smtCA_request.text)
+        smt_ca_file.close()
+    except IOError:
+        errMsg = 'Could not store SMT certificate'
+        logging.error(errMsg)
+        return 0
