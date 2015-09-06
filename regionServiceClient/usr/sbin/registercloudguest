@@ -155,34 +155,6 @@ def get_products():
 
 
 # ----------------------------------------------------------------------------
-def import_CA(smtCA_request):
-    key_chain = '/usr/share/pki/trust/anchors/registration_server.pem'
-    logging.info('Writing SMT rootCA: %s' % key_chain)
-    try:
-        smtCAFile = open(key_chain, 'w')
-        smtCAFile.write(smtCA_request.text)
-        smtCAFile.close()
-    except IOError:
-        errMsg = 'Could not store SMT certificate'
-        logging.error(errMsg)
-        return 0
-    try:
-        ca_update = ["update-ca-certificates"]
-        cmd = subprocess.Popen(
-            ca_update,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        logging.info('Updating CA certificates: %s' % ca_update)
-        cmd.communicate()
-    except:
-        errMsg = 'Could not update certificates %s' % cmd[1]
-        logging.error(errMsg)
-        return 0
-    return 1
-
-
-# ----------------------------------------------------------------------------
 def is_zypper_running():
     """Check if zypper is running"""
     # Zypper doesn't remove it's pid file, need to consult the process table
@@ -191,22 +163,6 @@ def is_zypper_running():
         return True
 
     return False
-
-
-# ----------------------------------------------------------------------------
-def is_x509_fingerprint_valid(smtCA_request, fingerprint):
-    try:
-        x509 = X509.load_cert_string(str(smtCA_request.text))
-        x509_fingerprint = x509.get_fingerprint('sha1')
-    except:
-        errMsg = 'Could not read X509 fingerprint from cert'
-        logging.error(errMsg)
-        return 0
-    if x509_fingerprint != fingerprint.replace(':', ''):
-        errMsg = 'Fingerprint could not be verified'
-        logging.error(errMsg)
-        return 0
-    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -283,8 +239,8 @@ if not os.path.exists(utils.REGISTRATION_DATA_DIR):
     os.mkdir(utils.REGISTRATION_DATA_DIR)
 for child in smtDataRoot:
     smt_server = smt.SMT(child)
-    store_file_name = (utils.REGISTRATION_DATA_DIR
-                       + utils.AVAILABLE_SMT_SERVER_DATA_FILE_NAME % smt_count)
+    store_file_name = (utils.REGISTRATION_DATA_DIR +
+                       utils.AVAILABLE_SMT_SERVER_DATA_FILE_NAME % smt_count)
     utils.store_smt_data(store_file_name, smt_server)
     known_smt_servers.append(smt_server)
 
@@ -430,16 +386,7 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         logging.error('No products found')
         sys.exit(1)
 
-    smtCA_request = utils.get_smt_cert(registration_target.get_FQDN())
-    if not smtCA_request:
-        sys.exit(1)
-
-    if not is_x509_fingerprint_valid(smtCA_request,
-                                     registration_target.get_fingerprint()):
-        logging.error('SMT certificate fingerprint verification failed')
-        sys.exit(1)
-
-    if not import_CA(smtCA_request):
+    if not utils.import_smt_cert(registration_target):
         logging.error('SMT certificate import failed')
         sys.exit(1)
 
