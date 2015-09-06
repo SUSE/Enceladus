@@ -193,10 +193,10 @@ def has_repos(smt_server_name):
 
 
 # ----------------------------------------------------------------------------
-def import_smtcert_11(smtCA_request):
+def import_smtcert_11(smt):
     """Import the SMT certificate on SLES 11"""
     key_chain = '/etc/ssl/certs'
-    if not write_cert(key_chain, smtCA_request):
+    if not write_cert(key_chain, smt.get_cert()):
         return 0
     if not update_ca_chain(['c_rehash', key_chain]):
         return 0
@@ -205,10 +205,10 @@ def import_smtcert_11(smtCA_request):
 
 
 # ----------------------------------------------------------------------------
-def import_smtcert_12(smtCA_request):
+def import_smtcert_12(smt):
     """Import the SMT certificate on SLES 12"""
     key_chain = '/usr/share/pki/trust/anchors'
-    if not write_cert(key_chain, smtCA_request):
+    if not write_cert(key_chain, smt.get_cert()):
         return 0
     if not update_ca_chain(['update-ca-certificates']):
         return 0
@@ -219,17 +219,11 @@ def import_smtcert_12(smtCA_request):
 # ----------------------------------------------------------------------------
 def import_smt_cert(smt):
     """Import the SMT certificate for the given server"""
-    smtCA_request = get_smt_cert(smt.get_FQDN())
-    if not smtCA_request:
-        return None
-    if not is_x509_fingerprint_valid(smtCA_request, smt):
-        logging.error('SMT certificate fingerprint verification failed')
-        return None
     import_result = None
     if is_sles11():
-        import_result = import_smtcert_11(smtCA_request)
+        import_result = import_smtcert_11(smt)
     else:
-        import_result = import_smtcert_12(smtCA_request)
+        import_result = import_smtcert_12(smt)
     if not import_result:
         logging.error('SMT certificate import failed')
         return None
@@ -256,25 +250,6 @@ def is_sles11():
                 return True
 
     return False
-
-
-# ----------------------------------------------------------------------------
-def is_x509_fingerprint_valid(smtCA_request, smt):
-    """Check if the fingerprint from the certificate in the request
-       is the same as the fingerprint of the given SMT server."""
-    try:
-        x509 = X509.load_cert_string(str(smtCA_request.text))
-        x509_fingerprint = x509.get_fingerprint('sha1')
-    except:
-        errMsg = 'Could not read X509 fingerprint from cert'
-        logging.error(errMsg)
-        return None
-    if x509_fingerprint != smt.get_fingerprint().replace(':', ''):
-        errMsg = 'Fingerprint could not be verified'
-        logging.error(errMsg)
-        return None
-
-    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -388,13 +363,13 @@ def update_ca_chain(cmd_w_args_lst):
 
 
 # ----------------------------------------------------------------------------
-def write_cert(target_dir, smtCA_request):
+def write_cert(target_dir, cert):
     """Write the certificat to the given location"""
     logging.info('Writing SMT rootCA: %s' % target_dir)
     ca_file_path = target_dir + '/registration_server.pem'
     try:
         smt_ca_file = open(ca_file_path, 'w')
-        smt_ca_file.write(smtCA_request.text)
+        smt_ca_file.write(cert)
         smt_ca_file.close()
     except IOError:
         errMsg = 'Could not store SMT certificate'
