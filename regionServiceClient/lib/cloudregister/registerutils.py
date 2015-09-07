@@ -196,7 +196,7 @@ def has_repos(smt_server_name):
 def import_smtcert_11(smt):
     """Import the SMT certificate on SLES 11"""
     key_chain = '/etc/ssl/certs'
-    if not write_cert(key_chain, smt.get_cert()):
+    if not smt.write_cert(key_chain):
         return 0
     if not update_ca_chain(['c_rehash', key_chain]):
         return 0
@@ -208,7 +208,7 @@ def import_smtcert_11(smt):
 def import_smtcert_12(smt):
     """Import the SMT certificate on SLES 12"""
     key_chain = '/usr/share/pki/trust/anchors'
-    if not write_cert(key_chain, smt.get_cert()):
+    if not smt.write_cert(key_chain):
         return 0
     if not update_ca_chain(['update-ca-certificates']):
         return 0
@@ -360,18 +360,3 @@ def update_ca_chain(cmd_w_args_lst):
         return 0
 
     return 1
-
-
-# ----------------------------------------------------------------------------
-def write_cert(target_dir, cert):
-    """Write the certificat to the given location"""
-    logging.info('Writing SMT rootCA: %s' % target_dir)
-    ca_file_path = target_dir + '/registration_server.pem'
-    try:
-        smt_ca_file = open(ca_file_path, 'w')
-        smt_ca_file.write(cert)
-        smt_ca_file.close()
-    except IOError:
-        errMsg = 'Could not store SMT certificate'
-        logging.error(errMsg)
-        return 0

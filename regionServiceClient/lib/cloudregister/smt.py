@@ -87,9 +87,28 @@ class SMT:
 
         return None
 
+    # --------------------------------------------------------------------
+    def write_cert(self, target_dir):
+        """Write the certificate to the given directory"""
+        logging.info('Writing SMT rootCA: %s' % target_dir)
+        ca_file_path = (target_dir +
+                '/registration_server_%s.pem' % self.get_ip().replace('.','_'))
+        try:
+            smt_ca_file = open(ca_file_path, 'w')
+            smt_ca_file.write(self.get_cert())
+            smt_ca_file.close()
+        except IOError:
+            errMsg = 'Could not store SMT certificate'
+            logging.error(errMsg)
+            return 0
+
+
+        return 1
+
+
     # Private
     # --------------------------------------------------------------------
-    def __is_cert_valid(cert):
+    def __is_cert_valid(self, cert):
         """Verfify that the fingerprint of the given cert matches the
            expected fingerprint"""
         try:
