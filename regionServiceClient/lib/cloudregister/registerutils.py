@@ -112,25 +112,6 @@ def get_registered_smt_file_path():
 
 
 # ----------------------------------------------------------------------------
-def get_smt_cert(smt_ip, retries=3):
-    """Return the response object or none if the request fails."""
-
-    cert = None
-    attempts = 0
-    while attempts < retries:
-        attempts += 1
-        try:
-            cert = requests.get('http://%s/smt.crt' % smt_ip)
-        except:
-            # No response from server
-            logging.error('=' * 20)
-            logging.error('Attempt %s of %s' % (attempts, retries))
-            logging.error('Server %s is unreachable' % smt_ip)
-
-    return cert
-
-
-# ----------------------------------------------------------------------------
 def get_smt_from_store(smt_store_file_path):
     """Create an SMTinstance from the stored data."""
     if not os.path.exists(smt_store_file_path):

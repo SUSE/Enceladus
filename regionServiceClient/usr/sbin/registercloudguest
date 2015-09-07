@@ -73,10 +73,8 @@ def find_equivalent_smt_server(configured_smt, known_smt_servers):
     for smt in known_smt_servers:
         if smt.get_ip() == configured_smt.get_ip():
             continue
-        if smt.is_equivalent(configured_smt):
-            cert = utils.get_smt_cert(smt.get_ip())
-            if cert:
-                return smt
+        if smt.is_equivalent(configured_smt) and smt.is_responsive():
+            return smt
 
     return None
 
@@ -260,8 +258,8 @@ known_hosts = open('/etc/hosts', 'r').readlines()
 configured_smt_server = get_configured_smt(known_smt_servers, known_hosts)
 if configured_smt_server:
     if utils.is_registered(configured_smt_server):
-        alive = utils.get_smt_cert(configured_smt_server.get_ip())
-        if alive and alive.status_code == 200:
+        alive = configured_smt_server.is_responsive()
+        if alive:
             msg = 'Instance is registered, and SMT server is reachable, '
             msg += 'nothing to do'
             logging.info(msg)
@@ -293,8 +291,8 @@ tested_smt_servers = []
 for smt in known_smt_servers:
     smt_ip = smt.get_ip()
     tested_smt_servers.append(smt_ip)
-    alive = utils.get_smt_cert(smt_ip)
-    if alive and alive.status_code == 200:
+    alive = smt.is_responsive()
+    if alive:
         registration_target = smt
         # Use the first server that responds
         break
