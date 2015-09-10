@@ -34,7 +34,7 @@ AVAILABLE_SMT_SERVER_DATA_FILE_NAME = 'availableSMTInfo_%d.obj'
 # ----------------------------------------------------------------------------
 def check_registration(smt_server_name):
     """Check if the instance is already registerd"""
-    if has_repos(smt_server_name) and has_credentials():
+    if has_repos(smt_server_name) and __has_credentials(smt_server_name):
         return 1
 
     return None
@@ -151,22 +151,14 @@ def get_zypper_pid():
 
 
 # ----------------------------------------------------------------------------
-def has_credentials():
-    """Check if a credentials file exists."""
-    if (
-            os.path.exists('/etc/zypp/credentials.d/NCCcredentials') or
-            os.path.exists('/etc/zypp/credentials.d/SCCcredentials')):
-        return 1
-
-    return None
-
-
-# ----------------------------------------------------------------------------
 def has_repos(smt_server_name):
     """Check if repositories exist."""
-    repo_name = smt_server_name.replace('.', '_')
-    if (glob.glob('/etc/zypp/repos.d/*%s*' % repo_name)):
-        return 1
+    repo_files = glob.glob('/etc/zypp/repos.d/*')
+    for repo_file in repo_files:
+        content = open(repo_file, 'r').readlines()
+        for ln in content:
+            if 'baseurl' in ln and smt_server_name in ln:
+                return 1
 
     return None
 
@@ -240,33 +232,6 @@ def set_as_current_smt(smt):
 
 
 # ----------------------------------------------------------------------------
-def remove_credentials():
-    """Remove the server generated credentials"""
-    ncc_credentials = '/etc/zypp/credentials.d/NCCcredentials'
-    scc_credentials = '/etc/zypp/credentials.d/SCCcredentials'
-    if os.path.exists(ncc_credentials):
-        logging.info('Removing credentials: %s' % ncc_credentials)
-        os.unlink(ncc_credentials)
-    if os.path.exists(scc_credentials):
-        logging.info('Removing credentials: %s' % scc_credentials)
-        os.unlink(scc_credentials)
-
-    return 1
-
-
-# ----------------------------------------------------------------------------
-def remove_service(smt_server_name):
-    """Remove the service for the given SMT server"""
-    repo_service_name = smt_server_name.replace('.', '_')
-    zypp_services = glob.glob('/etc/zypp/services.d/*%s*' % repo_service_name)
-    for srv in zypp_services:
-        logging.info('Removing service: %s' % srv)
-        os.unlink(srv)
-
-    return 1
-
-
-# ----------------------------------------------------------------------------
 def remove_registration_data(smt_servers):
     """Reset the instance to an unregistered state"""
     smt_data_file = __get_registered_smt_file_path()
@@ -276,21 +241,9 @@ def remove_registration_data(smt_servers):
         server_name = smt.get_FQDN()
         domain_name = smt.get_domain_name()
         clean_hosts_file(domain_name)
-        remove_repos(server_name)
-        remove_credentials()
-        remove_service(server_name)
-
-
-# ----------------------------------------------------------------------------
-def remove_repos(smt_server_name):
-    """Remove the repositories for the given server"""
-    repo_name = smt_server_name.replace('.', '_')
-    repos = glob.glob('/etc/zypp/repos.d/*%s*' % repo_name)
-    for repo in repos:
-        logging.info('Removing repo: %s' % repo)
-        os.unlink(repo)
-
-    return 1
+        __remove_credentials(server_name)
+        __remove_repos(server_name)
+        __remove_service(server_name)
 
 
 # ----------------------------------------------------------------------------
@@ -348,7 +301,7 @@ def switch_smt_repos(smt):
 # ----------------------------------------------------------------------------
 def switch_smt_service(smt):
     """Switch the existing service to the given SMT server"""
-    service_files = glob.glob('/etc/zypp/services.d/*.service')
+    service_files = glob.glob('/etc/zypp/services.d/*.service*')
     __replace_url_target(service_files, smt)
 
 
@@ -366,10 +319,88 @@ def update_ca_chain(cmd_w_args_lst):
 
 # Private
 # ----------------------------------------------------------------------------
+def  __get_referenced_credentials(smt_server_name):
+    """Return a list of credential names referenced by repositories"""
+    repo_files = glob.glob('/etc/zypp/repos.d/*.repo')
+    referenced_credentials = []
+    for repo in repo_files:
+        content = open(repo, 'r').readlines()
+        for ln in content:
+            if 'baseurl' in ln and smt_server_name in ln:
+                line_parts = ln.split('?credentials=')
+                if len(line_parts) > 1:
+                    credentials_name = line_parts[-1].strip()
+                    if credentials_name not in referenced_credentials:
+                        referenced_credentials.append(credentials_name)
+
+    return referenced_credentials
+        
+        
+# ----------------------------------------------------------------------------
 def __get_registered_smt_file_path():
     """Return the file path for the SMT infor stored for the registered
        server"""
     return REGISTRATION_DATA_DIR + REGISTERED_SMT_SERVER_DATA_FILE_NAME
+
+
+# ----------------------------------------------------------------------------
+def __has_credentials(smt_server_name):
+    """Check if a credentials file exists."""
+    referenced_credentials = __get_referenced_credentials(smt_server_name)
+    credential_files = glob.glob('/etc/zypp/credentials.d/*')
+    for credential_file in credential_files:
+        name = os.path.basename(credential_file)
+        if name in referenced_credentials:
+            return 1
+
+    return None
+
+
+# ----------------------------------------------------------------------------
+def __remove_credentials(smt_server_name):
+    """Remove the server generated credentials"""
+    referenced_credentials = __get_referenced_credentials(smt_server_name)
+    base_credentials = ['NCCcredentials', 'SCCcredentials']
+    for credential_name in base_credentials:
+        if credential_name not in referenced_credentials:
+            referenced_credentials.append(credential_name)
+    credential_path = '/etc/zypp/credentials.d/'
+    for credential_name in referenced_credentials:
+        credential_file_path = credential_path + credential_name
+        if os.path.exists(credential_file_path):
+            logging.info('Removing credentials: %s' % credential_name)
+            os.unlink(credential_file_path)
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
+def __remove_repos(smt_server_name):
+    """Remove the repositories for the given server"""
+    repo_files = glob.glob('/etc/zypp/repos.d/*')
+    for repo_file in repo_files:
+        content = open(repo_file, 'r').readlines()
+        for ln in content:
+            if 'baseurl' in ln and smt_server_name in ln:
+                logging.info('Removing repo: %s' % os.path.basename(repo_file))
+                os.unlink(repo_file)
+
+    return 1
+
+
+# ----------------------------------------------------------------------------
+def __remove_service(smt_server_name):
+    """Remove the service for the given SMT server"""
+    service_files = glob.glob('/etc/zypp/services.d/*')
+    for service_file in service_files:
+        content = open(service_file, 'r').readlines()
+        for ln in content:
+            if 'url' in ln and smt_server_name in ln:
+                logging.info('Removing service: %s'
+                             % os.path.basename(service_file))
+                os.unlink(service_file)
+
+    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -378,11 +409,11 @@ def __replace_url_target(config_files, new_smt):
     current_smt = get_current_smt()
     current_service_server = current_smt.get_FQDN()
     for config_file in config_files:
-        content = open(config_file, 'r')
+        content = open(config_file, 'r').read()
         if current_service_server in content:
             new_config = open(config_file, 'w')
             new_config.write(content.replace(
                 current_service_server, 
-                smt.get_FQDN()))
+                new_smt.get_FQDN()))
             new_config.close()
         
