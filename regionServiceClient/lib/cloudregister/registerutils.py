@@ -34,16 +34,8 @@ AVAILABLE_SMT_SERVER_DATA_FILE_NAME = 'availableSMTInfo_%d.obj'
 # ----------------------------------------------------------------------------
 def check_registration(smt_server_name):
     """Check if the instance is already registerd"""
-    credentials_exist = has_credentials()
-    repos_exist = has_repos(smt_server_name)
-    if repos_exist and credentials_exist:
+    if has_repos(smt_server_name) and has_credentials():
         return 1
-    elif repos_exist and not credentials_exist:
-        remove_repos(smt_server_name)
-    elif credentials_exist and not repos_exist:
-        # We might have to rethink this when BYOL comes along and
-        # registers with our SMT
-        remove_credentials()
 
     return None
 
@@ -86,6 +78,19 @@ def exec_subprocess(cmd):
 
 
 # ----------------------------------------------------------------------------
+def find_equivalent_smt_server(configured_smt, known_smt_servers):
+    """Find an SMT server that is equivalent to the currently configured
+       SMT server, only consider responsive servers"""
+    for smt in known_smt_servers:
+        if smt.get_ip() == configured_smt.get_ip():
+            continue
+        if smt.is_equivalent(configured_smt) and smt.is_responsive():
+            return smt
+
+    return None
+
+
+# ----------------------------------------------------------------------------
 def get_available_smt_servers():
     """Return a list of available SMT servers"""
     availabe_smt_servers = []
@@ -101,14 +106,7 @@ def get_available_smt_servers():
 # ----------------------------------------------------------------------------
 def get_current_smt():
     """Return the data for the current SMT server"""
-    return get_smt_from_store(get_registered_smt_file_path())
-
-
-# ----------------------------------------------------------------------------
-def get_registered_smt_file_path():
-    """Return the file path for the SMT infor stored for the registered
-       server"""
-    return REGISTRATION_DATA_DIR + REGISTERED_SMT_SERVER_DATA_FILE_NAME
+    return get_smt_from_store(__get_registered_smt_file_path())
 
 
 # ----------------------------------------------------------------------------
@@ -234,6 +232,14 @@ def is_sles11():
 
 
 # ----------------------------------------------------------------------------
+def set_as_current_smt(smt):
+    """Store the given SMT as the current SMT server."""
+    if not os.path.exists(REGISTRATION_DATA_DIR):
+        os.system('mkdir -p %s' % REGISTRATION_DATA_DIR)
+    store_smt_data(__get_registered_smt_file_path(), smt)
+
+
+# ----------------------------------------------------------------------------
 def remove_credentials():
     """Remove the server generated credentials"""
     ncc_credentials = '/etc/zypp/credentials.d/NCCcredentials'
@@ -263,7 +269,7 @@ def remove_service(smt_server_name):
 # ----------------------------------------------------------------------------
 def remove_registration_data(smt_servers):
     """Reset the instance to an unregistered state"""
-    smt_data_file = get_registered_smt_file_path()
+    smt_data_file = __get_registered_smt_file_path()
     if os.path.exists(smt_data_file):
         os.unlink(smt_data_file)
     for smt in smt_servers:
@@ -299,7 +305,7 @@ def replace_hosts_entry(current_smt, new_smt):
                                            new_smt.get_FQDN(),
                                            new_smt.get_name())
             continue
-        newHosts += entry
+        new_hosts += entry
 
     hosts = open('/etc/hosts', 'w')
     hosts.write(new_hosts)
@@ -332,6 +338,21 @@ def store_smt_data(smt_data_file_path, smt):
 
 
 # ----------------------------------------------------------------------------
+def switch_smt_repos(smt):
+    """Switch all the repositories pointing to the current SMT server to the
+       given SMT server."""
+    repo_files = glob.glob('/etc/zypp/repos.d/*.repo')
+    __replace_url_target(repo_files, smt)
+
+
+# ----------------------------------------------------------------------------
+def switch_smt_service(smt):
+    """Switch the existing service to the given SMT server"""
+    service_files = glob.glob('/etc/zypp/services.d/*.service')
+    __replace_url_target(service_files, smt)
+
+
+# ----------------------------------------------------------------------------
 def update_ca_chain(cmd_w_args_lst):
     """Update the CA chain using the given command with arguments"""
     logging.info('Updating CA certificates: %s' % cmd_w_args_lst[0])
@@ -341,3 +362,27 @@ def update_ca_chain(cmd_w_args_lst):
         return 0
 
     return 1
+
+
+# Private
+# ----------------------------------------------------------------------------
+def __get_registered_smt_file_path():
+    """Return the file path for the SMT infor stored for the registered
+       server"""
+    return REGISTRATION_DATA_DIR + REGISTERED_SMT_SERVER_DATA_FILE_NAME
+
+
+# ----------------------------------------------------------------------------
+def __replace_url_target(config_files, new_smt):
+    """Switch the url of the current SMT server for the given SMT server"""
+    current_smt = get_current_smt()
+    current_service_server = current_smt.get_FQDN()
+    for config_file in config_files:
+        content = open(config_file, 'r')
+        if current_service_server in content:
+            new_config = open(config_file, 'w')
+            new_config.write(content.replace(
+                current_service_server, 
+                smt.get_FQDN()))
+            new_config.close()
+        

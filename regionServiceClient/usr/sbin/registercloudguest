@@ -67,19 +67,6 @@ def add_region_server_args_to_URL(api, cfg):
 
 
 # ----------------------------------------------------------------------------
-def find_equivalent_smt_server(configured_smt, known_smt_servers):
-    """Find an SMT server that is equivalent to the currently configured
-       SMT server, only consider responsive servers"""
-    for smt in known_smt_servers:
-        if smt.get_ip() == configured_smt.get_ip():
-            continue
-        if smt.is_equivalent(configured_smt) and smt.is_responsive():
-            return smt
-
-    return None
-
-
-# ----------------------------------------------------------------------------
 def get_config(configFile=None):
     """Read configuration file and return a config object"""
     if not configFile:
@@ -226,7 +213,7 @@ for srv in region_servers:
             sys.exit(1)
         continue
 
-if not response.status_code == 200:
+if (not response) or (not response.status_code == 200):
     logging.error('Request not answered by any server, exiting')
     sys.exit(1)
 
@@ -241,6 +228,7 @@ for child in smtDataRoot:
                        utils.AVAILABLE_SMT_SERVER_DATA_FILE_NAME % smt_count)
     utils.store_smt_data(store_file_name, smt_server)
     known_smt_servers.append(smt_server)
+    smt_count += 1
 
 # This is a forced re-registration clear out all existing data
 if force_new_registration:
@@ -267,7 +255,7 @@ if configured_smt_server:
         else:
             # The configured server is not resposive, lets check if we can
             # find another server
-            new_target = find_equivalent_smt_server(
+            new_target = utils.find_equivalent_smt_server(
                 configured_smt_server,
                 known_smt_servers)
             if new_target:
@@ -318,7 +306,7 @@ if not os.path.exists(utils.REGISTRATION_DATA_DIR):
     os.system('mkdir -p %s' % utils.REGISTRATION_DATA_DIR)
 
 # Write the data of the current target server
-utils.store_smt_data(utils.get_registered_smt_file_path(), registration_target)
+utils.set_as_current_smt(registration_target)
 
 # Check if we need to send along any instance data
 instance_data_filepath = utils.REGISTRATION_DATA_DIR + str(uuid.uuid4())
