@@ -145,7 +145,7 @@ class SMT:
                 logging.error('=' * 20)
                 logging.error('Attempt %s of %s' % (attempts, retries))
                 logging.error('Server %s is unreachable' % self.get_ip())
-            if cert_rq.status_code == 200:
+            if cert_rq and cert_rq.status_code == 200:
                 attempts = retries
 
         return cert_rq
