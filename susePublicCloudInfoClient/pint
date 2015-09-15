@@ -75,6 +75,13 @@ for state in image_states:
         image_state = state
         break
 
+server_type = None
+server_types = ('regionserver', 'smt')
+for item in server_types:
+    if command_args['--%s' % item]:
+        server_type = item
+        break
+
 output_format = 'plain'
 output_options = ('json', 'xml')
 for out in output_options:
@@ -85,8 +92,6 @@ for out in output_options:
 region = 'all'
 if command_args['--region']:
     region = command_args['--region']
-
-server_type = command_args['--regionserver'] or command_args['--smt']
 
 if command_args['images']:
     print ifsrequest.get_image_data(
