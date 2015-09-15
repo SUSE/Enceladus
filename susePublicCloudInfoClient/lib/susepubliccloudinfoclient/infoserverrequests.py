@@ -120,10 +120,8 @@ def __form_url(
     doc_type = image_state or server_type
     server_format = __select_server_format(result_format, apply_filters)
     if doc_type:
-        doc_type += '.' + server_format
         url_components.append(doc_type)
-    else:
-        url_components[-1] = url_components[-1] + '.' + server_format
+    url_components[-1] = url_components[-1] + '.' + server_format
     url = '/'
     return url.join(url_components)
 
