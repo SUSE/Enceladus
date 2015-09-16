@@ -18,6 +18,12 @@ A collection of utilities useful for interacting with Amazon EC2
 
 A tool to collect metadata in a Google Compute Engine instance
 
+# monitoring
+
+Plugins for Nagios/Icinga used to monitor the SUSE update infrastructure
+in the Public CLoud covering cases for which we could not find already
+developed plugins
+
 # regionServiceClient
 
 The client for the SUSE Linux Enterprise Specific update infrastructure. The
