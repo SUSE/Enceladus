@@ -5,7 +5,7 @@
 .SH NAME
 pint \- Public-cloud INformation Tracker
 .SH SYNOPSIS
-.B pint amazon|google|hp|microsoft images|servers [option]
+.B pint amazon|google|hp|microsoft images|servers [options]
 .SH DESCRIPTION
 .B pint
 A client for the SUSE Public Cloud Information service at
@@ -29,8 +29,8 @@ in Amazon Web Services EC2 in JSON format.
 .IP https://susepubliccloudinfo.suse.com/v1/google/images/active.json
 Provides information about all the active images in Google Compute images
 in JSON format.
-.IP https://susepubliccloudinfo.suse.com/v1/microsoft/West US/images/active.xml
-Provides information about all active images in Microsoft Azure in the US-West
+.IP https://susepubliccloudinfo.suse.com/v1/microsoft/West%20US/images/active.xml
+Provides information about all active images in Microsoft Azure in the 'West US'
 region.
 .P
 The
@@ -93,8 +93,8 @@ are considered deprecated. The SUSE deprecation period is 6 months.
 .IP "--filter"
 Filter the information based on the given value(s). If the information is
 to be filtered on more than one entry type provide a comma separated
-list. The output id the union of the filters. The filter option
-specifies one or more of the valid data entries for the chosen
+list. The output is a subset of results that match all the filters. The filter 
+option specifies one or more of the valid data entries for the chosen
 .I <data-selector>
 and is a valid option for the
 .I images
@@ -156,7 +156,7 @@ DNS lookup. The name for all region servers are the same,
 across all cloud frameworks.
 .RS
 .P
-For example:
+Example:
 .IP --filter="publishedon>20150101,name~11-sp3"
 Filters images to a subset with a name containing "11-sp3" and published after 
 Jan 1, 2015.
@@ -167,7 +167,7 @@ Print a help message.
 Set the output format to JSON format. The option is mutually exclusive with
 the
 .I --xml
-option. If neither option is specified plain text information is provided.
+option. XML is the default output format if neither option is provided.
 .IP "--region"
 Specify the region for which the information is supposed to be retrieved.
 If no information is specified information for all regions in the given
@@ -200,5 +200,10 @@ Engine in JSON format.
 
 Will provide information about the active images in Amazon Web Services EC2
 in the us-west-2 region (Oregon).
+
+.B pint microsoft images --active --filter="name~priority"
+
+Will provide information about the active 'priority' images in Microsoft Azure.
+
 .SH AUTHORS
 Robert Schweikert (rjschwei@suse.com), James Mason (jmason@suse.com)
