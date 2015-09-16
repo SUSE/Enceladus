@@ -1,0 +1,179 @@
+#!/usr/bin/python
+
+# Copyright (c) 2015 SUSE LLC  All rights reserved.
+#
+# check_proc_timed_hang is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, version 2 of
+# the License.
+#
+# check_proc_timed_hang is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with susePublicCloudInfoClient. If not, see
+# <http://www.gnu.org/licenses/>.
+#
+"""
+usage: check_proc_timed_hang -h | --help
+       check_proc_timed_hang -p PROCESS_NAME
+           [ -k KILL_SIGNAL ]
+           [ -t RUN_TIME_ALLOWANCE ]
+
+options:
+   -h --help
+       Show help
+   -p
+       The name of the process to be monitored
+   -k
+       If provided the monitored process will be killed with the
+       provided signal
+   -t
+       The runtime allotted for the process. Specify a numeric value followed
+       by s (for seconds), m (for minutes), h (for hours), or d (for days).
+       A value of 10m would expect the process to run for 10m. If the process
+       is still running after 10m an attempt will be made to kill it with
+       the given signal if provided. If either the kill attempt fails or
+       no kill instruction is provided the process will be marked as critical.
+       The default allotted runtime is 1 hour.
+"""
+
+import datetime
+import dateutil.relativedelta
+import glob
+import os
+import subprocess
+import sys
+import time
+
+from docopt import docopt
+
+# Command line processing
+command_args = docopt(__doc__)
+
+kill_signal = command_args.get('KILL_SIGNAL')
+process_name = command_args.get('PROCESS_NAME')
+allowed_runtime = command_args.get('RUN_TIME_ALLOWANCE', '1h')
+
+# Nagios states
+CRITICAL = 2
+OK = 1
+UNKNOWN = 3
+
+
+# ----------------------------------------------------------------------------
+def clean_up(process_name):
+    """Clean up any files and the general monitoring tracker"""
+    proc_files = glob.glob('/tmp/%s_*.mon' % process_name)
+    for proc_file in proc_files:
+        os.unlink(proc_file)
+
+
+# ----------------------------------------------------------------------------
+def get_int_from_dateutil(date_util_obj):
+    """Return an int from the given dateutil object"""
+    return int(date_util_obj.isoformat().
+               replace('-', '').
+               replace('T', '').
+               replace(':', '').
+               replace('.', ''))
+
+
+# ----------------------------------------------------------------------------
+def get_isodata_from_int(date_int):
+    """Turns an int created by get_int_from_dateutil into an iso format date"""
+    date_str = '%d' % date_int
+    isoformat = '%s-%s-%sT%s:%s:%s.%s' % (date_str[:4],
+                                          date_str[4:6],
+                                          date_str[6:8],
+                                          date_str[8:10],
+                                          date_str[10:12],
+                                          date_str[12:14],
+                                          date_str[14:])
+
+    return isoformat
+
+
+# ----------------------------------------------------------------------------
+def get_pid(process_name):
+    """Get the PID of the process"""
+    pid_cmd = ['/usr/bin/ps', '-C', process_name, '-o', 'pid=']
+    proc = subprocess.Popen(pid_cmd, stdout=subprocess.PIPE)
+    pid_data = proc.communicate()
+    all_pids = pid_data[0].strip().split('\n')
+    if len(all_pids) > 1:
+        print 'Multiple "%s" running this is not suported' % process_name
+        sys.exit(CRITICAL)
+
+    return all_pids[0].strip()
+
+
+# ----------------------------------------------------------------------------
+process_pid = get_pid(process_name)
+if not process_pid:
+    clean_up(process_name)
+    print 'Process %s is not runnning' % process_name
+    sys.exit(UNKNOWN)
+
+monitor_file_path = '/tmp/%s_%s.mon' % (process_name, process_pid)
+
+now_date = datetime.datetime.now()
+now = int(get_int_from_dateutil(datetime.datetime.now()))
+
+
+expire = None
+if os.path.exists(monitor_file_path):
+    expire = int(open(monitor_file_path, 'r').read())
+
+if expire:
+    if now > expire:
+        clean_up(process_name)
+        # We have exceeded the specified runtime allowance
+        if kill_signal:
+            os.system('kill -%s %s' % (kill_signal, process_pid))
+            time.sleep(1)
+            process_pid = get_pid(process_name)
+            if process_pid:
+                msg = 'Process "%s" still running after kill attempt'
+                print msg % process_name
+                sys.exit(CRITICAL)
+            else:
+                msg = 'Process "%s" successfully removed'
+                print msg % process_name
+                sys.exit(OK)
+
+        msg = 'Process "%s" exceeded expiration time "%s"'
+        print msg % (process_name, get_isodata_from_int(expire))
+        sys.exit(CRITICAL)
+    else:
+        msg = 'Process "%s" withing runtime allotment'
+        print msg % process_name
+        sys.exit(OK)
+
+if allowed_runtime[-1] == 's':
+    expire = get_int_from_dateutil(now_date +
+                                   dateutil.relativedelta.relativedelta(
+                                       seconds=+int(allowed_runtime[:-1])))
+elif allowed_runtime[-1] == 'm':
+    expire = get_int_from_dateutil(now_date +
+                                   dateutil.relativedelta.relativedelta(
+                                       minutes=+int(allowed_runtime[:-1])))
+elif allowed_runtime[-1] == 'h':
+    expire = get_int_from_dateutil(now_date +
+                                   dateutil.relativedelta.relativedelta(
+                                       hours=+int(allowed_runtime[:-1])))
+else:
+    # treat everything else as days
+    expire = get_int_from_dateutil(now_date +
+                                   dateutil.relativedelta.relativedelta(
+                                       days=+int(allowed_runtime[:-1])))
+
+fout = open(monitor_file_path, 'w')
+fout.write('%d' % expire)
+fout.close()
+
+msg = 'Process "%s" has an exit window until: "%s"'
+print msg % (process_name, get_isodata_from_int(expire))
+sys.exit(OK)
