@@ -16,8 +16,8 @@
 #
 
 
-%define upstream_name susepubcloudinfo
-Name:           python-susepubcloudinfo
+%define upstream_name susepubliccloudinfo
+Name:           python-susepubliccloudinfo
 Version:        0.1.2
 Release:        0
 Summary:        Query SUSE Public Cloud Info Service

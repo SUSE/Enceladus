@@ -1,7 +1,7 @@
 DESTDIR=
 MANPATH=/usr/share/man
 PREFIX=/usr
-NAME=susepubcloudinfo
+NAME=susepubliccloudinfo
 dirs = lib man
 files = Makefile README.md LICENSE pint setup.py
 
