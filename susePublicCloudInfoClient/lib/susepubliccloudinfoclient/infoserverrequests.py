@@ -67,7 +67,7 @@ def __filter_substring(items, attr, value):
     # iterate over the list of items
     for item in items:
         # append the current item to the result set if matching
-        if value in item[attr]:
+        if value.lower() in item[attr].lower():
             filtered_items.append(item)
     # return the filtered list
     return filtered_items
