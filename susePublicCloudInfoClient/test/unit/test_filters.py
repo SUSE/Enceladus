@@ -137,6 +137,42 @@ def test_filter_substring():
     ]
     assert_equals(expected, filtered_result)
 
+def test_filter_substring_is_case_insensitive():
+    """'sles-11-sp4-byos' should match 'name~11-SP4-BYOS'"""
+    with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
+        images = json.load(fixture)['images']
+    filtered_result = ifsrequest.__filter_substring(
+        images,
+        'name',
+        '11-SP4-BYOS'
+    )
+    expected = [
+        {
+            'name': 'suse-sles-11-sp4-byos-v20150714-pv-ssd-x86_64',
+            'state': 'active',
+            'replacementname': '',
+            'replacementid': '',
+            'publishedon': '20150714',
+            'deprecatedon': '',
+            'region': 'us-west-1',
+            'id': 'ami-b97c8ffd',
+            'deletedon': ''
+        },
+        {
+            'name': 'suse-sles-11-sp4-byos-v20150714-hvm-ssd-x86_64',
+            'state': 'active',
+            'replacementname': '',
+            'replacementid': '',
+            'publishedon': '20150714',
+            'deprecatedon': '',
+            'region': 'us-west-1',
+            'id': 'ami-6f66952b',
+            'deletedon': ''
+        }
+    ]
+    assert_equals(expected, filtered_result)
+     
+
 
 def test_filter_less_than():
     """should only return results with attribute less than value (as int)"""

@@ -636,10 +636,9 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
 elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
     # get product list
     products = getProducts()
-    if not len(products):
-        logging.error('No products found')
+    if products == None:
         sys.exit(1)
-
+    
     smtCA_request = getSMTCert(registrationTarget.getFQDN())
     if not smtCA_request:
         sys.exit(1)
