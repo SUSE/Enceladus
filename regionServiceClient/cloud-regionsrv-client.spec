@@ -30,13 +30,13 @@ Requires:       python
 Requires:       python-lxml
 Requires:       python-requests
 Requires:       regionsrv-certs
-%if 0%{?suse_version} > 1140
+%if 0%{?suse_version} >= 1315
 Requires:       SUSEConnect
 Requires:       python-M2Crypto
 BuildRequires:  systemd
 %endif
 %{?systemd_requires}
-%if 0%{?suse_version} < 1140
+%if 0%{?suse_version} < 1315
 Requires:       insserv
 Requires:       python-m2crypto
 Requires:       sysvinit
