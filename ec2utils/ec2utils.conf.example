@@ -1,6 +1,6 @@
-# Onc can configure as many accounts as one chooses. Configured accounts
+# One can configure as many accounts as one chooses. Configured accounts
 # start with the "account-" prefix. Account information is retrieved by any
-# of the ec2utils tools by acombining the prefix "account-" with the name
+# of the ec2utils tools by combining the prefix "account-" with the name
 # specified with the --account command line option
 #
 # For example the information for the "account-servers" configuration is
@@ -8,6 +8,7 @@
 # tools
 [account-servers]
 access_key_id =
+secret_access_key = 
 ssh_key_name =
 ssh_private_key =
 
