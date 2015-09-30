@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 6.3.19
+%define base_version 6.4.0
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -30,13 +30,13 @@ Requires:       python
 Requires:       python-lxml
 Requires:       python-requests
 Requires:       regionsrv-certs
-%if 0%{?suse_version} > 1140
+%if 0%{?suse_version} >= 1315
 Requires:       SUSEConnect
 Requires:       python-M2Crypto
 BuildRequires:  systemd
 %endif
 %{?systemd_requires}
-%if 0%{?suse_version} < 1140
+%if 0%{?suse_version} < 1315
 Requires:       insserv
 Requires:       python-m2crypto
 Requires:       sysvinit
@@ -132,7 +132,15 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README LICENSE
+%dir %{_usr}/lib/zypp
+%dir %{_usr}/lib/zypp/plugins
+%dir %{_usr}/lib/zypp/plugins/services
 %{_sbindir}/registercloudguest
+%{_usr}/lib/zypp/plugins/services/cloud_update
+%{python_sitelib}/cloudregister/__*
+%{python_sitelib}/cloudregister/reg*
+%{python_sitelib}/cloudregister/smt*
+%{python_sitelib}/cloudregister/VERSION
 %if 0%{?suse_version} > 1140
 %{_unitdir}/guestregister.service
 %else
@@ -149,7 +157,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info
 %dir %{python_sitelib}/cloudregister/
 %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info/*
-%{python_sitelib}/cloudregister/*
+%{python_sitelib}/cloudregister/google*
 
 %changelog
 

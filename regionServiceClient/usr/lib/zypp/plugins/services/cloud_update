@@ -1,0 +1,84 @@
+#!/usr/bin/python
+
+# Copyright (c) 2015, SUSE LLC, All rights reserved.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 3.0 of the License, or (at your option) any later version.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library.
+
+"""This script verifies the access to the registered SMT server. If the
+   server cannot be reached an attempt is made to switch the configured
+   server to another known server that was previously provided by the
+   region server.
+
+   The configuration is in ini format and is located in
+   /etc/regionserverclnt.cfg"""
+
+import logging
+import os
+import subprocess
+import sys
+import time
+
+import cloudregister.registerutils as utils
+
+utils.start_logging()
+
+current_smt = utils.get_current_smt()
+if not current_smt:
+    logging.info('[Service] No SMT server found, nothing to do')
+    sys.exit()
+
+if utils.is_registered(current_smt):
+    alive = current_smt.is_responsive()
+    # TODO: verify instance data here if applicable
+    if alive:
+        msg = '[Service] Current SMT (%s) ' % current_smt.get_ip()
+        msg += 'server will be refreshed'
+        logging.info(msg)
+        sys.exit()
+    else:
+        # If the configured smt server is not responsive we need to switch
+        # to another server
+        available_servers = utils.get_available_smt_servers()
+        new_target = utils.find_equivalent_smt_server(
+            current_smt,
+            available_servers)
+        if new_target:
+            msg = '[Service] Switching to alternate SMT server: '
+            msg += new_target.get_ip()
+            logging.info(msg)
+            utils.replace_hosts_entry(current_smt, new_target)
+            sys.exit()
+        else:
+            # There is no equivalent SMT server, search for another one
+            for smt in available_servers:
+                if smt.is_equivalent(current_smt):
+                    # All the equivalent servers have already been ruled
+                    # out as targets
+                    continue
+                if smt.is_responsive():
+                    utils.import_smt_cert(smt)
+                    msg = '[Service] Switching the service to: '
+                    msg += smt.get_ip()
+                    logging.info(msg)
+                    utils.switch_smt_service(smt)
+                    msg = '[Service] Switching all repos to: '
+                    msg += smt.get_ip()
+                    logging.info(msg)
+                    utils.switch_smt_repos(smt)
+                    utils.replace_hosts_entry(current_smt, smt)
+                    utils.set_as_current_smt(smt)
+                    sys.exit()
+
+
+    msg = '[Service] Could not find any available SMT server, '
+    msg += 'repo refresh will fail'
+    logging.error(msg)
