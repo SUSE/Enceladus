@@ -26,9 +26,11 @@ import sys
 from cloudregister import smt
 from M2Crypto import X509
 
+AVAILABLE_SMT_SERVER_DATA_FILE_NAME = 'availableSMTInfo_%d.obj'
+HOSTSFILE_PATH = '/etc/hosts'
 REGISTRATION_DATA_DIR = '/var/lib/cloudregister/'
 REGISTERED_SMT_SERVER_DATA_FILE_NAME = 'currentSMTInfo.obj'
-AVAILABLE_SMT_SERVER_DATA_FILE_NAME = 'availableSMTInfo_%d.obj'
+
 
 
 # ----------------------------------------------------------------------------
@@ -44,7 +46,7 @@ def check_registration(smt_server_name):
 def clean_hosts_file(domain_name):
     """Remove the smt server entry from the /etc/hosts file"""
     new_hosts_content = []
-    content = open('/etc/hosts', 'r').readlines()
+    content = open(HOSTSFILE_PATH, 'r').readlines()
     smt_announce_found = None
     for entry in content:
         if '# Added by SMT' in entry:
@@ -55,10 +57,9 @@ def clean_hosts_file(domain_name):
             continue
         new_hosts_content.append(entry)
 
-    hosts_file = open('/etc/hosts', 'w')
-    for entry in new_hosts_content:
-        hosts_file.write(entry)
-    hosts_file.close()
+    with open(HOSTSFILE_PATH, 'w') as hosts_file:
+        for entry in new_hosts_content:
+            hosts_file.write(entry)
 
 
 # ----------------------------------------------------------------------------
@@ -115,15 +116,13 @@ def get_smt_from_store(smt_store_file_path):
     if not os.path.exists(smt_store_file_path):
         return None
 
-    smt_file = open(smt_store_file_path, 'r')
-    u = pickle.Unpickler(smt_file)
-    try:
-        smt = u.load()
-    except:
-        smt_file.close()
-        return None
-
-    smt_file.close()
+    smt = None
+    with open(smt_store_file_path, 'r') as smt_file:
+        u = pickle.Unpickler(smt_file)
+        try:
+            smt = u.load()
+        except:
+            pass
 
     return smt
 
@@ -204,7 +203,7 @@ def import_smt_cert(smt):
 
 # ----------------------------------------------------------------------------
 def is_registered(smt):
-    """Firgure out if any of the servers is known and this instan"""
+    """Figure out if any of the servers is known"""
     if check_registration(smt.get_FQDN()):
         return 1
 
@@ -249,7 +248,7 @@ def remove_registration_data(smt_servers):
 # ----------------------------------------------------------------------------
 def replace_hosts_entry(current_smt, new_smt):
     """Replace the information of the SMT server in /etc/hosts"""
-    known_hosts = open('/etc/hosts', 'r').readlines()
+    known_hosts = open(HOSTSFILE_PATH, 'r').readlines()
     new_hosts = ''
     current_smt_ip = current_smt.get_ip()
     for entry in known_hosts:
@@ -260,9 +259,8 @@ def replace_hosts_entry(current_smt, new_smt):
             continue
         new_hosts += entry
 
-    hosts = open('/etc/hosts', 'w')
-    hosts.write(new_hosts)
-    hosts.close()
+    with open(HOSTSFILE_PATH, 'w') as hosts_file:
+        hosts_file.write(new_hosts)
 
 
 # ----------------------------------------------------------------------------

@@ -133,7 +133,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc README LICENSE
 %dir %{_usr}/lib/zypp
-%dir %{_usr}/lib/zypp//plugins
+%dir %{_usr}/lib/zypp/plugins
 %dir %{_usr}/lib/zypp/plugins/services
 %{_sbindir}/registercloudguest
 %{_usr}/lib/zypp/plugins/services/cloud_update
