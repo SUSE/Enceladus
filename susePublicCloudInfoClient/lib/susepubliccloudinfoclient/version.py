@@ -18,4 +18,4 @@
 # along with susePublicCloudInfoClient. If not, see
 # <http://www.gnu.org/licenses/>.
 #
-VERSION = '0.1.3'
+VERSION = '0.1.4'

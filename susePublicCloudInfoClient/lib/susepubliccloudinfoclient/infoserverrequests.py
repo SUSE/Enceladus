@@ -192,7 +192,7 @@ def __reformat(items, info_type, result_format):
         root = ET.Element(info_type)
         for item in items:
             ET.SubElement(root, __inflect(info_type), item)
-        return ET.tostring(root, 'UTF-8', 'xml')
+        return ET.tostring(root, 'UTF-8')
 
 
 def __select_server_format(result_format, apply_filters=False):
