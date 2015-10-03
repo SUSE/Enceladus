@@ -48,5 +48,5 @@ if __name__ == '__main__':
         package_dir={
             '': 'lib',
         },
-        scripts=['pint']
+        scripts=['bin/pint','bin/awscsvgen']
     )
