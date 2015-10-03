@@ -43,6 +43,8 @@ Query the SUSE Public Cloud Information Service REST API
 Summary:        Generate Amazon specific information
 Group:          System/Management
 PreReq:         python-susepubliccloudinfo = %version
+Requires:       python-boto
+Requires:       python-lxml
 
 %description amazon
 Script that generates information for Amazon to automate image inclusion
