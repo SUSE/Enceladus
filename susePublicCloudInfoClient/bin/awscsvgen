@@ -108,9 +108,9 @@ for region in ec2_regions:
             backing_store = 'ssd'
         else:
             backing_store = 'standard'
-        print  '%s,%s,%s,%s,%s,%s' % (name,
-                                      image.get('id'),
-                                      region.name,
-                                      arch,
-                                      virt_type,
-                                      backing_store)
+        print '%s,%s,%s,%s,%s,%s' % (name,
+                                     image.get('id'),
+                                     region.name,
+                                     arch,
+                                     virt_type,
+                                     backing_store)
