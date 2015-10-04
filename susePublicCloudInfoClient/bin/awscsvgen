@@ -105,7 +105,7 @@ for region in ec2_regions:
         else:
             arch = 'i386'
         if 'ssd' in name:
-            backing_store = 'ssd'
+            backing_store = 'gp2'
         else:
             backing_store = 'standard'
         print '%s,%s,%s,%s,%s,%s' % (name,
