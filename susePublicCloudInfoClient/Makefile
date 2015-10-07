@@ -5,8 +5,8 @@ NAME=susepubliccloudinfo
 dirs = bin lib man
 files = Makefile README.md LICENSE setup.py
 
-nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
-verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
+nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}|' *.spec | cut -d'|' -f1)
+verSpec = $(shell rpm -q --specfile --qf '%{VERSION}|' *.spec | cut -d'|' -f1)
 verSrc = $(shell cat lib/susepubliccloudinfoclient/version.py | \
 	grep VERSION | awk -F\' '{ print $$2 }' | tr -d '\n')
 
