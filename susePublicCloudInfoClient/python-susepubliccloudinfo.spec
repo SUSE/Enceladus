@@ -72,6 +72,7 @@ gzip %{buildroot}/%{_mandir}/man1/pint.1
 %{_bindir}/pint
 
 %files amazon
+%defattr(-,root,root,-)
 %{_bindir}/awscsvgen
 
 %changelog
