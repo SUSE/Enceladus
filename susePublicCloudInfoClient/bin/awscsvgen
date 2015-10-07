@@ -1,0 +1,116 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+#
+# This file is part of susePublicCloudInfoClient
+#
+# susePublicCloudInfoClient is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# susePublicCloudInfoClient is is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with susePublicCloudInfoClient. If not, see
+# <http://www.gnu.org/licenses/>.
+#
+"""
+usage:
+    awscsvgen -h | --help
+    awscsvgen
+       [ --active|--all ]
+       [ --service-pack=<service_pack_number> ]
+       [ --suse-version=<suse_version> ]
+       [ --virt-type=<virt_type> ]
+
+options:
+   -h --help
+       Show help
+   --active
+       Provide information about the currently active images (default)
+   --all
+       Provide information about all images
+   --service-pack=<service_pack_number>
+       The service pack of interest, not used for GA,  1 | 2....
+   --suse-version=<suse_version>
+       The version of SUSE Linux Enterprise 11 | 12
+   --virt-type=<virt_type>
+       Virtualization type para|hvm, default hvm
+"""
+
+import sys
+
+from docopt import docopt
+from lxml import etree
+
+import boto
+import boto.ec2
+
+import susepubliccloudinfoclient.infoserverrequests as ifsrequest
+import susepubliccloudinfoclient.version as version
+
+command_args = docopt(__doc__, version=version.VERSION)
+
+framework = 'amazon'
+image_state = 'active'
+
+virt_type = 'hvm'
+if command_args['--virt-type'] and command_args['--virt-type'] == 'para':
+    virt_type = 'pv'
+
+if command_args['--all']:
+    image_state = None
+    virt_type = None
+
+region = 'all'
+name_filter = None
+
+if command_args['--suse-version']:
+    name_filter = 'name~suse-sles-%s' % command_args['--suse-version']
+if command_args['--service-pack']:
+    name_filter += '-sp%s' % command_args['--service-pack']
+
+image_data = ifsrequest.get_image_data(
+    framework,
+    image_state,
+    'xml',
+    region,
+    name_filter)
+
+ec2_regions = boto.ec2.regions()
+image_info = etree.fromstring(image_data)
+region_data = {}
+for region in ec2_regions:
+    region_data[region.name] = []
+
+for image in image_info.findall('image'):
+    region_data[image.get('region')].append(image)
+
+print 'ami-name,ami-id,region,arch,virt-typ,backing-store'
+for region in ec2_regions:
+    for image in region_data[region.name]:
+        name = image.get('name')
+        if virt_type and virt_type not in name:
+            continue
+        if 'hvm' in name:
+            virt_type = 'hvm'
+        else:
+            virt_type = 'pv'
+        if 'x86_64' in name:
+            arch = 'x86_64'
+        else:
+            arch = 'i386'
+        if 'ssd' in name:
+            backing_store = 'gp2'
+        else:
+            backing_store = 'standard'
+        print '%s,%s,%s,%s,%s,%s' % (name,
+                                     image.get('id'),
+                                     region.name,
+                                     arch,
+                                     virt_type,
+                                     backing_store)

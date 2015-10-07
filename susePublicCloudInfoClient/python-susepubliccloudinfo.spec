@@ -18,7 +18,7 @@
 
 %define upstream_name susepubliccloudinfo
 Name:           python-susepubliccloudinfo
-Version:        0.1.4
+Version:        0.2.0
 Release:        0
 Summary:        Query SUSE Public Cloud Info Service
 License:        GPL-3.0+
@@ -39,6 +39,17 @@ BuildArch:      noarch
 %description
 Query the SUSE Public Cloud Information Service REST API
 
+%package amazon
+Summary:        Generate Amazon specific information
+Group:          System/Management
+PreReq:         python-susepubliccloudinfo = %version
+Requires:       python-boto
+Requires:       python-lxml
+
+%description amazon
+Script that generates information for Amazon to automate image inclusion
+in the quick launcher and the Support matrix on the AWS web pages.
+
 %prep
 %setup -q -n %{upstream_name}-%{version}
 
@@ -57,6 +68,9 @@ gzip %{buildroot}/%{_mandir}/man1/pint.1
 %{_mandir}/man1/*
 %dir %{python_sitelib}/susepubliccloudinfoclient
 %{python_sitelib}/*
-%{_bindir}/*
+%{_bindir}/pint
+
+%files amazon
+%{_bindir}/awscsvgen
 
 %changelog

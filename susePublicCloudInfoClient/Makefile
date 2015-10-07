@@ -2,11 +2,11 @@ DESTDIR=
 MANPATH=/usr/share/man
 PREFIX=/usr
 NAME=susepubliccloudinfo
-dirs = lib man
-files = Makefile README.md LICENSE pint setup.py
+dirs = bin lib man
+files = Makefile README.md LICENSE setup.py
 
-nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
-verSpec = $(shell rpm -q --specfile --qf '%{VERSION}' *.spec)
+nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}|' *.spec | cut -d'|' -f1)
+verSpec = $(shell rpm -q --specfile --qf '%{VERSION}|' *.spec | cut -d'|' -f1)
 verSrc = $(shell cat lib/susepubliccloudinfoclient/version.py | \
 	grep VERSION | awk -F\' '{ print $$2 }' | tr -d '\n')
 
@@ -25,7 +25,7 @@ install:
 	install -d -m 755 "$(DESTDIR)"/"$(MANDIR)"/man1
 	install -m 644 man/man1/pint.1 "$(DESTDIR)"/"$(MANDIR)"/man1
 	gzip "$(DESTDIR)"/"$(MANDIR)"/man1/pint.1
-	
+
 pep8:
 	tools/run-pep8
 
