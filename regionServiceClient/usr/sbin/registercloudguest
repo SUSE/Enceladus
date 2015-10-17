@@ -378,9 +378,9 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         sys.exit(1)
 
     # Register the base product first
-    cmd = [register12, '--url', 'https://%s ' % registration_target.get_FQDN()]
+    cmd = [register12, '--url', 'https://%s' % registration_target.get_FQDN()]
     if os.path.exists(instance_data_filepath):
-        cmd.append(' --instance-data')
+        cmd.append('--instance-data')
         cmd.append(instance_data_filepath)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     res = p.communicate()
