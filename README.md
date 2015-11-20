@@ -10,6 +10,14 @@ explaining the details of the code developed in that directory.
 
 A tool to collect metadata in a Microsoft Azure instance
 
+# CloudFormation 
+
+Cloud Formation scripts to deploy/orchestrate SUSE images in Amazon EC2
+
+# dockerImgStore
+
+Setup image storage for docker in cloud images
+
 # ec2utils
 
 A collection of utilities useful for interacting with Amazon EC2

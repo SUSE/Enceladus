@@ -1,0 +1,11 @@
+#!/bin/bash
+if [ -e /var/lib/docker-storage.btrfs ]
+then
+  exit
+fi
+
+mkdir -p /var/lib/docker
+qemu-img create /var/lib/docker-storage.btrfs 100g
+mkfs.btrfs /var/lib/docker-storage.btrfs
+echo "/var/lib/docker-storage.btrfs /var/lib/docker btrfs defaults 0 0" >> /etc/fstab
+mount /var/lib/docker
