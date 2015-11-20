@@ -49,6 +49,21 @@
     }
   },
 
+  "Mappings" : {
+    "Regions2AMI" : {
+      "us-east-1"      : { "HVM64": "ami-f2d5ad98" },
+      "us-west-1"      : { "HVM64": "ami-b56b05d5" },
+      "us-west-2"      : { "HVM64": "ami-d51607b4" },
+      "eu-central-1"   : { "HVM64": "ami-d7485abb" },
+      "eu-west-1"      : { "HVM64": "ami-c1f328b2" },
+      "ap-southeast-1" : { "HVM64": "ami-2620e645" },
+      "ap-southeast-2" : { "HVM64": "ami-96ecb2f5" },
+      "ap-northeast-1" : { "HVM64": "ami-0a705064" },
+      "sa-east-1"      : { "HVM64": "ami-319e245d" }
+    }
+  },
+
+
   "Resources" : {
     "WebServerInstance" : {
       "Type" : "AWS::EC2::Instance",
@@ -56,7 +71,7 @@
         "InstanceType"   : { "Ref" : "WebInstanceType" },
         "SecurityGroups" : [ "ssh-and-http" ],
         "KeyName" : { "Ref" : "KeyName" },
-        "ImageId" : "ami-ccd7e4d1",
+        "ImageId" : { "Fn::FindInMap" : [ "Regions2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : [ "", [
           "#!/bin/bash\n",
           "zypper -n install apache php5 mariadb-client\n",
@@ -74,7 +89,7 @@
         "InstanceType"   : { "Ref" : "DBInstanceType" },
         "SecurityGroups" : [ { "Ref" : "DBSecurityGroup" } ],
         "KeyName" : { "Ref" : "KeyName" },
-        "ImageId" : "ami-ccd7e4d1",
+        "ImageId" : { "Fn::FindInMap" : [ "Regions2AMI", { "Ref" : "AWS::Region" }, "HVM64" ] },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : [ "", [
           "#!/bin/bash\n",
           "zypper -n install mariadb\n",
