@@ -18,7 +18,7 @@
 
 %define upstream_name susepubliccloudinfo
 Name:           python-susepubliccloudinfo
-Version:        0.2.0
+Version:        0.2.1
 Release:        1
 Summary:        Query SUSE Public Cloud Info Service
 License:        GPL-3.0+
@@ -27,6 +27,7 @@ Url:            https://github.com/SUSE/Enceladus
 Source0:        %{upstream_name}-%{version}.tar.bz2
 Requires:       python
 Requires:       python-docopt
+Requires:       python-lxml
 Requires:       python-requests
 BuildRequires:  python-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
