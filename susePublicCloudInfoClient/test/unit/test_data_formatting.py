@@ -201,7 +201,7 @@ def test_reformat_to_json():
         }
     ]
     result = ifsrequest.__reformat(images, 'images', 'json')
-    assert '{"images": [{' in result
+    assert '{\n  "images": [\n    {' in result
     assert '"id": "ami-b97c8ffd"' in result
     assert '"name": "suse-sles-11-sp4-byos-v20150714-pv-ssd-x86_64"' in result
 

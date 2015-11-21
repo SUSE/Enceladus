@@ -23,7 +23,7 @@ import re
 import requests
 import sys
 import urllib
-import xml.etree.ElementTree as ET
+from lxml import etree
 
 
 def __apply_filters(superset, filters):
@@ -117,10 +117,9 @@ def __form_url(
         url_components.append(urllib.quote(region))
     url_components.append(info_type)
     doc_type = image_state or server_type
-    server_format = __select_server_format(result_format, apply_filters)
     if doc_type:
         url_components.append(doc_type)
-    url_components[-1] = url_components[-1] + '.' + server_format
+    url_components[-1] = url_components[-1] + '.json'
     url = '/'
     return url.join(url_components)
 
@@ -184,23 +183,22 @@ def __parse_server_response_data(server_response_data, info_type):
 
 def __reformat(items, info_type, result_format):
     if result_format == 'json':
-        return json.dumps({info_type: items})
+        return json.dumps(
+            {info_type: items},
+            sort_keys=True,
+            indent=2,
+            separators=(',', ': '))
     # default to XML output (until we have a plain formatter)
     else:
         # elif result_format == 'xml':
-        root = ET.Element(info_type)
+        root = etree.Element(info_type)
         for item in items:
-            ET.SubElement(root, __inflect(info_type), item)
-        return ET.tostring(root, 'UTF-8')
-
-
-def __select_server_format(result_format, apply_filters=False):
-    if apply_filters:
-        return 'json'
-    elif result_format == 'plain':
-        return 'xml'
-    else:
-        return result_format
+            etree.SubElement(root, __inflect(info_type), item)
+        return etree.tostring(
+            root,
+            xml_declaration=True,
+            encoding='UTF-8',
+            pretty_print=True)
 
 
 def __warn(str, out=sys.stdout):
@@ -211,13 +209,11 @@ def __process(url, info_type, command_arg_filter, result_format):
     # where the magic happens
     """given a URL, the type of information, maybe some filters, and an expected format, do the right thing"""
     server_response_data = __get_data(url)
+    resultset = __parse_server_response_data(server_response_data, info_type)
     if command_arg_filter:
         filters = __parse_command_arg_filter(command_arg_filter)
-        superset = __parse_server_response_data(server_response_data, info_type)
-        filtered_items = __apply_filters(superset, filters)
-        return __reformat(filtered_items, info_type, result_format)
-    else:
-        return server_response_data
+        resultset = __apply_filters(resultset, filters)
+    return __reformat(resultset, info_type, result_format)
 
 
 def get_image_data(
