@@ -137,6 +137,7 @@ def test_filter_substring():
     ]
     assert_equals(expected, filtered_result)
 
+
 def test_filter_substring_is_case_insensitive():
     """'sles-11-sp4-byos' should match 'name~11-SP4-BYOS'"""
     with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
@@ -171,7 +172,6 @@ def test_filter_substring_is_case_insensitive():
         }
     ]
     assert_equals(expected, filtered_result)
-     
 
 
 def test_filter_less_than():
