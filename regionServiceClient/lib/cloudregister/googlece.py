@@ -14,13 +14,14 @@
 import logging
 import requests
 
+
 def generateRegionSrvArgs():
     """
     Generate arguments to be sent to the region server.
     """
     metaDataUrl = 'http://169.254.169.254/computeMetadata/v1/'
     zoneInfo = 'instance/zone'
-    headers = { 'Metadata-Flavor' : 'Google' }
+    headers = {'Metadata-Flavor': 'Google'}
 
     zoneResp = requests.get(metaDataUrl + zoneInfo, headers=headers)
 
@@ -29,12 +30,12 @@ def generateRegionSrvArgs():
             country, region, zone = zoneResp.text.split('/')[-1].split('-')
         except:
             logging.warning('Unable to form region string from text: %s'
-                            %zoneResp.text)
+                            % zoneResp.text)
             return
     else:
         logging.warning('Unable to get zone metadata')
-        logging.warning('\tReturn code: %d' %zoneResp.status_code)
-        logging.warning('\tMessage: %s' %zoneResp.text)
+        logging.warning('\tReturn code: %d' % zoneResp.status_code)
+        logging.warning('\tMessage: %s' % zoneResp.text)
         return
 
     return 'regionHint=' + country + '-' + region
