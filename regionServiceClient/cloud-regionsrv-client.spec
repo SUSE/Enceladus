@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 6.4.2
+%define base_version 6.4.3
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -66,7 +66,8 @@ Provides:     cloud-regionsrv-client-config
 Conflicts:    otherproviders(cloud-regionsrv-client-config)
 
 %description generic-config
-Generic configuration for the registration client
+Generic configuration for the registration client. The configuration needs
+to be adapted for the specific cloud framework after installation.
 
 %package plugin-gce
 Version:      1.0.0
@@ -76,7 +77,7 @@ Group:        Productivity/Networking/Web/Servers
 Requires:     cloud-regionsrv-client >= 6.0.0
 
 %description plugin-gce
-Guest registration plugin for Google Compute Engine
+Guest registration plugin for images intended for Google Compute Engine
 
 %prep
 %setup -q

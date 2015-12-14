@@ -19,6 +19,7 @@ import requests
 
 from M2Crypto import X509
 
+
 class SMT:
     """Store smt information"""
     def __init__(self, smtXMLNode):
@@ -26,7 +27,6 @@ class SMT:
         self._fqdn = smtXMLNode.attrib['SMTserverName']
         self._fingerprint = smtXMLNode.attrib['fingerprint']
         self._cert = None
-
 
     # --------------------------------------------------------------------
     def get_cert(self):
@@ -39,7 +39,7 @@ class SMT:
                     self._cert = cert
 
         return self._cert
-            
+
     # --------------------------------------------------------------------
     def get_domain_name(self):
         """Return the domain name for the server."""
@@ -76,7 +76,6 @@ class SMT:
 
         return None
 
-
     # --------------------------------------------------------------------
     def is_responsive(self):
         """Check if the SMT server is responsive"""
@@ -89,13 +88,13 @@ class SMT:
 
         return False
 
-
     # --------------------------------------------------------------------
     def write_cert(self, target_dir):
         """Write the certificate to the given directory"""
         logging.info('Writing SMT rootCA: %s' % target_dir)
-        ca_file_path = (target_dir +
-                '/registration_server_%s.pem' % self.get_ip().replace('.','_'))
+        ca_file_path = (
+            target_dir +
+            '/registration_server_%s.pem' % self.get_ip().replace('.', '_'))
         try:
             smt_ca_file = open(ca_file_path, 'w')
             smt_ca_file.write(self.get_cert())
@@ -105,9 +104,7 @@ class SMT:
             logging.error(errMsg)
             return 0
 
-
         return 1
-
 
     # Private
     # --------------------------------------------------------------------
@@ -121,14 +118,13 @@ class SMT:
             errMsg = 'Could not read X509 fingerprint from cert'
             logging.error(errMsg)
             return False
-        
+
         if x509_fingerprint != self.get_fingerprint().replace(':', ''):
             errMsg = 'Fingerprint could not be verified'
             logging.error(errMsg)
-            return  False
+            return False
 
         return True
-
 
     # --------------------------------------------------------------------
     def __request_cert(self):

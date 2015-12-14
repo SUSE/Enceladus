@@ -43,6 +43,7 @@ from M2Crypto import X509
 
 error_exp = re.compile('^error', re.IGNORECASE)
 
+
 # ----------------------------------------------------------------------------
 def add_region_server_args_to_URL(api, cfg):
     """Add arguments from the instance to the given api URL.
@@ -370,7 +371,7 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
 elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
     # get product list
     products = get_products()
-    if products == None:
+    if products is None:
         sys.exit(1)
 
     if not utils.import_smt_cert(registration_target):
@@ -391,19 +392,26 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
             sys.exit(1)
 
     for product in products:
-        cmd = register12
-        cmd += ' --url https://%s ' % registration_target.get_FQDN()
-        cmd += ' --product %s ' % product
+        cmd = [
+            register12,
+            '--url',
+            'https://%s' % registration_target.get_FQDN(),
+            '--product',
+            product]
         if os.path.exists(instance_data_filepath):
-            cmd += ' --instance-data %s ' % instance_data_filepath
+            cmd.append('--instance-data')
+            cmd.append(instance_data_filepath)
 
-        logging.info('Registration: %s' % cmd)
-        res = os.system(cmd)
+        logging.info('Registration: %s' % ' '.join(cmd))
+        p = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        res = p.communicate()
 
-        if res:
-            logging.error('Registration failed')
-            sys.exit(1)
-
+        for entry in res:
+            if 'Error:' in entry:
+                logging.error('\tRegistration failed: %s' % entry)
 else:
     logging.error('No registration executable found')
     sys.exit(1)

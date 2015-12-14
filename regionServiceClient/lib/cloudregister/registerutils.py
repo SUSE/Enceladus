@@ -32,7 +32,6 @@ REGISTRATION_DATA_DIR = '/var/lib/cloudregister/'
 REGISTERED_SMT_SERVER_DATA_FILE_NAME = 'currentSMTInfo.obj'
 
 
-
 # ----------------------------------------------------------------------------
 def check_registration(smt_server_name):
     """Check if the instance is already registerd"""
@@ -317,7 +316,7 @@ def update_ca_chain(cmd_w_args_lst):
 
 # Private
 # ----------------------------------------------------------------------------
-def  __get_referenced_credentials(smt_server_name):
+def __get_referenced_credentials(smt_server_name):
     """Return a list of credential names referenced by repositories"""
     repo_files = glob.glob('/etc/zypp/repos.d/*.repo')
     referenced_credentials = []
@@ -332,8 +331,8 @@ def  __get_referenced_credentials(smt_server_name):
                         referenced_credentials.append(credentials_name)
 
     return referenced_credentials
-        
-        
+
+
 # ----------------------------------------------------------------------------
 def __get_registered_smt_file_path():
     """Return the file path for the SMT infor stored for the registered
@@ -411,7 +410,6 @@ def __replace_url_target(config_files, new_smt):
         if current_service_server in content:
             new_config = open(config_file, 'w')
             new_config.write(content.replace(
-                current_service_server, 
+                current_service_server,
                 new_smt.get_FQDN()))
             new_config.close()
-        
