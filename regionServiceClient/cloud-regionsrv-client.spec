@@ -63,6 +63,7 @@ License:      LGPL-3.0
 Summary:      Cloud Environment Guest Registration Configuration
 Group:        Productivity/Networking/Web/Servers
 Provides:     cloud-regionsrv-client-config
+Provides:     regionsrv-certs
 Conflicts:    otherproviders(cloud-regionsrv-client-config)
 
 %description generic-config
@@ -102,6 +103,7 @@ python setup.py install --prefix=%{_prefix}  --root=%{buildroot}
 %endif
     rm -rf %{buildroot}/etc/init.d
 %endif
+mkdir -p %{buildroot}/var/lib/regionService/certs
 
 %pre
 %if 0%{?suse_version} > 1140
@@ -151,6 +153,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files generic-config
 %defattr(-,root,root,-)
+%dir /var/lib/regionService
+%dir /var/lib/regionService/certs
 %config %{_sysconfdir}/regionserverclnt.cfg
 
 %files plugin-gce
