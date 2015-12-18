@@ -68,9 +68,11 @@ if command_args['--all']:
 
 region = 'all'
 name_filter = None
+if command_args['--suse-version'] or command_args['--service-pack']:
+    name_filter = 'name~'
 
 if command_args['--suse-version']:
-    name_filter = 'name~suse-sles-%s' % command_args['--suse-version']
+    name_filter += 'suse-sles-%s' % command_args['--suse-version']
 if command_args['--service-pack']:
     name_filter += '-sp%s' % command_args['--service-pack']
 
