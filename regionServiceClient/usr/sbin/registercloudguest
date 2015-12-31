@@ -211,7 +211,7 @@ for srv in region_servers:
         logging.error('No response from: %s' % srvName)
         if srv == region_servers[-1]:
             logging.error('None of the servers responded')
-            logging.error('\tAttemted: %s' % region_servers)
+            logging.error('\tAttempted: %s' % region_servers)
             logging.error('Exiting without registration')
             sys.exit(1)
         continue
