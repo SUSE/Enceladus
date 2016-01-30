@@ -183,6 +183,16 @@ logging.info('Using API: %s' % api)
 # Add regionserver arguments
 api = add_region_server_args_to_URL(api, cfg)
 
+# Proxy setup
+proxies = None
+proxy = utils.set_proxy()
+if proxy:
+    http_proxy = os.environ.get('http_proxy')
+    https_proxy = os.environ.get('https_proxy')
+    proxies = {'http_proxy': http_proxy,
+               'https_proxy': https_proxy}
+    logging.info('Using proxy settings: %s' % proxies)
+
 # Get the SMT server information from one of the configured region servers
 response = None
 # Get the location of the cert files for the region servers
@@ -199,7 +209,8 @@ for srv in region_servers:
     try:
         response = requests.get('https://%s/%s' % (srvName, api),
                                 verify=certFile,
-                                timeout=15.0)
+                                timeout=15.0,
+                                proxies=proxies)
         if response.status_code == 200:
             break
         else:
