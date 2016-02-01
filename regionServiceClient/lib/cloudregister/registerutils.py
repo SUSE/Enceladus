@@ -238,6 +238,9 @@ def set_proxy():
     existing_http_proxy = os.environ.get('http_proxy')
     existing_https_proxy = os.environ.get('https_proxy')
     if (existing_http_proxy and existing_https_proxy):
+        # If the environment variables exist all external functions used
+        # by the registration code will honor them, thus we can tell the
+        # client that we didn't do anything, which also happens to be true
         logging.info('Using proxy settings from execution environment')
         logging.info('\thttp_proxy: %s' % existing_http_proxy)
         logging.info('\thttps_proxy: %s' % existing_https_proxy)
