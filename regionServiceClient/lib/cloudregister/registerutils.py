@@ -230,6 +230,38 @@ def set_as_current_smt(smt):
 
 
 # ----------------------------------------------------------------------------
+def set_proxy():
+    """Set up proxy environment if applicable"""
+    proxy_config_file = '/etc/sysconfig/proxy'
+    if not os.path.exists(proxy_config_file):
+        return False
+    existing_http_proxy = os.environ.get('http_proxy')
+    existing_https_proxy = os.environ.get('https_proxy')
+    if (existing_http_proxy and existing_https_proxy):
+        # If the environment variables exist all external functions used
+        # by the registration code will honor them, thus we can tell the
+        # client that we didn't do anything, which also happens to be true
+        logging.info('Using proxy settings from execution environment')
+        logging.info('\thttp_proxy: %s' % existing_http_proxy)
+        logging.info('\thttps_proxy: %s' % existing_https_proxy)
+        return False
+    proxy_config = open(proxy_config_file, 'r').readlines()
+    http_proxy = ''
+    https_proxy = ''
+    for entry in proxy_config:
+        if 'PROXY_ENABLED' in entry and 'no' in entry:
+            return False
+        if 'HTTP_PROXY' in entry:
+            http_proxy = entry.split('"')[1]
+        if 'HTTPS_PROXY' in entry:
+            https_proxy = entry.split('"')[1]
+    os.environ['http_proxy'] = http_proxy
+    os.environ['https_proxy'] = https_proxy
+
+    return True
+
+
+# ----------------------------------------------------------------------------
 def remove_registration_data(smt_servers):
     """Reset the instance to an unregistered state"""
     smt_data_file = __get_registered_smt_file_path()
