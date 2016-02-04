@@ -1,0 +1,180 @@
+#!/bin/bash
+
+# Supportconfig Plugin for SUSE Public Cloud Images
+# 
+# Copyright (C) 2016 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA  02110-1301, USA.
+
+# Gathers important troubleshooting information about
+# SUSE Public Cloud Instances
+
+SVER='1.0'
+RCFILE="/usr/lib/supportconfig/resources/scplugin.rc"
+LOG_LINES=0  # 0 means include the entire file
+
+# Collect all the public cloud relevant data in a directory
+DATA_LOCATION="$LOG/public_cloud"
+mkdir -p $DATA_LOCATION
+
+if [ -s $RCFILE ]; then
+    if ! source $RCFILE; then
+        echo "ERROR: Initializing resource file: $RCFILE" >&2
+        exit 1
+    fi
+fi
+
+_collect_all_file_data() {
+    dir=$1
+    dest_file=$2
+    for f in $dir/*; do
+        echo "#==[ $f ]====================================#" >> $dest_file
+        echo "# cat $f" >> $dest_file
+        cat $f >> $dest_file
+        echo "" >> $dest_file
+        echo "" >> $dest_file
+    done
+}
+
+credentials() {
+    local INFO_FILE="$DATA_LOCATION/credentials.txt"
+    _collect_all_file_data '/etc/zypp/credentials.d' $INFO_FILE
+}
+
+framework() {
+    local INFO_FILE="$DATA_LOCATION/framework.txt"
+    echo "#==[ Determine Framework ]================================#" > $INFO_FILE
+    echo "# dmidecode | grep -q amazon|Google|Microsoft" >> $INFO_FILE
+
+    dmidecode | grep -q amazon
+    if (( $? == 0 )); then
+        FRAMEWORK='EC2'
+    fi
+    dmidecode | grep -q Google
+    if (( $? == 0 )); then
+        FRAMEWORK='GCE'
+    fi
+    dmidecode | grep -q Microsoft
+    if (( $? == 0 )); then
+        FRAMEWORK='Azure'
+    fi
+    echo $FRAMEWORK >> $INFO_FILE
+}
+
+hosts() {
+    local INFO_FILE="$DATA_LOCATION/hosts.txt"
+    echo "#==[ Hosts ]=============================================#" > $INFO_FILE
+    echo "# cat /etc/hosts" >> $INFO_FILE
+    cat /etc/hosts >> $INFO_FILE
+}
+
+metadata() {
+    local INFO_FILE="$DATA_LOCATION/metadata.txt"
+    echo "#==[ Instance Metadata ]=================================#" > $INFO_FILE
+    local EXEC=''
+    if [ -e '/usr/bin/ec2metadata' ]; then
+        echo "# /usr/bin/ec2metadata --api latestC" >> $INFO_FILE
+        /usr/bin/ec2metadata --api latest  >> $INFO_FILE
+    fi
+    if [ -e '/usr/sbin/azuremetadata' ]; then
+        echo "# /usr/sbin/azuremetadata -e" >> $INFO_FILE
+        /usr/sbin/azuremetadata -e >> $INFO_FILE
+        echo "" >> $INFO_FILE
+        echo "# /usr/sbin/azuremetadata -i" >> $INFO_FILE
+        /usr/sbin/azuremetadata -i >> $INFO_FILE
+        echo "" >> $INFO_FILE
+        echo "# /usr/sbin/azuremetadata -t" >> $INFO_FILE
+        /usr/sbin/azuremetadata -t >> $INFO_FILE
+    fi
+    if [ -e '/usr/bin/gcemetadata' ]; then
+        echo "# /usr/bin/gcemetadata" >> $INFO_FILE
+        /usr/bin/gcemetadata  >> $INFO_FILE
+    fi
+}
+
+packages() {
+    local INFO_FILE="$DATA_LOCATION/frameworkpackages.txt"
+    local COMMON_PACKAGE_LIST='/usr/lib/supportconfig/resources/rpmlist_pubcloud_common.rc'
+    local FRAMEWORK_PACKAGE_LIST="/usr/lib/supportconfig/resources/rpmlist_$FRAMEWORK.rc"
+    echo "#==[ Packages ]=================================#" > $INFO_FILE
+
+    if [ -e $COMMON_PACKAGE_LIST ]; then
+        COMMON_PACKAGES=$(cat $COMMON_PACKAGE_LIST)
+    else
+        echo "$COMMON_PACKAGE_LIST not found" > $INFO_FILE
+        echo "Possible install problem of supportutils-plugin-suse-public-cloud" > $INFO_FILE
+    fi
+    
+    if [ -e $FRAMEWORK_PACKAGE_LIST ]; then
+        FRAMEWORK_PACKAGES=$(cat $FRAMEWORK_PACKAGE_LIST)
+    else
+        echo "$FRAMEWORK_PACKAGE_LIST not found" > $INFO_FILE
+        echo "Possible install problem of supportutils-plugin-suse-public-cloud" > $INFO_FILE
+    fi
+
+    PACKAGE_QUERY=($COMMON_PACKAGES $FRAMEWORK_PACKAGES)
+
+    for pack in ${PACKAGE_QUERY[@]};do
+        echo "# rpm -qa $pack" >> $INFO_FILE
+        rpm -qa $pack >> $INFO_FILE
+    done
+}
+
+region_sever_config() {
+    local INFO_FILE="$DATA_LOCATION/regionserverclnt.txt"
+    echo "#==[ Region Server Configuration ]=======================#" > $INFO_FILE
+    local REGIONSERVER_CONFIG='/etc/regionserverclnt.cfg'
+    echo "# $REGIONSERVER_CONFIG" >> $INFO_FILE
+    if [ -e $REGIONSERVER_CONFIG ]; then
+        cat $REGIONSERVER_CONFIG >> $INFO_FILE
+    else
+        echo "File not found" >> $INFO_FILE
+        echo "This may not be an on demand instance" >> $INSTANCE
+    fi
+}
+
+registration_data() {
+    local INFO_FILE="$DATA_LOCATION/cloudregister.txt"
+    echo "#==[ Registration Data ]=================================#" > $INFO_FILE
+    local REGISTRATION_LOG='/var/log/cloudregister'
+    echo "# $REGISTRATION_LOG" >> $INFO_FILE
+    if [ -e $REGISTRATION_LOG ]; then
+        cat $REGISTRATION_LOG >> $INFO_FILE
+    else
+        echo "File not found" >> $INFO_FILE
+        echo "This may not be an on demand instance" >> $INSTANCE
+    fi
+}
+
+repos() {
+    local INFO_FILE="$DATA_LOCATION/repositories.txt"
+    _collect_all_file_data '/etc/zypp/repos.d' $INFO_FILE
+}
+
+services() {
+    local INFO_FILE="$DATA_LOCATION/services.txt"
+    _collect_all_file_data '/etc/zypp/services.d' $INFO_FILE
+}
+
+framework
+credentials
+hosts
+metadata
+packages
+region_sever_config
+registration_data
+repos
+services
