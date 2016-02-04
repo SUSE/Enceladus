@@ -1,0 +1,8 @@
+aws-cli
+cloud-init
+python-ec2deprecateimg
+python-ec2metadata
+python-ec2metadata
+python-ec2publishimg
+python-ec2uploadimg
+regionServiceClientConfigEC2
