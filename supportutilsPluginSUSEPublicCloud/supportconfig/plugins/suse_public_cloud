@@ -22,25 +22,28 @@
 # Gathers important troubleshooting information about
 # SUSE Public Cloud Instances
 
-SVER='1.0'
+set +o noglob
+
+SVER="1.0"
 RCFILE="/usr/lib/supportconfig/resources/scplugin.rc"
-LOG_LINES=0  # 0 means include the entire file
 
 # Collect all the public cloud relevant data in a directory
-DATA_LOCATION="$LOG/public_cloud"
+# $LOG is exported by supportconfig script and is the data collection
+# directory
+DATA_LOCATION="${LOG}/public_cloud"
 mkdir -p $DATA_LOCATION
 
 if [ -s $RCFILE ]; then
-    if ! source $RCFILE; then
+    if ! source "$RCFILE"; then
         echo "ERROR: Initializing resource file: $RCFILE" >&2
         exit 1
     fi
 fi
 
-_collect_all_file_data() {
+function _collect_all_file_data() {
     dir=$1
     dest_file=$2
-    for f in $dir/*; do
+    for f in "$dir/*"; do
         echo "#==[ $f ]====================================#" >> $dest_file
         echo "# cat $f" >> $dest_file
         cat $f >> $dest_file
@@ -49,47 +52,44 @@ _collect_all_file_data() {
     done
 }
 
-credentials() {
+function credentials() {
     local INFO_FILE="$DATA_LOCATION/credentials.txt"
-    _collect_all_file_data '/etc/zypp/credentials.d' $INFO_FILE
+    _collect_all_file_data "/etc/zypp/credentials.d" $INFO_FILE
 }
 
-framework() {
+function framework() {
     local INFO_FILE="$DATA_LOCATION/framework.txt"
     echo "#==[ Determine Framework ]================================#" > $INFO_FILE
     echo "# dmidecode | grep -q amazon|Google|Microsoft" >> $INFO_FILE
 
-    dmidecode | grep -q amazon
-    if (( $? == 0 )); then
-        FRAMEWORK='EC2'
+    if dmidecode | grep -q amazon; then
+        FRAMEWORK="EC2"
     fi
-    dmidecode | grep -q Google
-    if (( $? == 0 )); then
-        FRAMEWORK='GCE'
+    if dmidecode | grep -q Google; then
+        FRAMEWORK="GCE"
     fi
-    dmidecode | grep -q Microsoft
-    if (( $? == 0 )); then
-        FRAMEWORK='Azure'
+    if dmidecode | grep -q Microsoft; then
+        FRAMEWORK="Azure"
     fi
     echo $FRAMEWORK >> $INFO_FILE
 }
 
-hosts() {
+function hosts() {
     local INFO_FILE="$DATA_LOCATION/hosts.txt"
     echo "#==[ Hosts ]=============================================#" > $INFO_FILE
     echo "# cat /etc/hosts" >> $INFO_FILE
     cat /etc/hosts >> $INFO_FILE
 }
 
-metadata() {
+function metadata() {
     local INFO_FILE="$DATA_LOCATION/metadata.txt"
     echo "#==[ Instance Metadata ]=================================#" > $INFO_FILE
-    local EXEC=''
-    if [ -e '/usr/bin/ec2metadata' ]; then
-        echo "# /usr/bin/ec2metadata --api latestC" >> $INFO_FILE
+    local EXEC=""
+    if [ -e "/usr/bin/ec2metadata" ]; then
+        echo "# /usr/bin/ec2metadata --api latest" >> $INFO_FILE
         /usr/bin/ec2metadata --api latest  >> $INFO_FILE
     fi
-    if [ -e '/usr/sbin/azuremetadata' ]; then
+    if [ -e "/usr/sbin/azuremetadata" ]; then
         echo "# /usr/sbin/azuremetadata -e" >> $INFO_FILE
         /usr/sbin/azuremetadata -e >> $INFO_FILE
         echo "" >> $INFO_FILE
@@ -99,15 +99,16 @@ metadata() {
         echo "# /usr/sbin/azuremetadata -t" >> $INFO_FILE
         /usr/sbin/azuremetadata -t >> $INFO_FILE
     fi
-    if [ -e '/usr/bin/gcemetadata' ]; then
+    if [ -e "/usr/bin/gcemetadata" ]; then
         echo "# /usr/bin/gcemetadata" >> $INFO_FILE
         /usr/bin/gcemetadata  >> $INFO_FILE
     fi
 }
 
-packages() {
+function packages() {
+    # Note oreder dependent, the framework function must be called first
     local INFO_FILE="$DATA_LOCATION/frameworkpackages.txt"
-    local COMMON_PACKAGE_LIST='/usr/lib/supportconfig/resources/rpmlist_pubcloud_common.rc'
+    local COMMON_PACKAGE_LIST="/usr/lib/supportconfig/resources/rpmlist_pubcloud_common.rc"
     local FRAMEWORK_PACKAGE_LIST="/usr/lib/supportconfig/resources/rpmlist_$FRAMEWORK.rc"
     echo "#==[ Packages ]=================================#" > $INFO_FILE
 
@@ -133,10 +134,10 @@ packages() {
     done
 }
 
-region_sever_config() {
+function region_sever_config() {
     local INFO_FILE="$DATA_LOCATION/regionserverclnt.txt"
     echo "#==[ Region Server Configuration ]=======================#" > $INFO_FILE
-    local REGIONSERVER_CONFIG='/etc/regionserverclnt.cfg'
+    local REGIONSERVER_CONFIG="/etc/regionserverclnt.cfg"
     echo "# $REGIONSERVER_CONFIG" >> $INFO_FILE
     if [ -e $REGIONSERVER_CONFIG ]; then
         cat $REGIONSERVER_CONFIG >> $INFO_FILE
@@ -146,10 +147,10 @@ region_sever_config() {
     fi
 }
 
-registration_data() {
+function registration_data() {
     local INFO_FILE="$DATA_LOCATION/cloudregister.txt"
     echo "#==[ Registration Data ]=================================#" > $INFO_FILE
-    local REGISTRATION_LOG='/var/log/cloudregister'
+    local REGISTRATION_LOG="/var/log/cloudregister"
     echo "# $REGISTRATION_LOG" >> $INFO_FILE
     if [ -e $REGISTRATION_LOG ]; then
         cat $REGISTRATION_LOG >> $INFO_FILE
@@ -159,14 +160,14 @@ registration_data() {
     fi
 }
 
-repos() {
+function repos() {
     local INFO_FILE="$DATA_LOCATION/repositories.txt"
-    _collect_all_file_data '/etc/zypp/repos.d' $INFO_FILE
+    _collect_all_file_data "/etc/zypp/repos.d" $INFO_FILE
 }
 
-services() {
+function services() {
     local INFO_FILE="$DATA_LOCATION/services.txt"
-    _collect_all_file_data '/etc/zypp/services.d' $INFO_FILE
+    _collect_all_file_data "/etc/zypp/services.d" $INFO_FILE
 }
 
 framework
