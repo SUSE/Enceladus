@@ -1,0 +1,270 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "SUSE Manager",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair"
+    },
+    "ServerInstanceType" : {
+      "Description" : "Server EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.medium",
+      "AllowedValues" : [ "t2.medium", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge"  ],
+      "ConstraintDescription" : "must be a valid EC2 instance type"
+    },
+    "VolumeSize" : {
+      "Description" : "Volume size of SUSE Manager repositories and data base (use 25G per channel)",
+      "Type" : "Number",
+      "MinValue" : "15",
+      "Default"  : "100"
+    },
+    "SecurityGroups" : {
+      "Description" : "EC2 SecurityGroups for SUSE Manager instance",
+      "Type" : "List<AWS::EC2::SecurityGroup::GroupName>",
+      "ConstraintDescription" : "must be an existing SecurityGroup",
+      "Default" : "suma"
+    },
+    "ManagerAdminEMail" : {
+      "Description" : "E-Mail address of administrator",
+      "Type" : "String",
+      "Default" : "jgleissner@suse.com"
+    },
+    "ManagerPassword" : {
+      "Description" : "Administrator password",
+      "Type" : "String",
+      "Default" : "admin123",
+      "NoEcho" : "true"
+    },
+    "DatabasePassword" : {
+      "Description" : "SUSE Manager database password",
+      "Type" : "String",
+      "Default" : "sumadb123",
+      "NoEcho" : "true"
+    },
+    "SCCPassword" : {
+      "Description" : "SCC Password",
+      "Type" : "String",
+      "NoEcho" : "true"
+    },
+    "SCCUser" : {
+      "Description" : "SCC User",
+      "Type" : "String"
+    },
+    "RegEMail" : {
+      "Description" : "E-Mail to use for registration with SCC",
+      "Type": "String"
+    },
+    "RegCode" : {
+      "Description" : "Product registration code",
+      "Type": "String"
+    },
+    "UpdateSystem" : {
+      "Description" : "Update SUSE Manager system before initialization",
+      "Type": "Number",
+      "MinValue": "0",
+      "MaxValue": "1",
+      "Default": "1"
+    },
+    "ProductList" : {
+      "Description" : "Comma separated list of products for which channels to sync and bootstrap repos to create",
+      "Type" : "String",
+      "Default": "sles12sp1"
+    },
+    "SwapSize" : {
+      "Description" : "Size of swapfile to create",
+      "Type": "Number",
+      "Default": "1024"
+    },
+    "CertOrg" : {
+      "Description" : "Certificate Organization",
+      "Type" : "String"
+    },
+    "CertOrgUnit" : {
+      "Description" : "Certificate Organization Unit",
+      "Type" : "String"
+    },
+    "CertCity" : {
+      "Description" : "Certificate City",
+      "Type" : "String"
+    },
+    "CertState" : {
+      "Description" : "Certificate State",
+      "Type" : "String"
+    },
+    "CertCountry" : {
+      "Description" : "Certificate Country Code",
+      "Type" : "String"
+    },
+    "CertEMail" : {
+      "Description" : "Certificate Admin E-Mail Address",
+      "Type" : "String"
+    },
+    "CertPassword" : {
+      "Description" : "Certificate Password",
+      "Type" : "String"
+    },
+    "ActivationKeyName" : {
+      "Description" : "Name of activation key to create",
+      "Type" : "String",
+      "AllowedPattern" : "[1-9]-[a-zA-Z0-9_-]*",
+      "Default" : "1-default_key"
+    },
+    "ActivationKeyDescription" : {
+      "Description" : "Description of the activation key",
+      "Type" : "String",
+      "Default" : "Default Key"
+    }
+  },
+
+  "Mappings" : {
+    "Regions2SUMa" : {
+      "us-east-1"      : { "HVM64": "ami-46b09f2c" },
+      "us-west-1"      : { "HVM64": "ami-a02a5cc0" },
+      "us-west-2"      : { "HVM64": "ami-99c82ef9" },
+      "eu-central-1"   : { "HVM64": "ami-98ebf3f4" },
+      "eu-west-1"      : { "HVM64": "ami-d565d3a6" },
+      "ap-southeast-1" : { "HVM64": "ami-9067a8f3" },
+      "ap-southeast-2" : { "HVM64": "ami-3ba18558" },
+      "ap-northeast-1" : { "HVM64": "ami-ed370d83" },
+      "ap-northeast-2" : { "HVM64": "ami-00f23c6e" },
+      "sa-east-1"      : { "HVM64": "ami-4f1b9b23" }
+    }
+  },
+
+  "Resources" : {
+    "ServerInstance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "InstanceType"   : { "Ref" : "ServerInstanceType" },
+        "SecurityGroups" : { "Ref" : "SecurityGroups" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Fn::FindInMap" : [ "Regions2SUMa", { "Ref" : "AWS::Region" }, "HVM64" ] },
+        "BlockDeviceMappings" : [
+        {
+          "DeviceName" : "/dev/sda1",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : "20"
+          }
+        },
+        {
+          "DeviceName" : "/dev/xvdd",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : { "Ref" : "VolumeSize" } 
+          }
+        }
+        ],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash\n",
+          "set -e\n",
+          "sed -r -i -e 's/DHCLIENT_SET_HOSTNAME=\"yes\"/DHCLIENT_SET_HOSTNAME=\"no\"/' /etc/sysconfig/network/dhcp\n",
+          "hostname $(ec2metadata --public-hostname | cut -d. -f1)\n",
+          "echo \"$(ec2metadata --local-ip) $(ec2metadata --public-hostname) $(hostname)\" >> /etc/hosts\n",
+          "/usr/bin/suma-storage /dev/xvdd\n",
+          "mkdir -p /manager_storage/spacewalk/packages\n",
+          "ln -s /manager_storage/spacewalk /var/spacewalk\n",
+          "echo \"/dev/xvdd1 /manager_storage xfs defaults 1 1\" >> /etc/fstab\n",
+          "suse_register -n -a email=", { "Ref" : "RegEMail" },
+          " -a regcode-sms=", { "Ref" : "RegCode" }, "\n",
+          "rcapache2 stop\n",
+          "if [ ", { "Ref" : "UpdateSystem" }, " = 1 ]; then\n",
+          "zypper -n dup --auto-agree-with-licenses\n",
+          "fi\n",
+          "echo \"export ACTIVATE_SLP='n'\" > /root/setup_env.sh\n",
+          "echo \"export MANAGER_ADMIN_EMAIL='",
+          { "Ref" : "ManagerAdminEMail" },
+          "'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_ENABLE_TFTP='n'\" >> /root/setup_env.sh\n",
+          "echo -n \"export MANAGER_IP='\" >> /root/setup_env.sh\n",
+          "echo \"$(ec2metadata --local-ip)'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_DB_PORT='5432'\" >> /root/setup_env.sh\n",
+          "echo \"export DB_BACKEND='postgresql'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_DB_HOST='localhost'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_DB_NAME='susemanager'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_DB_PROTOCOL='TCP'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_PASS='", { "Ref" : "DatabasePassword" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_PASS2='", { "Ref" : "DatabasePassword" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export MANAGER_USER='susemanager'\" >> /root/setup_env.sh\n",
+          "echo \"export LOCAL_DB='1'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_CITY='", { "Ref" : "CertCity" },
+          "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_COUNTRY='", { "Ref" : "CertCountry" },
+          "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_EMAIL='", { "Ref" : "CertEMail" },
+          "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_O='", { "Ref" : "CertOrg" },"'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_OU='", { "Ref" : "CertOrgUnit" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_PASS='", { "Ref" : "CertPassword" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_PASS2='", { "Ref" : "CertPassword" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export CERT_STATE='", { "Ref" : "CertState" }, "'\" >> /root/setup_env.sh\n",
+          "echo \"export ISS_PARENT=''\" >> /root/setup_env.sh\n",
+          "echo \"export SCC_PASS='",
+          { "Ref" : "SCCPassword" },
+          "'\" >> /root/setup_env.sh\n",
+          "echo \"export SCC_USER='",
+          { "Ref" : "SCCUser" },
+          "'\" >> /root/setup_env.sh\n",
+          "chmod 600 /root/setup_env.sh\n",
+          "dd if=/dev/zero of=/SWAPFILE bs=1M count=" , { "Ref" : "SwapSize" }, "\n",
+          "mkswap -f /SWAPFILE\n",
+          "echo \"/SWAPFILE swap swap defaults 0 0\" >> /etc/fstab\n",
+          "swapon -a\n",
+          "/usr/lib/susemanager/bin/migration.sh -s\n",
+          "echo ",
+          { "Ref" : "ManagerPassword" },
+          " | satpasswd --stdin admin\n",
+          "echo \"mgrsync.user = admin\" > /root/.mgr-sync\n",
+          "echo \"mgrsync.password = ",
+          { "Ref" : "ManagerPassword" },
+          "\" >> /root/.mgr-sync\n",
+          "chmod 600 /root/.mgr-sync\n",
+          "ln -s /root/.mgr-sync /.mgr-sync\n",
+          "# perhaps not a good way to create activation key\n",
+          "echo 'localhost:*:susemanager:susemanager:", { "Ref" : "DatabasePassword" }, "' > /root/.pgpass\n",
+          "chmod 600 /root/.pgpass\n",
+          "psql -U susemanager <<EOF\n",
+          "insert into rhnregtoken values (1, 1, 1, NULL, '",
+          { "Ref" : "ActivationKeyDescription" }, "', NULL, 0, 'N', 1);\n",
+          "insert into rhnregtokenentitlement values (1, 2);\n",
+          "insert into rhnactivationkey values ('",
+          { "Ref" : "ActivationKeyName" }, "', '1', NULL, DEFAULT, DEFAULT, 'N');\n", 
+          "insert into rhnset values (1, 'activation_keys', 1, NULL, NULL);\n",
+          "SELECT pg_catalog.setval('rhn_reg_token_seq', 1, true);\n",
+          "EOF\n",
+          "mgr-bootstrap --activation-keys ", { "Ref": "ActivationKeyName" }, " --no-gpg --hostname $(ec2metadata --public-hostname)\n",
+          "sed -i 's/FULLY_UPDATE_THIS_BOX=1/FULLY_UPDATE_THIS_BOX=0/' /srv/www/htdocs/pub/bootstrap/bootstrap.sh\n",
+          "cp /var/lib/nocpulse/.ssh/nocpulse-identity.pub /srv/www/htdocs/pub/bootstrap\n",
+          "if [ -n \"", { "Ref" : "ProductList" }, "\" ]; then\n",
+          "wget -O /root/manager_populate_channels.sh https://suse-manager-scripts-eu-west-1.s3.amazonaws.com/manager_populate_channels.sh\n",
+          "/bin/bash /root/manager_populate_channels.sh ", { "Ref": "ProductList" }, " &\n",
+          "fi\n",
+          "" ]] }
+        }
+      }
+    }
+  },
+
+  "Outputs" : {
+    "HostIP" : {
+      "Description" : "Server public IP address",
+      "Value" : { "Fn::GetAtt" : [ "ServerInstance", "PublicIp" ] }
+    },
+    "ManagerURL" : {
+      "Description" : "Server Web Interface URL",
+      "Value" : { "Fn::Join" : [ "", [ "https://", { "Fn::GetAtt" : [ "ServerInstance", "PublicDnsName" ] } ] ]  }
+    },
+    "ImageID" : {
+      "Description" : "ID of the AMI used",
+      "Value" : { "Fn::FindInMap" : [ "Regions2SUMa", { "Ref" : "AWS::Region" }, "HVM64" ] }
+    },
+    "Notes" : {
+      "Description" : "Setup notes",
+      "Value" : "Your SUSE Manager instance should be set up automatically. This may take a while (>1h) as channels need to be synced." }
+  }
+}
+

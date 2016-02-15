@@ -1,0 +1,175 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "SUSE Manager Proxy",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair"
+    },
+    "ServerInstanceType" : {
+      "Description" : "Server EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.medium",
+      "AllowedValues" : [ "t2.medium", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge"  ],
+      "ConstraintDescription" : "must be a valid EC2 instance type"
+    },
+    "VolumeSize" : {
+      "Description" : "Volume size of SUSE Manager repositories and data base (use 25G per channel)",
+      "Type" : "Number",
+      "MinValue" : "15",
+      "Default"  : "100"
+    },
+    "SecurityGroups" : {
+      "Description" : "EC2 SecurityGroups for SUSE Manager instance",
+      "Type" : "List<AWS::EC2::SecurityGroup::GroupName>",
+      "ConstraintDescription" : "must be an existing SecurityGroup"
+    },
+    "TracebackEMail" : {
+      "Description" : "E-Mail address of administrator",
+      "Type" : "String"
+    },
+    "ParentServer" : {
+      "Description" : "Host name of Parent Server (FQDN)",
+      "Type" : "String"
+    },
+    "SwapSize" : {
+      "Description" : "Size of swapfile to create",
+      "Type": "Number",
+      "Default": "1024"
+    },
+    "CertOrg" : {
+      "Description" : "Certificate Organization",
+      "Type" : "String"
+    },
+    "CertOrgUnit" : {
+      "Description" : "Certificate Organization Unit",
+      "Type" : "String"
+    },
+    "CertCity" : {
+      "Description" : "Certificate City",
+      "Type" : "String"
+    },
+    "CertState" : {
+      "Description" : "Certificate State",
+      "Type" : "String"
+    },
+    "CertCountry" : {
+      "Description" : "Certificate Country Code",
+      "Type" : "String"
+    },
+    "CertEMail" : {
+      "Description" : "Certificate Admin E-Mail Address",
+      "Type" : "String"
+    },
+    "CertPassword" : {
+      "Description" : "Certificate Password",
+      "Type" : "String"
+    }
+  },
+
+  "Mappings" : {
+    "Regions2SUMa" : {
+      "us-east-1"      : { "HVM64": "ami-f04b7c9a" },
+      "us-west-1"      : { "HVM64": "ami-450c7d25" },
+      "us-west-2"      : { "HVM64": "ami-e147a781" },
+      "eu-central-1"   : { "HVM64": "ami-c6869daa" },
+      "eu-west-1"      : { "HVM64": "ami-c800b3bb" },
+      "ap-southeast-1" : { "HVM64": "ami-896fa1ea" },
+      "ap-southeast-2" : { "HVM64": "ami-14d2f577" },
+      "ap-northeast-1" : { "HVM64": "ami-401a1c2e" },
+      "ap-northeast-2" : { "HVM64": "ami-6a11df04" },
+      "sa-east-1"      : { "HVM64": "ami-10bd3e7c" } 
+    }
+  },
+
+  "Resources" : {
+    "ServerInstance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "InstanceType"   : { "Ref" : "ServerInstanceType" },
+        "SecurityGroups" : { "Ref" : "SecurityGroups" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Fn::FindInMap" : [ "Regions2SUMa", { "Ref" : "AWS::Region" }, "HVM64" ] },
+        "BlockDeviceMappings" : [
+        {
+          "DeviceName" : "/dev/sda1",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : "20"
+          }
+        },
+        {
+          "DeviceName" : "/dev/xvdd",
+          "Ebs" : {
+            "DeleteOnTermination" : "true",
+            "VolumeSize" : { "Ref" : "VolumeSize" } 
+          }
+        }
+        ],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash\n",
+          "set -e\n",
+          "sed -r -i -e 's/DHCLIENT_SET_HOSTNAME=\"yes\"/DHCLIENT_SET_HOSTNAME=\"no\"/' /etc/sysconfig/network/dhcp\n",
+          "hostname $(ec2metadata --public-hostname | cut -d. -f1)\n",
+          "echo \"$(ec2metadata --local-ip) $(ec2metadata --public-hostname) $(hostname)\" >> /etc/hosts\n",
+          "echo -e \"n\\np\\n1\\n\\n\\nw\" | fdisk /dev/xvdd\n",
+          "mkfs.xfs /dev/xvdd1\n",
+          "mkdir /manager_storage\n",
+          "mount /dev/xvdd1 /manager_storage\n",
+          "echo \"/dev/xvdd1 /manager_storage xfs defaults 1 1\" >> /etc/fstab\n",
+          "mkdir /manager_storage/spacewalk\n",
+          "mkdir /manager_storage/pgsql\n",
+          "ln -s /manager_storage/spacewalk /var/lib/spacewalk\n",
+          "ln -s /manager_storage/spacewalk /var/spacewalk\n",
+          "ln -s /manager_storage/pgsql /var/lib/pgsql\n",
+          "echo \"RHN_PARENT='",  { "Ref" : "ParentServer" }, "'\" > /root/proxy-conf\n",
+          "echo \"VERSION='2.1'\" >> /root/proxy-conf\n",
+          "echo \"TRACEBACK_EMAIL='",
+          { "Ref" : "TracebackEMail" },
+          "'\" >> /root/proxy-conf\n",
+          "echo \"USE_SSL='Y'\" >> /root/proxy-conf\n",
+          "echo \"SSL_ORG='", { "Ref" : "CertOrg" }, "'\" >> /root/proxy-conf\n",
+          "echo \"SSL_ORGUNIT='", { "Ref" : "CertOrgUnit" }, "'\" >> /root/proxy-conf\n",
+          "echo -n \"SSL_COMMON='\" >> /root/proxy-conf\n",
+          "echo \"$(ec2metadata --public-hostname)'\" >> /root/proxy-conf\n",
+          "echo \"SSL_CITY='", { "Ref" : "CertCity" }, "'\" >> /root/proxy-conf\n",
+          "echo \"SSL_STATE='", { "Ref" : "CertState" }, "'\" >> /root/proxy-conf\n",
+          "echo \"SSL_COUNTRY='", { "Ref" : "CertCountry" }, "'\" >> /root/proxy-conf\n",
+          "echo \"MONITORING_PARENT='", { "Ref" : "ParentServer" }, "'\" >> /root/proxy-conf\n",
+          "echo -n \"MONITORING_PARENT_IP='\" >> /root/proxy-conf\n",
+          "echo \"$(host ", { "Ref" : "ParentServer" }, ")'\" >> /root/proxy-conf\n",
+          "echo \"ENABLE_SCOUT='n'\" >> /root/proxy-conf\n",
+          "chmod 600 /root/proxy-conf\n",
+          "dd if=/dev/zero of=/SWAPFILE bs=1M count=" , { "Ref" : "SwapSize" }, "\n",
+          "mkswap -f /SWAPFILE\n",
+          "echo \"/SWAPFILE swap swap defaults 0 0\" >> /etc/fstab\n",
+          "swapon -a\n",
+          "curl -Sks https://", { "Ref" : "ParentServer" }, "/pub/bootstrap/bootstrap-proxy.sh | /bin/bash\n",
+          "" ]] }
+        }
+      }
+    }
+  },
+
+  "Outputs" : {
+    "HostIP" : {
+      "Description" : "Server public IP address",
+      "Value" : { "Fn::GetAtt" : [ "ServerInstance", "PublicIp" ] }
+    },
+    "ManagerURL" : {
+      "Description" : "Server Web Interface URL",
+      "Value" : { "Fn::Join" : [ "", [ "https://", { "Fn::GetAtt" : [ "ServerInstance", "PublicDnsName" ] } ] ]  }
+    },
+    "ImageID" : {
+      "Description" : "ID of the AMI used",
+      "Value" : { "Fn::FindInMap" : [ "Regions2SUMa", { "Ref" : "AWS::Region" }, "HVM64" ] }
+    },
+    "Notes" : {
+      "Description" : "Setup notes",
+      "Value" : "To finalize the setup, copy /root/ssl-build from the parent server and run configure-proxy.sh --answer-file /root/proxy-conf." }
+  }
+}
+
