@@ -25,7 +25,7 @@ the parameter to an empty string, no channels will be synchronized.
 
 Please note that setting up SUSE Manager Server 2.1 takes a while, especially
 synchronizing channels. You can inspect
-`/var/log/cloud-init/cloud-init-output.log` on the server to see whether SUSE
+`/var/log/cloud-init-output.log` on the server to see whether SUSE
 Manager Server initialization has been completed, and if you configured any
 channels to be synchronized, you will find the according log in
 `/var/log/populate_channels.log`.
