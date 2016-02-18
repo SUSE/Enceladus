@@ -243,26 +243,40 @@ regions = utils.get_regions(args)
 
 access_key = args.accessKey
 if not access_key:
-    access_key = utils.get_from_config(args.accountName,
-                                       config,
-                                       None,
-                                       'access_key_id')
+    try:
+        access_key = utils.get_from_config(args.accountName,
+                                           config,
+                                           None,
+                                           'access_key_id',
+                                           '--access-id')
+    except EC2AccountException as e:
+        print >> sys.stderr, e
+        sys.exit(1)
+
 if not access_key:
     print >> sys.stderr, 'Could not determine account access key'
     sys.exit(1)
 
 secret_key = args.secretKey
 if not secret_key:
-    secret_key = utils.get_from_config(args.accountName,
-                                       config,
-                                       None,
-                                       'secret_access_key')
+    try:
+        secret_key = utils.get_from_config(args.accountName,
+                                           config,
+                                           None,
+                                           'secret_access_key',
+                                           '--secret-key')
+    except EC2AccountException as e:
+        print >> sys.stderr, e
+        sys.exit(1)
+
 if not secret_key:
     print >> sys.stderr, 'Could not determine account secret access key'
     sys.exit(1)
 
-try:
-    deprecator = ec2depimg.EC2DeprecateImg(
+# Collect all the errors to be displayed later
+errors = {}
+
+deprecator = ec2depimg.EC2DeprecateImg(
         access_key=access_key,
         deprecation_period=args.depTime,
         deprecation_image_id=args.depImgID,
@@ -279,15 +293,28 @@ try:
         secret_key=secret_key,
         verbose=args.verbose)
 
-    for region in regions:
-        deprecator.set_region(region)
+for region in regions:
+    deprecator.set_region(region)
+    try:
         if args.dryRun:
+            print 'Dry run, image attributes will not be modified'
             deprecator.print_deprecation_info()
         else:
             deprecator.deprecate_images()
-except EC2DeprecateImgException, e:
-    print >> sys.stderr, e
+    except EC2DeprecateImgException, e:
+        errors[region] = e.message
+    except Exception, e:
+        if errors:
+            print >> sys.stderr, 'Collected errors:'
+            for region, error in errors.items():
+                print  >> sys.stderr, 'Region: %s -> %s' % (region, error)
+        print >> sys.stderr, e
+        sys.exit(1)
+
+if errors:
+    print >> sys.stderr, 'Errors encountered:'
+    for region, error in errors.items():
+        print  >> sys.stderr, 'Region: %s -> %s' % (region, error)
     sys.exit(1)
-except Exception, e:
-    print >> sys.stderr, e
-    sys.exit(1)
+
+        

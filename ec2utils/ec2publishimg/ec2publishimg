@@ -167,20 +167,32 @@ regions = utils.get_regions(args)
 
 access_key = args.accessKey
 if not access_key:
-    access_key = utils.get_from_config(args.accountName,
-                                       config,
-                                       None,
-                                       'access_key_id')
+    try:
+        access_key = utils.get_from_config(args.accountName,
+                                           config,
+                                           None,
+                                           'access_key_id',
+                                           '--access-id')
+    except EC2AccountException as e:
+        print >> sys.stderr, e
+        sys.exit(1)
+        
 if not access_key:
     print >> sys.stderr, 'Could not determine account access key'
     sys.exit(1)
 
 secret_key = args.secretKey
 if not secret_key:
-    secret_key = utils.get_from_config(args.accountName,
-                                       config,
-                                       None,
-                                       'secret_access_key')
+    try:
+        secret_key = utils.get_from_config(args.accountName,
+                                           config,
+                                           None,
+                                           'secret_access_key',
+                                           '--secret-key')
+    except EC2AccountException as e:
+        print >> sys.stderr, e
+        sys.exit(1)
+
 if not secret_key:
     print >> sys.stderr, 'Could not determine account secret access key'
     sys.exit(1)
@@ -199,9 +211,7 @@ if (
 if visibility[-1] == ',':
     visibility = visibility[:-1]
 
-# Implementh te publisher next, then come back to this
-try:
-    publisher = ec2pubimg.EC2PublishImage(
+publisher = ec2pubimg.EC2PublishImage(
         access_key=access_key,
         image_id=args.pubImgID,
         image_name=args.pubImgName,
@@ -211,6 +221,9 @@ try:
         verbose=args.verbose,
         visibility=visibility)
 
+if args.dryRun:
+    print 'Dry run, image attributes will not be modified'
+try:
     for region in regions:
         publisher.set_region(region)
         if args.dryRun:
