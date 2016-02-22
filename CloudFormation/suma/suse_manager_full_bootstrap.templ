@@ -12,7 +12,7 @@
     "ServerInstanceType" : {
       "Description" : "Server EC2 instance type",
       "Type" : "String",
-      "Default" : "t2.medium",
+      "Default" : "m4.large",
       "AllowedValues" : [ "t2.medium", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge"  ],
       "ConstraintDescription" : "must be a valid EC2 instance type"
     },
@@ -31,12 +31,10 @@
     "ManagerAdminEMail" : {
       "Description" : "E-Mail address of administrator",
       "Type" : "String",
-      "Default" : "jgleissner@suse.com"
     },
     "ManagerPassword" : {
       "Description" : "Administrator password",
       "Type" : "String",
-      "Default" : "admin123",
       "NoEcho" : "true"
     },
     "DatabasePassword" : {
