@@ -4,24 +4,25 @@ SUSE Manager 2.1 Templates
 This directory contains example templates for creating SUSE Manager Server 2.1
 and SUSE Manager Proxy 2.1 instances.
 
-### `suse_manager.templ`
+### `suse_manager_base_storage_setup.templ`
 
 Sample template for bootstrapping a SUSE Manager Server 2.1 instance with
 external EBS storage, which gets prepared on instance initialization for SUSE
 Manager use.
 
-### `suse_manager_full_bootstrap.templ`
+### `suse_manager.templ`
 
 This template can be used to fully bootstrap a SUSE Manager Server 2.1 instance
-including EBS storage setup, product registration for updates, certificate creation,
-registration with SCC for SUSE Manager entitlements, activation key creation,
-bootstrap script generation, and optionally synchronizing channels and creating
-bootstrap repositories. Most configuration parameters in the script should be
-self-explanatory. The parameter `ProductList` may hold a comma separated list
-of channels to sync. The values `sles12sp1`, `sles12`, and `sles11sp4` have a
-special meaning. They will be expanded to the corresponding pool, updates,
-manager-tools pool, and manager-tools updates channels (`x86_64`). If you set
-the parameter to an empty string, no channels will be synchronized.
+including EBS storage setup, product registration for updates, certificate
+creation, registration with SCC for SUSE Manager entitlements, activation key
+creation, bootstrap script generation, and optionally synchronizing channels
+and creating bootstrap repositories. Most configuration parameters in the
+script should be self-explanatory. The parameter `ProductList` may hold a comma
+separated list of channels to sync. The values `sles12sp1`, `sles12`, and
+`sles11sp4` have a special meaning. They will be expanded to the corresponding
+pool, updates, manager-tools pool, and manager-tools updates channels
+(`x86_64`). If you set the parameter to an empty string, no channels will be
+synchronized.
 
 Please note that setting up SUSE Manager Server 2.1 takes a while, especially
 synchronizing channels. You can inspect
@@ -48,9 +49,14 @@ Proxy instance. To finalize the setup, you need to  peform the following manual
 steps:
 
 1. Log into the SUSE Manager Proxy instance and become root (e.g. `sudo su -`).
-2. If necessary (see above), run the bootstrap script from the SUSE Manager Server (e.g. `curl -Sks https://MY_SUSE_MANAGER_SERVER/pub/bootstrap/bootstrap-proxy.sh | /bin/bash`).
-3. Copy the certificate files from the SUSE Manager Server (e.g. `cd /root; mkdir ssl-build; scp MY_SUSE_MANAGER_SERVER:/root/ssl-build/{RHN-ORG-PRIVATE-SSL-KEY,RHN-ORG-TRUSTED-SSL-CERT,rhn-ca-openssl.cnf} ssl-build`)
-4. Run `configure-proxy.sh --answer-file /root/proxy-conf` (this will ask you for a certificate password; this is the one from the server certificate).
+2. If necessary (see above), run the bootstrap script from the SUSE Manager
+   Server (e.g. `curl -Sks
+   https://MY_SUSE_MANAGER_SERVER/pub/bootstrap/bootstrap-proxy.sh | /bin/bash`).
+3. Copy the certificate files from the SUSE Manager Server (e.g. `cd /root;
+   mkdir ssl-build;
+   scp MY_SUSE_MANAGER_SERVER:/root/ssl-build/{RHN-ORG-PRIVATE-SSL-KEY,RHN-ORG-TRUSTED-SSL-CERT,rhn-ca-openssl.cnf} ssl-build`)
+4. Run `configure-proxy.sh --answer-file /root/proxy-conf` (this will ask you
+   for a certificate password; this is the one from the server certificate).
  
 Your SUSE Manager Proxy 2.1 instance should now be ready. You may want to
 create bootstrap scripts using `mgr-bootstrap` and copy bootstrap repositories
@@ -70,6 +76,6 @@ Ditto for SUSE Manager Proxy 2.1.
 ### `manager_populate_channels.sh`
 
 This script is used by `suse_manager_full_bootstrap.templ` to synchronize
-channels. It is avaiable from an S3 bucket where the template will try to fetch
-it from, so unless you want to change channel synchronization, you don't need
-this file.
+channels. It is available from an S3 bucket where the template will try to
+fetch it from, so unless you want to change channel synchronization, you don't
+need this file.
