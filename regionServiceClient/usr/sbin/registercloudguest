@@ -109,7 +109,7 @@ def get_products():
     products = []
     try:
         cmd = subprocess.Popen(
-            ["zypper", "-x", "products"], stdout=subprocess.PIPE
+            ["zypper", "--no-remote", "-x", "products"], stdout=subprocess.PIPE
         )
         product_xml = cmd.communicate()
     except:
