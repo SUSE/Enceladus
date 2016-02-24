@@ -220,7 +220,7 @@ def __warn(str, out=sys.stdout):
     out.write("Warning: %s" % str)
 
 
-def __error(str, out=sys.stdout):
+def __error(str, out=sys.stderr):
     out.write("Error: %s" % str)
     sys.exit(1)
 
