@@ -136,9 +136,24 @@ def __get_base_url():
 
 def __get_data(url):
     """Make the request and return the data or None in case of failure"""
-    response = requests.get(url)
-    assert response.text, "No data was returned by the server!"
-    return response.text
+    try:
+        response = requests.get(url)
+    except requests.exceptions.HTTPError as e:
+        __error("The server responded with an error.\n%s" % e)
+    except requests.exceptions.Timeout as e:
+        __error("The server did not respond in a timely fashion.\n%s" % e)
+    except requests.exceptions.SSLError as e:
+        __error("There was a problem with the security of this request:\n%s" % e)
+    except requests.exceptions.ConnectionError as e:
+        __error(
+            "There was a problem connecting to the server. " +
+            "Please check your network connection.\n%s" % e
+        )
+    except requests.exceptions.RequestException as e:
+        __error(e)
+    else:
+        assert response.text, "No data was returned by the server!"
+        return response.text
 
 
 def __inflect(plural):
@@ -203,6 +218,11 @@ def __reformat(items, info_type, result_format):
 
 def __warn(str, out=sys.stdout):
     out.write("Warning: %s" % str)
+
+
+def __error(str, out=sys.stdout):
+    out.write("Error: %s" % str)
+    sys.exit(1)
 
 
 def __process(url, info_type, command_arg_filter, result_format):
