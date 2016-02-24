@@ -22,8 +22,11 @@
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
 
 import os
+import mock
+import requests
 import sys
 
+from mock import patch
 from nose.tools import *
 from StringIO import StringIO
 
@@ -34,3 +37,19 @@ def test_warn_includes_warning():
     out = StringIO()
     ifsrequest.__warn("test", out)
     assert('Warning:' in out.getvalue())
+
+
+@raises(SystemExit)
+def test_errr_includes_error():
+    """The point of error is to say so"""
+    out = StringIO()
+    ifsrequest.__error("test", out)
+    assert('Error:' in out.getvalue())
+
+
+@patch('lib.susepubliccloudinfoclient.infoserverrequests.requests.get')
+@patch('lib.susepubliccloudinfoclient.infoserverrequests.__error')
+def test_connection_error(mock_error, mock_get):
+    mock_get.side_effect = requests.ConnectionError("Whoops!")
+    ifsrequest.__get_data('http://foo.de.bar')
+    assert mock_error.called
