@@ -314,3 +314,84 @@ def test_filter_images_on_publishedon_greater_than():
         "ami-d56e9d91"
     ]
     assert_equals(expected_ids, [item['id'] for item in filtered_result])
+
+def test_filter_not_substring():
+    """should only return results with substring not in attribute"""
+    with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
+        images = json.load(fixture)['images']
+    filtered_result = ifsrequest.__filter_not_substring(
+        images,
+        'name',
+        'sles-11'
+    )
+    expected = [
+        {
+            "deletedon":"",
+            "deprecatedon":"",
+            "id":"ami-cd5b4f88",
+            "name":"suse-sles-12-v20141023-pv-ssd-x86_64",
+            "publishedon":"20141023",
+            "region":"us-west-1",
+            "replacementid":"",
+            "replacementname":"",
+            "state":"active"
+        },
+        {
+            "deletedon":"",
+            "deprecatedon":"",
+            "id":"ami-99796ddc",
+            "name":"suse-sles-12-byos-v20141023-pv-ssd-x86_64",
+            "publishedon":"20141023",
+            "region":"us-west-1",
+            "replacementid":"",
+            "replacementname":"",
+            "state":"active"
+        },
+        {
+            "deletedon":"",
+            "deprecatedon":"",
+            "id":"ami-b95b4ffc",
+            "name":"suse-sles-12-v20141023-hvm-ssd-x86_64",
+            "publishedon":"20141023",
+            "region":"us-west-1",
+            "replacementid":"",
+            "replacementname":"",
+            "state":"active"
+        },
+        {
+            "deletedon":"",
+            "deprecatedon":"",
+            "id":"ami-557a6e10",
+            "name":"suse-sles-12-byos-v20141023-hvm-ssd-x86_64",
+            "publishedon":"20141023",
+            "region":"us-west-1",
+            "replacementid":"",
+            "replacementname":"",
+            "state":"active"
+        }
+    ]
+    assert_equals(expected, filtered_result)
+
+def test_filter_regex():
+    """should only return results with matching regex in attribute"""
+    with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
+        images = json.load(fixture)['images']
+    filtered_result = ifsrequest.__filter_regex(
+        images,
+        'name',
+        'suse-sles-12-v[0-9]*-hvm-.*'
+    )
+    expected = [
+          {
+            "deletedon":"",
+            "deprecatedon":"",
+            "id":"ami-b95b4ffc",
+            "name":"suse-sles-12-v20141023-hvm-ssd-x86_64",
+            "publishedon":"20141023",
+            "region":"us-west-1",
+            "replacementid":"",
+            "replacementname":"",
+            "state":"active"
+          }
+    ]
+    assert_equals(expected, filtered_result)
