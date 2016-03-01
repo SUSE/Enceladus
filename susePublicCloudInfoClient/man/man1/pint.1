@@ -104,7 +104,8 @@ arguments.
 Name filters (
 .BR name ,
 .B replacementname
-) are partial string matches.
+) can be partial string matches (~), partial string exclusions (!), or regular
+expression matches (%).
 Date filters (
 .BR deletedon ,
 .BR deprecatedon ,
@@ -126,6 +127,8 @@ are:
 .BR id= ,
 
 .BR name~ ,
+.BR name! ,
+.BR name% ,
 
 .BR publishedon> ,
 .BR publishedon= , 
@@ -133,7 +136,9 @@ are:
 
 .BR replacementid= ,
 
-.BR replacementname~ .
+.BR replacementname~ ,
+.BR replacementname! ,
+.BR replacementname% .
 
 .B Note
 that not all filters will be populated for all images in all frameworks.
@@ -145,6 +150,8 @@ are:
 .BR ip= ,
 
 .BR name~ .
+.BR name! .
+.BR name% .
 
 .B Note
 that the name for all update servers (SMT servers) is the same in each

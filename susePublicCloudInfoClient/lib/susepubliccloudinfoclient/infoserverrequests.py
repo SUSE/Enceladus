@@ -31,6 +31,8 @@ def __apply_filters(superset, filters):
     filter_operations = {
         '=': __filter_exact,
         '~': __filter_substring,
+        '!': __filter_not_substring,
+        '%': __filter_regex,
         '>': __filter_greater_than,
         '<': __filter_less_than
     }
@@ -71,6 +73,29 @@ def __filter_substring(items, attr, value):
     # return the filtered list
     return filtered_items
 
+def __filter_not_substring(items, attr, value):
+    """select from items list where 'value' is not a substring of the attribute"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if value.lower() not in item[attr].lower():
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
+
+def __filter_regex(items, attr, value):
+    """select from items list where 'value' is a regex matching the attribute"""
+    # start with an empty result set
+    filtered_items = []
+    # iterate over the list of items
+    for item in items:
+        # append the current item to the result set if matching
+        if re.match(value.lower(), item[attr].lower()):
+            filtered_items.append(item)
+    # return the filtered list
+    return filtered_items
 
 def __filter_less_than(items, attr, value):
     """select from items list where the attribute is less than 'value' as integers"""
@@ -167,8 +192,8 @@ def __parse_command_arg_filter(command_arg_filter=None):
         'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
         'replacementid': '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
         'ip': '^(?P<attr>ip)(?P<operator>[=])(?P<value>\d+\.\d+\.\d+.\d+)$',
-        'name': '^(?P<attr>name)(?P<operator>[~])(?P<value>.+)$',
-        'replacementname': '(?P<attr>replacementname)(?P<operator>[~])(?P<value>.+)$',
+        'name': '^(?P<attr>name)(?P<operator>[~!%])(?P<value>.+)$',
+        'replacementname': '(?P<attr>replacementname)(?P<operator>[~!%])(?P<value>.+)$',
         'publishedon': '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
         'deprecatedon': '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
         'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$'
