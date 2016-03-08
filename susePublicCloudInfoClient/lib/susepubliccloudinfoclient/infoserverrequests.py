@@ -163,6 +163,7 @@ def __get_data(url):
     """Make the request and return the data or None in case of failure"""
     try:
         response = requests.get(url)
+        response.raise_for_status()
     except requests.exceptions.HTTPError as e:
         __error("The server responded with an error.\n%s" % e)
     except requests.exceptions.Timeout as e:
