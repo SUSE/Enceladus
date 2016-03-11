@@ -1,0 +1,84 @@
+#! /bin/sh
+# Copyright 2016 SUSE LLC All Rights Reserved.
+#
+#  This file is part of serviceAccessConfig
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+### BEGIN INIT INFO
+# Provides:          serviceAccessConfig
+# Required-Start:    $apache2 $haproxy
+# Required-Stop:     $null
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Config update service for the CSP Infrastructure servers
+### END INIT INFO
+
+# Return values acc. to LSB for all commands but status:
+# 0 - success
+# 1 - generic or unspecified error
+# 2 - invalid or excess argument(s)
+# 3 - unimplemented feature (e.g. "reload")
+# 4 - insufficient privilege
+# 5 - program is not installed
+# 6 - program is not configured
+# 7 - program is not running
+# Do NOT "set -e"
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+NAME=serviceAccessConfig
+EXEC=/usr/sbin/serviceAccessConfig
+PIDFILE=/var/run/$NAME.pid
+. /etc/rc.status
+rc_reset
+
+# Exit if the package is not installed
+[ -x "$EXEC" ] || exit 0
+
+start() {
+    /sbin/startproc -p $PIDFILE $EXEC
+}
+
+stop() {
+    /sbin/killproc -p $PIDFILE $EXEC
+}
+
+case "$1" in
+    start)
+        $1
+        rc_status -v
+        ;;
+    stop)
+        $1
+        rc_status -v
+        ;;
+    reload)
+        stop
+        start
+        rc_status -v
+        ;;
+    restart|force-reload)
+        stop
+        start
+        ;;
+    status)
+        /sbin/checkproc -p $PIDFILE $EXEC
+        rc_status -v
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|reload|restart|force-reload}"
+    exit 3
+    ;;
+esac
