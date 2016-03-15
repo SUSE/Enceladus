@@ -27,14 +27,14 @@ Usage:
     serviceAccessConfig --version
 
 Options:
-    --config
+    --config=<config-file-name>
         The configuration file for serviceAccessConfig
     -h --help
         Show help
-    --ipdata
+    --ipdata=<ip-data-file-name>
         The source data file to monitor from which the CIDR blocks will
         be extracted to generate the access data for the configured service(s)
-    --log
+    --log=<log-file-name>
         The log file to be written
 """
 
@@ -70,7 +70,7 @@ if not parsed:
 log_file_name = command_args.get('--log')
 if not log_file_name:
     if (
-            generator_config.has_section('accessservice') and 
+            generator_config.has_section('accessservice') and
             generator_config.has_option('accessservice', 'logFile')
     ):
         log_file_name = generator_config.get('accessservice', 'logFile')
@@ -103,6 +103,6 @@ if command_args.get('--ipdata'):
 generators = get_access_rule_generators(generator_config)
 for generator in generators:
     generator.update_config()
-    
-        
-    
+
+
+
