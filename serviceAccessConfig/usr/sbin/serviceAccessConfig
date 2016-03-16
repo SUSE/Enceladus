@@ -1,0 +1,108 @@
+#!/usr/bin/python
+
+#  Copyright (C) 2016 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+#  All rights reserved.
+#
+#  This file is part of serviceAccessConfig
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+"""Command serviceAccessConfig
+
+Usage:
+    serviceAccessConfig  -h | --help
+    serviceAccessConfig [--config=<config-file-name>] [--ipdata=<ip-data-file-name>] [--log=<log-file-name>]
+    serviceAccessConfig --version
+
+Options:
+    --config=<config-file-name>
+        The configuration file for serviceAccessConfig
+    -h --help
+        Show help
+    --ipdata=<ip-data-file-name>
+        The source data file to monitor from which the CIDR blocks will
+        be extracted to generate the access data for the configured service(s)
+    --log=<log-file-name>
+        The log file to be written
+"""
+
+import ConfigParser
+import logging
+import sys
+
+from docopt import docopt
+
+from serviceAccessConfig.generatorfactory import get_access_rule_generators
+from serviceAccessConfig.version import version
+
+command_args = docopt(__doc__, version=version)
+
+default_config_file = '/etc/serviceaccess/srvAccess.cfg'
+config_file_name = command_args.get('--config') or default_config_file
+
+generator_config = ConfigParser.RawConfigParser()
+try:
+    parsed = generator_config.read(config_file_name)
+except:
+    error_msg = 'Could not parse configuration file %s' % config_file_name
+    print >> sys.stderr, error_msg
+    type, value, tb = sys.exc_info()
+    print >> sys.stderr, value.message
+    sys.exit(1)
+
+if not parsed:
+    error_msg = 'Error parsing config file: %s' % config_file_name
+    print >> sys.stderr, error_msg
+    sys.exit(1)
+
+log_file_name = command_args.get('--log')
+if not log_file_name:
+    if (
+            generator_config.has_section('accessservice') and
+            generator_config.has_option('accessservice', 'logFile')
+    ):
+        log_file_name = generator_config.get('accessservice', 'logFile')
+    else:
+        error_msg = 'Could not determine log file name, no command line '
+        error_msg += 'option given and no option in config '
+        error_msg += 'file "%s"' % config_file_name
+        print >> sys.stderr, error_msg
+        sys.exit(1)
+
+# Start logging
+try:
+    logging.basicConfig(
+        filename=log_file_name,
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s:%(message)s'
+    )
+except IOError:
+    error_msg = 'Could not open log file "%s" for writing.' % log_file_name
+    print >> sys.stderr, error_msg
+    sys.exit(1)
+
+if command_args.get('--ipdata'):
+    generator_config.set(
+        'accessservice',
+        'ipdata',
+        command_args.get('--ipdata')
+    )
+
+generators = get_access_rule_generators(generator_config)
+for generator in generators:
+    generator.update_config()
+
+
+
