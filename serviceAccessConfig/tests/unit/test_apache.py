@@ -228,4 +228,58 @@ def test_update_config_v24(
     else:
         msg = 'Test failed, not removing test directory '
         msg += '"%s" to aid debugging ' % utils.get_test_tmpdir()
-        assert 1 == 0, msg
+        assert False, msg
+
+
+# ======================================================================
+@patch('serviceAccessConfig.accessrulegenerator.os.path.exists',
+       return_value=False)
+@patch('serviceAccessConfig.apache.os.path.exists', return_value=False)
+@patch('serviceAccessConfig.apache.os.access', return_value=False)
+@patch('serviceAccessConfig.apache.glob.glob',
+       return_value=['apache-22-24-upgrade'])
+def test_update_config_v24_large_IP_set(
+        mock_glob,
+        mock_osaccess,
+        mock_ospath_apache,
+        mock_ospath_base):
+    """Test we get the expected modifications in the config file"""
+
+    utils.create_test_tmpdir()
+    utils.copy_to_testdir('%s/apache-vhost.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    ip_config = utils.get_config('%s/ip_data.cfg' % utils.get_data_path())
+    large_ip_set = '192.168.1.0/24,' * 400
+    large_ip_set += '192.168.1.0/24'
+    ip_config.set('region3', 'public-ips', large_ip_set)
+    large_ip_data = open('%s/large_ip_data.cfg' % utils.get_test_tmpdir(), 'w')
+    ip_config.write(large_ip_data)
+    large_ip_data.close()
+
+    gen = ServiceAccessGeneratorApache(
+        '%s/large_ip_data.cfg' % utils.get_test_tmpdir()
+    )
+    gen.set_config_values(config)
+    with pytest.raises(ServiceAccessGeneratorServiceRestartError) as excinfo:
+        gen.update_config()
+
+    # Load the reference result data
+    ref_result_file = (
+        '%s/apache-vhost-24-large-ip-set.cfg'
+        % utils.get_reference_result_path()
+    )
+    ref_result = open(ref_result_file).read()
+
+    # Load the generated result
+    gen_result_file = (
+        '%s/apache-vhost.cfg' % utils.get_test_tmpdir()
+    )
+    gen_result = open(gen_result_file).read()
+
+    if ref_result == gen_result:
+        # success
+        utils.remove_test_tmpdir()
+    else:
+        msg = 'Test failed, not removing test directory '
+        msg += '"%s" to aid debugging ' % utils.get_test_tmpdir()
+        assert False, msg

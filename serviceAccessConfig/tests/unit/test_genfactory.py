@@ -76,7 +76,7 @@ def test_factory_missing_plugin(mock_logging):
 # ======================================================================
 @patch('serviceAccessConfig.generatorfactory.logging')
 def test_factory_missing_option(mock_logging):
-    """Test that an incomplte configuration file, with the missing 'ipdata'
+    """Test that an incomplete configuration file, with the missing 'ipdata'
        option in the 'accessservice' triggers and error"""
 
     config = utils.get_config(
