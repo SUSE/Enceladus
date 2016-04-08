@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ec2utilsbase.  If not, see <http://www.gnu.org/licenses/>.
 
-import boto
-import boto.ec2
+import boto3
 import ConfigParser
 import os
 
@@ -28,41 +27,35 @@ class EC2Utils:
 
     def __init__(self):
 
-        self.ec2 = None
         self.region = None
         self.verbose = None
 
     # ---------------------------------------------------------------------
     def _connect(self):
         """Connect to EC2"""
-        if self.ec2:
-            return True
 
         if self.region:
-            self.ec2 = boto.ec2.connect_to_region(
-                self.region,
+            ec2 = boto3.client(
                 aws_access_key_id=self.access_key,
-                aws_secret_access_key=self.secret_key
+                aws_secret_access_key=self.secret_key,
+                region_name=self.region,
+                service_name='ec2'
             )
         else:
             self.region = 'UNKNOWN'
 
-        if not self.ec2:
+        if not ec2:
             msg = 'Could not connect to region: %s ' % self.region
             raise EC2ConnectionException(msg)
 
-        if self.verbose:
-            print 'Connected to region: ', self.region
-
-        return True
+        return ec2
 
     # ---------------------------------------------------------------------
-    def _disconnect_from_ec2(self):
-        """Disconnect from EC2"""
-        if self.ec2:
-            self.ec2.close()
-            self.ec2 = None
-
+    def _get_owned_images(self):
+        """Return the list of images owned by the account used for
+           uploading"""
+        return self._connect().describe_images(Owners=['self'])['Images']
+    
     # ---------------------------------------------------------------------
     def _set_access_keys():
         """Set the access keys for the connection"""
@@ -79,7 +72,9 @@ class EC2Utils:
         if self.region and self.region == region:
             return True
 
-        self._disconnect_from_ec2()
+        if self.verbose:
+            print 'Using EC2 region: ', region
+            
         self.region = region
 
         return True
