@@ -44,12 +44,15 @@ class EC2ImageUploader(EC2Utils):
                  launch_inst_type='m1.small',
                  root_volume_size=10,
                  secret_key=None,
+                 security_group_ids='',
                  sriov_type=None,
                  ssh_key_pair_name=None,
                  ssh_key_private_key_file=None,
                  ssh_timeout=300,
                  use_grub2=False,
+                 use_private_ip=False,
                  verbose=None,
+                 vpc_subnet_id='',
                  wait_count=1):
         EC2Utils.__init__(self)
 
@@ -61,16 +64,19 @@ class EC2ImageUploader(EC2Utils):
         self.image_name = image_name
         self.image_virt_type = image_virt_type
         self.inst_user_name = inst_user_name
-        self.launch_ami = launch_ami
+        self.launch_ami_id = launch_ami
         self.launch_ins_type = launch_inst_type
         self.root_volume_size = int(root_volume_size)
         self.secret_key = secret_key
+        self.security_group_ids = security_group_ids
         self.sriov_type = sriov_type
         self.ssh_key_pair_name = ssh_key_pair_name
         self.ssh_key_private_key_file = ssh_key_private_key_file
         self.ssh_timeout = ssh_timeout
         self.use_grub2 = use_grub2
+        self.use_private_ip = use_private_ip
         self.verbose = verbose
+        self.vpc_subnet_id = vpc_subnet_id
         self.wait_count = wait_count
 
         self.created_volumes = []
@@ -138,6 +144,41 @@ class EC2ImageUploader(EC2Utils):
             if image['Name'] == self.image_name:
                 msg = 'Image with name "%s" already exists' % self.image_name
                 raise EC2UploadImgException(msg)
+
+    # ---------------------------------------------------------------------
+    def _check_security_groups_exist(self):
+        """Check that the specified security groups exist"""
+        try:
+            self._connect().describe_security_groups(
+                GroupIds=self.security_group_ids.split(',')
+            )
+        except:
+            error_msg = 'One or more of the specified security groups '
+            error_msg += 'could not be found: %s' % self.security_group_ids
+            raise EC2UploadImgException(error_msg)
+
+    # ---------------------------------------------------------------------
+    def _check_subnet_exists(self):
+        """Verify that the subnet being used for the helper instance
+           exists"""
+        try:
+            self._connect().describe_subnets(SubnetIds=[self.vpc_subnet_id])
+        except:
+            error_msg = 'Specified subnet %s not found' % self.vpc_subnet_id
+            raise EC2UploadImgException(error_msg)
+
+    # ---------------------------------------------------------------------
+    def _check_virt_type_consistent(self):
+        """When using root swap the virtualization type of the helper
+           image and the target image must be the same"""
+        image = self._connect().describe_images(
+            ImageIds=[self.launch_ami_id]
+        )['Images'][0]
+        if not self.image_virt_type == image['VirtualizationType']:
+            error_msg = 'Virtualization type of the helper image and the '
+            error_msg += 'target image must be the same when using '
+            error_msg += 'root-swap method for image creation.'
+            raise EC2UploadImgException(error_msg)
 
     # ---------------------------------------------------------------------
     def _check_wait_status(
@@ -217,6 +258,10 @@ class EC2ImageUploader(EC2Utils):
     def _create_image_root_volume(self, source):
         """Create a root volume from the image"""
         self._check_image_exists()
+        if self.vpc_subnet_id:
+            self._check_subnet_exists()
+        if self.security_group_ids:
+            self._check_security_groups_exist()
         helper_instance = self._launch_helper_instance()
         self.helper_instance = helper_instance
         store_volume = self._create_storge_volume()
@@ -433,24 +478,27 @@ class EC2ImageUploader(EC2Utils):
     def _establish_ssh_connection(self, instance):
         """Connect to the running instance with ssh"""
         if self.verbose:
-            print 'Waiting to obtain instance public IP address'
+            print 'Waiting to obtain instance IP address'
         instance_ip = instance.get('PublicIpAddress')
+        if self.use_private_ip:
+            instance_ip = instance.get('PrivateIpAddress')
         timeout_counter = 1
         while not instance_ip:
             instance = self._connect().describe_instances(
                 InstanceIds=[instance['InstanceId']]
             )['Reservations'][0]['Instances'][0]
             instance_ip = instance.get('PublicIpAddress')
+            if self.use_private_ip:
+                instance_ip = instance.get('PrivateIpAddress')
             if self.verbose:
                 print '. ',
                 sys.stdout.flush()
             if timeout_counter * self.default_sleep >= self.ssh_timeout:
-                msg = 'Unable to obtain the instance public IP address'
+                msg = 'Unable to obtain the instance IP address'
                 raise EC2UploadImgException(msg)
             timeout_counter += 1
         if self.verbose:
             print
-
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.WarningPolicy())
         if self.verbose:
@@ -575,15 +623,27 @@ class EC2ImageUploader(EC2Utils):
     def _launch_helper_instance(self):
         """Launch the helper instance that is used to create the new image"""
         self._set_zone_to_use()
-        # TODO also support the use of specific security group
-        instance = self._connect().run_instances(
-            ImageId=self.launch_ami,
-            MinCount=1,
-            MaxCount=1,
-            KeyName=self.ssh_key_pair_name,
-            InstanceType=self.launch_ins_type,
-            Placement={'AvailabilityZone': self.zone}
-        )['Instances'][0]
+        if self.security_group_ids:
+            instance = self._connect().run_instances(
+                ImageId=self.launch_ami_id,
+                MinCount=1,
+                MaxCount=1,
+                KeyName=self.ssh_key_pair_name,
+                InstanceType=self.launch_ins_type,
+                Placement={'AvailabilityZone': self.zone},
+                SubnetId=self.vpc_subnet_id,
+                SecurityGroupIds=self.security_group_ids.split(',')
+            )['Instances'][0]
+        else:
+            instance = self._connect().run_instances(
+                ImageId=self.launch_ami_id,
+                MinCount=1,
+                MaxCount=1,
+                KeyName=self.ssh_key_pair_name,
+                InstanceType=self.launch_ins_type,
+                Placement={'AvailabilityZone': self.zone},
+                SubnetId=self.vpc_subnet_id,
+            )['Instances'][0]
 
         self.instance_ids.append(instance['InstanceId'])
 
@@ -614,7 +674,6 @@ class EC2ImageUploader(EC2Utils):
                 error_msg,
                 repeat_count
             )
-            
 
         return instance
 
@@ -668,6 +727,14 @@ class EC2ImageUploader(EC2Utils):
     # ---------------------------------------------------------------------
     def _set_zone_to_use(self):
         """Set the availability zone to use for all operations"""
+        if self.vpc_subnet_id:
+            # If a subnet is given we need to launch the helper instance
+            # in the AZ wher ethe subnet is defined
+            subnet = self._connect().describe_subnets(
+                SubnetIds=[self.vpc_subnet_id]
+            )['Subnets'][0]
+            self.zone = subnet['AvailabilityZone']
+            return
         zones = self._connect().describe_availability_zones()[
             'AvailabilityZones']
         availability_zones = []
@@ -777,6 +844,7 @@ class EC2ImageUploader(EC2Utils):
         """Creae an AMI (Amazon Machine Image) from the given source using
            the root swap method"""
 
+        self._check_virt_type_consistent()
         target_root_volume = self._create_image_root_volume(source)
         self._connect().stop_instances(InstanceIds=self.instance_ids)
         if self.verbose:
