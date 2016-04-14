@@ -31,6 +31,22 @@ HOSTSFILE_PATH = '/etc/hosts'
 REGISTRATION_DATA_DIR = '/var/lib/cloudregister/'
 REGISTERED_SMT_SERVER_DATA_FILE_NAME = 'currentSMTInfo.obj'
 
+# ----------------------------------------------------------------------------
+def add_hosts_entry(smt_server):
+    """Add an entry to the /etc/hosts file for the given SMT server"""
+
+    smt_hosts_entry_comment = '\n# Added by SMT registration do not remove, '
+    smt_hosts_entry_comment += 'retain comment as well\n'
+    hosts = open('/etc/hosts', 'a')
+    hosts.write(smt_hosts_entry_comment)
+    entry = '%s\t%s\t%s\n' % (
+        smt_server.get_ip(),
+        smt_server.get_FQDN(),
+        smt_server.get_name()
+    )
+    hosts.write(entry)
+    hosts.close()
+    logging.info('Modified /etc/hosts, added: %s' % entry)
 
 # ----------------------------------------------------------------------------
 def check_registration(smt_server_name):

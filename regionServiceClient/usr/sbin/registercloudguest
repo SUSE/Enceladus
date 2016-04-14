@@ -304,16 +304,7 @@ if not registration_target:
     sys.exit(1)
 
 # Add the target SMT server to the hosts file
-smt_hosts_entry_comment = '\n# Added by SMT registration do not remove, '
-smt_hosts_entry_comment += 'retain comment as well\n'
-hosts = open('/etc/hosts', 'a')
-hosts.write(smt_hosts_entry_comment)
-entry = '%s\t%s\t%s\n' % (registration_target.get_ip(),
-                          registration_target.get_FQDN(),
-                          registration_target.get_name())
-hosts.write(entry)
-hosts.close()
-logging.info('Modified /etc/hosts, added: %s' % entry)
+utils.add_hosts_entry(registration_target)
 
 # Create location to store data if it does not exist
 if not os.path.exists(utils.REGISTRATION_DATA_DIR):
@@ -350,23 +341,46 @@ if cfg.has_section('instance'):
 register11 = '/usr/lib/suseRegister/bin/clientSetup4SMT.sh'
 register12 = '/usr/sbin/SUSEConnect'
 if (os.path.exists(register11) and os.access(register11, os.X_OK)):
-    cmd = register11
-    cmd += ' --host %s ' % registration_target.get_FQDN()
-    cmd += '--fingerprint %s ' % registration_target.get_fingerprint()
-    cmd += '--yes '
+    base_registered = False
+    failed_smts = []
+    while not base_registered:
+        cmd = register11
+        cmd += ' --host %s ' % registration_target.get_FQDN()
+        cmd += '--fingerprint %s ' % registration_target.get_fingerprint()
+        cmd += '--yes '
 
-    if os.path.exists(instance_data_filepath):
-        cmd += '--regdata %s' % instance_data_filepath
+        if os.path.exists(instance_data_filepath):
+            cmd += '--regdata %s' % instance_data_filepath
 
-    if force_new_registration:
-        cmd += ' > /dev/null 2>&1'
+        if force_new_registration:
+            cmd += ' > /dev/null 2>&1'
 
-    logging.info('Registration: %s' % cmd)
-    res = os.system(cmd)
+        logging.info('Registration: %s' % cmd)
+        res = os.system(cmd)
 
-    if res:
-        logging.error('Registration failed')
-        sys.exit(1)
+        if res:
+            failed_smts.append(registration_target.get_ip())
+            if len(failed_smts) == len(known_smt_servers):
+                logging.error('Registration failed')
+                sys.exit(1)
+            for smt in known_smt_servers:
+                if (
+                        smt.get_ip() != registration_target.get_ip() and
+                        smt.get_ip() not in failed_smts
+                ):
+                    error_msg = 'Registration with %s failed. Trying %s'
+                    logging.error(
+                        error_msg % (
+                            registration_target.get_ip(),
+                            smt.get_ip()
+                        )
+                    )
+                    utils.remove_registration_data([registration_target])
+                    utils.add_hosts_entry(smt)
+                    registration_target = smt
+                    break
+        else:
+            base_registered = True
 
     # registration was successful, let's check if the repos do
     # really exist and if not complete the registration by calling
@@ -390,17 +404,45 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         sys.exit(1)
 
     # Register the base product first
-    cmd = [register12, '--url', 'https://%s' % registration_target.get_FQDN()]
-    if os.path.exists(instance_data_filepath):
-        cmd.append('--instance-data')
-        cmd.append(instance_data_filepath)
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    res = p.communicate()
-    for entry in res:
-        if error_exp.match(entry):
-            logging.error('Baseproduct registration failed')
-            logging.error('\t%s' % entry)
-            sys.exit(1)
+    base_registered = False
+    failed_smts = []
+    while not base_registered:
+        cmd = [register12, '--url']
+        cmd.append('https://%s' % registration_target.get_FQDN())
+        if os.path.exists(instance_data_filepath):
+            cmd.append('--instance-data')
+            cmd.append(instance_data_filepath)
+        p = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        res = p.communicate()
+        for entry in res:
+            if error_exp.match(entry):
+                failed_smts.append(registration_target.get_ip())
+                if len(failed_smts) == len(known_smt_servers):
+                    logging.error('Baseproduct registration failed')
+                    logging.error('\t%s' % entry)
+                    sys.exit(1)
+                for smt in known_smt_servers:
+                    if (
+                            smt.get_ip() != registration_target.get_ip() and
+                            smt.get_ip() not in failed_smts
+                    ):
+                        error_msg = 'Registration with %s failed. Trying %s'
+                        logging.error(
+                            error_msg % (
+                                registration_target.get_ip(),
+                                smt.get_ip()
+                            )
+                        )
+                        utils.remove_registration_data([registration_target])
+                        utils.add_hosts_entry(smt)
+                        registration_target = smt
+                        break
+                break
+        else:
+            base_registered = True
 
     for product in products:
         cmd = [
