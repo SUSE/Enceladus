@@ -1,0 +1,11 @@
+/var/log/regionService/regionInfo.log {
+    compress
+    dateext
+    missingok
+    notifempty
+
+    maxage 30
+    rotate 10
+    size 100M
+}
+    
