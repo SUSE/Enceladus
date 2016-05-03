@@ -32,6 +32,11 @@ Plugins for Nagios/Icinga used to monitor the SUSE update infrastructure
 in the Public CLoud covering cases for which we could not find already
 developed plugins
 
+# regionService
+
+Server side for providing update server information per region in a cloud
+framework.
+
 # regionServiceClient
 
 The client for the SUSE Linux Enterprise Specific update infrastructure. The
