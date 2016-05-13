@@ -75,7 +75,7 @@ help_msg = '2 Letter country identifierfor for the organization creating '
 help_msg += 'the certificate'
 argparse.add_option(
     '-c', '--country',
-    help=help_msg
+    help=help_msg,
     dest='country'
 )
 argparse.add_option(
