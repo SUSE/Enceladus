@@ -190,7 +190,7 @@ if proxy:
 # Get the SMT server information from the metadats server or
 # one of the configured region servers
 response = None
-try:
+if cfg.has_option('server', 'use_metadata_server'):
     metadata_url = cfg.get('server', 'use_metadata_server')
     logging.info(
         'Using metada server "%s" to obtain SMT information' % metadata_url
@@ -224,7 +224,7 @@ try:
         smt_info_xml += '%s="%s" ' % (attr, value)
     smt_info_xml += '/></regionSMTdata>'
     smtDataRoot = etree.fromstring(smt_info_xml)
-except:
+else:
     # Get the API to use
     api = cfg.get('server', 'api')
     logging.info('Using API: %s' % api)
