@@ -23,6 +23,7 @@
 import ConfigParser
 import base64
 import glob
+import json
 import logging
 import os
 import pickle
@@ -176,13 +177,6 @@ utils.start_logging()
 if force_new_registration:
     logging.info('Forced new registration')
 
-# Get the API to use
-api = cfg.get('server', 'api')
-logging.info('Using API: %s' % api)
-
-# Add regionserver arguments
-api = add_region_server_args_to_URL(api, cfg)
-
 # Proxy setup
 proxies = None
 proxy = utils.set_proxy()
@@ -193,45 +187,87 @@ if proxy:
                'https_proxy': https_proxy}
     logging.info('Using proxy settings: %s' % proxies)
 
-# Get the SMT server information from one of the configured region servers
+# Get the SMT server information from the metadats server or
+# one of the configured region servers
 response = None
-# Get the location of the cert files for the region servers
-cert_dir = cfg.get('server', 'certLocation')
-region_servers = cfg.get('server', 'regionsrv').split(',')
-random.shuffle(region_servers)
-for srv in region_servers:
-    srvName = srv.strip()
-    logging.info('Using region server: %s' % srvName)
-    certFile = cert_dir + '/' + srvName + '.pem'
-    if not os.path.isfile(certFile):
-        logging.info('No cert found: %s skip this server' % certFile)
-        continue
+if cfg.has_option('server', 'metadata_server'):
+    metadata_url = cfg.get('server', 'metadata_server')
+    logging.info(
+        'Using metada server "%s" to obtain SMT information' % metadata_url
+    )
     try:
-        response = requests.get('https://%s/%s' % (srvName, api),
-                                verify=certFile,
-                                timeout=15.0,
-                                proxies=proxies)
-        if response.status_code == 200:
-            break
-        else:
-            logging.error('=' * 20)
-            logging.error('Server returned: %d' % response.status_code)
-            logging.error(response.text)
-            logging.error('=' * 20)
-    except:
-        logging.error('No response from: %s' % srvName)
-        if srv == region_servers[-1]:
-            logging.error('None of the servers responded')
-            logging.error('\tAttempted: %s' % region_servers)
-            logging.error('Exiting without registration')
+        response = requests.get(
+            metadata_url,
+            timeout=15.0,
+            proxies=proxies
+        )
+        if response.status_code != 200:
+            raise Exception(
+                'Metadata server returned %s' % response.status_code
+            )
+    except Exception as e:
+        logging.error('=' * 20)
+        logging.error(e.message)
+        logging.error('Unable to obtain SMT server information, exiting')
+        sys.exit(1)
+    smt_info = json.loads(response.text)
+    expected_entries = ('fingerprint', 'SMTserverIP', 'SMTserverName')
+    smt_info_xml = '<regionSMTdata><smtInfo '
+    for attr in expected_entries:
+        value = smt_info.get(attr)
+        if not value:
+            logging.error(
+                'Metadata server did not supply a vlaue for "%s"' % attr
+            )
+            logging.error('Cannot proceed, exiting registration code')
             sys.exit(1)
-        continue
+        smt_info_xml += '%s="%s" ' % (attr, value)
+    smt_info_xml += '/></regionSMTdata>'
+    smtDataRoot = etree.fromstring(smt_info_xml)
+else:
+    # Get the API to use
+    api = cfg.get('server', 'api')
+    logging.info('Using API: %s' % api)
+    # Add regionserver arguments
+    api = add_region_server_args_to_URL(api, cfg)
+    # Get the location of the cert files for the region servers
+    cert_dir = cfg.get('server', 'certLocation')
+    region_servers = cfg.get('server', 'regionsrv').split(',')
+    random.shuffle(region_servers)
+    for srv in region_servers:
+        srvName = srv.strip()
+        logging.info('Using region server: %s' % srvName)
+        certFile = cert_dir + '/' + srvName + '.pem'
+        if not os.path.isfile(certFile):
+            logging.info('No cert found: %s skip this server' % certFile)
+            continue
+        try:
+            response = requests.get(
+                'https://%s/%s' % (srvName, api),
+                verify=certFile,
+                timeout=15.0,
+                proxies=proxies
+            )
+            if response.status_code == 200:
+                break
+            else:
+                logging.error('=' * 20)
+                logging.error('Server returned: %d' % response.status_code)
+                logging.error(response.text)
+                logging.error('=' * 20)
+        except:
+            logging.error('No response from: %s' % srvName)
+            if srv == region_servers[-1]:
+                logging.error('None of the servers responded')
+                logging.error('\tAttempted: %s' % region_servers)
+                logging.error('Exiting without registration')
+                sys.exit(1)
+            continue
+    if (not response) or (not response.status_code == 200):
+        logging.error('Request not answered by any server, exiting')
+        sys.exit(1)
+    smtDataRoot = etree.fromstring(response.text)
 
-if (not response) or (not response.status_code == 200):
-    logging.error('Request not answered by any server, exiting')
-    sys.exit(1)
-
-smtDataRoot = etree.fromstring(response.text)
 known_smt_servers = []
 smt_count = 1
 if not os.path.exists(utils.REGISTRATION_DATA_DIR):
