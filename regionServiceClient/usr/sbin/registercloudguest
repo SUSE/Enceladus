@@ -190,8 +190,8 @@ if proxy:
 # Get the SMT server information from the metadats server or
 # one of the configured region servers
 response = None
-if cfg.has_option('server', 'use_metadata_server'):
-    metadata_url = cfg.get('server', 'use_metadata_server')
+if cfg.has_option('server', 'metadata_server'):
+    metadata_url = cfg.get('server', 'metadata_server')
     logging.info(
         'Using metada server "%s" to obtain SMT information' % metadata_url
     )
