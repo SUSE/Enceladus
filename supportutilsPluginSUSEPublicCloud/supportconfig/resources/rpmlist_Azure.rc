@@ -1,4 +1,5 @@
 azuremetadata
+python-azure-agent
 python-azure-sdk
 python-azurectl
 regionServiceClientConfigAzure
