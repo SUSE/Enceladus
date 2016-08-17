@@ -71,7 +71,7 @@ class EC2Metadata:
 
     def _get(self, uri):
         url = 'http://%s/%s/%s' % (self.addr, self.api, uri)
-        value = urllib.urlopen(url).read()
+        value = urllib.urlopen(url, proxies={}).read()
         if "404 - Not Found" in value:
             return None
 
@@ -113,7 +113,7 @@ class EC2Metadata:
     def getAvailableAPIVersions(self):
         """Return a list of the available API versions"""
         url = 'http://%s/' %self.addr
-        value = urllib.urlopen(url).read()
+        value = urllib.urlopen(url, proxies={}).read()
         apiVers = value.split('\n')
         return apiVers
     
@@ -129,7 +129,7 @@ class EC2Metadata:
             # Nothing to do
             return self.api
         url = 'http://%s' %self.addr
-        availableAPIs = urllib.urlopen(url).read().split('\n')
+        availableAPIs = urllib.urlopen(url, proxies={}).read().split('\n')
         if apiVersion not in availableAPIs:
             msg = 'Requested API version "%s" not available' %apiVersion
             raise EC2MetadataError(msg)
