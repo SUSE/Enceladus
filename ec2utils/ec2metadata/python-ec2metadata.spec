@@ -18,7 +18,7 @@
 
 %define upstream_name ec2metadata
 Name:           python-ec2metadata
-Version:        1.5.3
+Version:        1.5.4
 Release:        0
 Summary:        Collect instance metadata in EC2
 License:        GPL-3.0+
