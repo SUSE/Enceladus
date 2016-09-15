@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with ec2deprecateimg. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 try:
     import setuptools
 except ImportError:
@@ -41,5 +43,6 @@ if __name__ == '__main__':
         package_dir={
             '': 'lib',
         },
-        scripts=['ec2deprecateimg']
+        scripts=['ec2deprecateimg'],
+        namespace_packages = ['ec2utils']
     )
