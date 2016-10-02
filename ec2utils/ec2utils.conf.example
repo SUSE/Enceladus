@@ -119,6 +119,17 @@ backing-store = mag,ssd
 # ssk_key_name =
 # ssh_private_key =
 
+[region-us-east-2]
+ami = ami-71ca9114
+instance_type = t2.micro
+aki_i386 = aki-da055ebf
+aki_x86_64 = aki-d83a61bd
+user = ec2-user
+backing-store = ssd
+# Allow a region to overwrite the account key
+# ssk_key_name =
+# ssh_private_key =
+
 [region-us-gov-west-1]
 ami = ami-c2b5d7e1
 instance_type = t2.micro
