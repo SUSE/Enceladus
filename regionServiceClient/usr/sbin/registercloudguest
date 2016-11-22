@@ -425,9 +425,10 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
     if not reposExist:
         cmd = "suse_register --restore-repos"
         res = os.system(cmd)
+        if res:
+            logging.info('Repositories were not restored')
 
-    if res:
-        logging.info('Repositories were not restored')
+    utils.enable_repository('SLE11-Public-Cloud-Module')
 
 elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
     # get product list
