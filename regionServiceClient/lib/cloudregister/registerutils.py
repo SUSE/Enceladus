@@ -31,6 +31,7 @@ HOSTSFILE_PATH = '/etc/hosts'
 REGISTRATION_DATA_DIR = '/var/lib/cloudregister/'
 REGISTERED_SMT_SERVER_DATA_FILE_NAME = 'currentSMTInfo.obj'
 
+
 # ----------------------------------------------------------------------------
 def add_hosts_entry(smt_server):
     """Add an entry to the /etc/hosts file for the given SMT server"""
@@ -47,6 +48,7 @@ def add_hosts_entry(smt_server):
     hosts.write(entry)
     hosts.close()
     logging.info('Modified /etc/hosts, added: %s' % entry)
+
 
 # ----------------------------------------------------------------------------
 def check_registration(smt_server_name):
@@ -75,6 +77,16 @@ def clean_hosts_file(domain_name):
     with open(HOSTSFILE_PATH, 'w') as hosts_file:
         for entry in new_hosts_content:
             hosts_file.write(entry)
+
+
+# ----------------------------------------------------------------------------
+def enable_repository(repo_name):
+    """Enable the given repository"""
+
+    cmd = ['zypper', 'mr', '-e', repo_name]
+    res = exec_subprocess(cmd)
+    if not res:
+        logging.error('Unable to enable repository %s' % repo_name)
 
 
 # ----------------------------------------------------------------------------
