@@ -28,6 +28,19 @@ class SMT:
         self._fingerprint = smtXMLNode.attrib['fingerprint']
         self._cert = None
 
+
+    # --------------------------------------------------------------------
+    def __eq__(self, other_smt):
+        if not isinstance(other_smt, SMT):
+            return False
+        if (
+                self.get_ip() == other_smt.get_ip() and
+                self.get_FQDN() == other_smt.get_FQDN() and
+                self.get_fingerprint() == other_smt.get_fingerprint()):
+            return True
+
+        return False
+    
     # --------------------------------------------------------------------
     def get_cert(self):
         """Return the CA certificate for the SMT server"""
@@ -65,6 +78,7 @@ class SMT:
         """Return the IP address"""
         return self._ip
 
+
     # --------------------------------------------------------------------
     def is_equivalent(self, smt_server):
         """When 2 SMT servers have the same cert fingerprint and their
@@ -72,9 +86,9 @@ class SMT:
         if (
                 self.get_FQDN() == smt_server.get_FQDN() and
                 self.get_fingerprint() == smt_server.get_fingerprint()):
-            return 1
+            return True
 
-        return None
+        return False
 
     # --------------------------------------------------------------------
     def is_responsive(self):
