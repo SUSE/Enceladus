@@ -90,7 +90,6 @@ def get_products():
     return products
 
 
-
 # ----------------------------------------------------------------------------
 # Support custom config file with -f command line option
 configFile = None
@@ -144,7 +143,7 @@ if proxy:
 region_smt_data = utils.fetch_smt_data(cfg, proxies)
 registration_smt = utils.get_current_smt()
 
-region_smt_servers = {'cached' : [], 'new' : [] }
+region_smt_servers = {'cached': [], 'new': []}
 # Compare the smt information received from the SMT data server with
 # the cached data
 for child in region_smt_data:
@@ -222,7 +221,7 @@ if registration_smt:
             )
         else:
             msg = 'Configured SMT unresponsive, could not find '
-            msg += 'no other SMT server in this region is responsive. '
+            msg += 'a replacement SMT server in this region. '
             msg += 'Possible network configuration issue'
             logging.error(msg)
             sys.exit(1)
@@ -331,7 +330,7 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
         res = os.system(cmd)
         if res:
             logging.info('Repositories were not restored')
-    
+
     utils.enable_repository('SLE11-Public-Cloud-Module')
 
 elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
