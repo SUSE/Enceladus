@@ -126,6 +126,7 @@ def enable_repository(repo_name):
     if not res:
         logging.error('Unable to enable repository %s' % repo_name)
 
+
 # ----------------------------------------------------------------------------
 def exec_subprocess(cmd):
     """Execute the given command as a subprocess (blocking)"""
@@ -147,9 +148,8 @@ def fetch_smt_data(cfg, proxies):
     """Retrieve the data for the region SMT servers from a remote host"""
     if cfg.has_option('server', 'metadata_server'):
         metadata_url = cfg.get('server', 'metadata_server')
-        logging.info(
-            'Using metada server "%s" to obtain SMT information' % metadata_url
-        )
+        msg = 'Using metadata server "%s" to obtain SMT information'
+        logging.info(msg % metadata_url)
         try:
             response = requests.get(
                 metadata_url,
@@ -172,7 +172,7 @@ def fetch_smt_data(cfg, proxies):
             value = smt_info.get(attr)
             if not value:
                 logging.error(
-                    'Metadata server did not supply a vlaue for "%s"' % attr
+                    'Metadata server did not supply a value for "%s"' % attr
                 )
                 logging.error('Cannot proceed, exiting registration code')
                 sys.exit(1)
@@ -299,6 +299,7 @@ def get_current_smt():
         return
 
     return smt
+
 
 # ----------------------------------------------------------------------------
 def get_smt_from_store(smt_store_file_path):
@@ -476,14 +477,12 @@ def remove_registration_data():
         clean_hosts_file(domain_name)
         __remove_credentials(server_name)
         __remove_repos(server_name)
-        __remove_service(server_name)        
+        __remove_service(server_name)
         os.unlink(smt_data_file)
         if os.path.exists('/etc/SUSEConnect'):
             os.unlink('/etc/SUSEConnect')
     else:
         logging.info('Nothing to do no registration target')
-
-
 
 
 # ----------------------------------------------------------------------------
