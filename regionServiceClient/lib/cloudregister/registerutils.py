@@ -25,6 +25,7 @@ import requests
 import stat
 import subprocess
 import sys
+import time
 
 from cloudregister import smt
 from lxml import etree
@@ -123,22 +124,33 @@ def enable_repository(repo_name):
 
     cmd = ['zypper', 'mr', '-e', repo_name]
     res = exec_subprocess(cmd)
-    if not res:
+    if res:
         logging.error('Unable to enable repository %s' % repo_name)
 
 
 # ----------------------------------------------------------------------------
-def exec_subprocess(cmd):
-    """Execute the given command as a subprocess (blocking)"""
+def exec_subprocess(cmd, return_channels=False):
+    """Execute the given command as a subprocess (blocking)
+       Returns on off:
+           - exit code of the command
+           - stdout and stderr
+           - -1 indicates an exception"""
     try:
-        cmd = subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        cmd.communicate()
+        out, err = proc.communicate()
+        status = proc.returncode
+        while status is None:
+            time.sleep(1)
+            status = proc.returncode
+        if return_channels:
+            return (out, err)
+        return status
     except:
-        return 0
+        return -1
 
     return 1
 
@@ -547,7 +559,7 @@ def switch_smt_service(smt):
 def update_ca_chain(cmd_w_args_lst):
     """Update the CA chain using the given command with arguments"""
     logging.info('Updating CA certificates: %s' % cmd_w_args_lst[0])
-    if not exec_subprocess(cmd_w_args_lst):
+    if exec_subprocess(cmd_w_args_lst):
         errMsg = 'Certificate update failed'
         logging.error(errMsg)
         return 0
