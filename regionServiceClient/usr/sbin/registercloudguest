@@ -41,6 +41,7 @@ import stat
 import subprocess
 import sys
 import time
+import urlparse
 import uuid
 
 import cloudregister.registerutils as utils
@@ -161,7 +162,7 @@ if cached_smt_servers:
     logging.info('Have extra cached SMT data, clearing cache')
     for smt in cached_smt_servers:
         if registration_smt and smt.is_equivalent(registration_smt):
-            msg = 'Extra cache server is current registration target, '
+            msg = 'Extra cached server is current registration target, '
             msg += 'cleaning up registration'
             logging.info(msg)
             utils.remove_registration_data()
@@ -411,3 +412,16 @@ else:
 
 if os.path.exists(instance_data_filepath):
     os.unlink(instance_data_filepath)
+
+# Enable Nvidia repo if repo(s) are configured and destination can be reached
+if utils.has_nvidia_support():
+    nvidia_repo_names = utils.find_repos('nvidia')
+    for repo_name in nvidia_repo_names:
+        url = urlparse.urlparse(utils.get_repo_url(repo_name))
+        cmd = ['ping', '-c', '2', url.hostname]
+        if utils.exec_subprocess(cmd):
+            msg = 'Cannot reach host: "%s", will not enable repo "%s"'
+            logging.info(msg % (url.hostname, repo_name))
+        else:
+            utils.enable_repository(repo_name)
+        

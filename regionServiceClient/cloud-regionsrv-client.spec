@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 6.5.0
+%define base_version 7.0.0
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -29,6 +29,7 @@ Requires:       cloud-regionsrv-client-config
 Requires:       python
 Requires:       python-lxml
 Requires:       python-requests
+Requires:       python-urlparse
 Requires:       regionsrv-certs
 %if 0%{?suse_version} >= 1315
 Requires:       SUSEConnect
