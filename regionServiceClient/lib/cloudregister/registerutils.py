@@ -25,6 +25,7 @@ import requests
 import stat
 import subprocess
 import sys
+import time
 
 from cloudregister import smt
 from lxml import etree
@@ -123,22 +124,29 @@ def enable_repository(repo_name):
 
     cmd = ['zypper', 'mr', '-e', repo_name]
     res = exec_subprocess(cmd)
-    if not res:
+    if res:
         logging.error('Unable to enable repository %s' % repo_name)
 
 
 # ----------------------------------------------------------------------------
-def exec_subprocess(cmd):
-    """Execute the given command as a subprocess (blocking)"""
+def exec_subprocess(cmd, return_output=False):
+    """Execute the given command as a subprocess (blocking)
+       Returns on off:
+           - exit code of the command
+           - stdout and stderr
+           - -1 indicates an exception"""
     try:
-        cmd = subprocess.Popen(
+        proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        cmd.communicate()
+        out, err = proc.communicate()
+        if return_output:
+            return (out, err)
+        return proc.returncode
     except:
-        return 0
+        return -1
 
     return 1
 
@@ -240,6 +248,24 @@ def find_equivalent_smt_server(configured_smt, known_smt_servers):
 
 
 # ----------------------------------------------------------------------------
+def find_repos(contains_name):
+    """Find all repos that contain the given name (case insensitive) in
+       the repo name"""
+    repo_names = []
+    search_for = contains_name.lower()
+    repos = glob.glob('/etc/zypp/repos.d/*.repo')
+    for repo in repos:
+        repo_cfg = get_config(repo)
+        for section in repo_cfg.sections():
+            cfg_repo_name = repo_cfg.get(section, 'name')
+            repo_name = cfg_repo_name
+            if search_for in repo_name.lower():
+                repo_names.append(cfg_repo_name)
+
+    return repo_names
+
+
+# ----------------------------------------------------------------------------
 def get_available_smt_servers():
     """Return a list of available SMT servers"""
     availabe_smt_servers = []
@@ -302,6 +328,19 @@ def get_current_smt():
 
 
 # ----------------------------------------------------------------------------
+def get_repo_url(repo_name):
+    """Return the url for the given repository"""
+    repos = glob.glob('/etc/zypp/repos.d/*.repo')
+    for repo in repos:
+        repo_cfg = get_config(repo)
+        for section in repo_cfg.sections():
+            if repo_name == repo_cfg.get(section, 'name'):
+                return repo_cfg.get(section, 'baseurl')
+
+    return None
+
+
+# ----------------------------------------------------------------------------
 def get_smt_from_store(smt_store_file_path):
     """Create an SMTinstance from the stored data."""
     if not os.path.exists(smt_store_file_path):
@@ -339,6 +378,16 @@ def get_zypper_pid():
 
     return pidData[0].strip()
 
+
+# ----------------------------------------------------------------------------
+def has_nvidia_support():
+    """Check if the instance has Nvida capabilities"""
+    pci_info, errors = exec_subprocess(['lspci'], True)
+    if 'NVIDIA' in pci_info:
+        logging.info('Instance has Nvidia support')
+        return True
+
+    return False
 
 # ----------------------------------------------------------------------------
 def has_repos(smt_server_name):
@@ -471,7 +520,7 @@ def remove_registration_data():
     if os.path.exists(smt_data_file):
         smt = get_smt_from_store(smt_data_file)
         ip_address = smt.get_ip()
-        logging.info('Clean currentregistration server: %s' % ip_address)
+        logging.info('Clean current registration server: %s' % ip_address)
         server_name = smt.get_FQDN()
         domain_name = smt.get_domain_name()
         clean_hosts_file(domain_name)
@@ -547,7 +596,7 @@ def switch_smt_service(smt):
 def update_ca_chain(cmd_w_args_lst):
     """Update the CA chain using the given command with arguments"""
     logging.info('Updating CA certificates: %s' % cmd_w_args_lst[0])
-    if not exec_subprocess(cmd_w_args_lst):
+    if exec_subprocess(cmd_w_args_lst):
         errMsg = 'Certificate update failed'
         logging.error(errMsg)
         return 0
