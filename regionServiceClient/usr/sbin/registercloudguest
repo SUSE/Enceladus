@@ -111,6 +111,9 @@ if '--delay' in sys.argv:
 cfg = utils.get_config(configFile)
 utils.start_logging()
 
+if not os.path.isdir(utils.REGISTRATION_DATA_DIR):
+    os.makedirs(utils.REGISTRATION_DATA_DIR)
+
 if force_new_registration:
     logging.info('Forced new registration')
 
