@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 7.0.0
+%define base_version 7.0.1
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -29,7 +29,6 @@ Requires:       cloud-regionsrv-client-config
 Requires:       python
 Requires:       python-lxml
 Requires:       python-requests
-Requires:       python-urlparse
 Requires:       regionsrv-certs
 %if 0%{?suse_version} >= 1315
 Requires:       SUSEConnect
@@ -105,6 +104,7 @@ python setup.py install --prefix=%{_prefix}  --root=%{buildroot}
     rm -rf %{buildroot}/etc/init.d
 %endif
 mkdir -p %{buildroot}/var/lib/regionService/certs
+mkdir -p %{buildroot}/var/lib/cloudregister
 
 %pre
 %if 0%{?suse_version} > 1140
@@ -139,6 +139,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_usr}/lib/zypp
 %dir %{_usr}/lib/zypp/plugins
 %dir %{_usr}/lib/zypp/plugins/services
+%dir /var/lib/cloudregister
 %{_sbindir}/registercloudguest
 %{_usr}/lib/zypp/plugins/services/cloud_update
 %{python_sitelib}/cloudregister/__*
