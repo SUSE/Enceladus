@@ -37,13 +37,13 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
-	  "ZipFile": { "Fn::Join": ["\n", [
-	    "from botocore.vendored import requests",
-	    "import json",
+          "ZipFile": { "Fn::Join": ["\n", [
+            "from botocore.vendored import requests",
+            "import json",
             "import cfnresponse",
             "import sys",
             "import re",
-	    "",
+            "",
             "def handler(event, context):",
             "  if event['RequestType'] == 'Delete':",
             "    cfnresponse.send(event, context, cfnresponse.SUCCESS, {})",
@@ -51,13 +51,13 @@
             "    ecs_tag = '-ecs'",
             "  else:",
             "    ecs_tag = ''",
-            "  url = 'https://susepubliccloudinfo.suse.com/v1/amazon/%s/images.json' % event['ResourceProperties']['Region']",
+            "  url = 'https://susepubliccloudinfo.suse.com/v1/amazon/%s/images/active.json' % event['ResourceProperties']['Region']",
             "  try:",
             "    response = requests.get(url)",
             "    response.raise_for_status()",
             "    images = json.loads(response.text)",
             "    for image in images['images']:",
-            "      if image['state'] == 'active' and re.match('{}-v[0-9]*{}-{}-ssd-{}'.format(event['ResourceProperties']['OS'], ecs_tag, event['ResourceProperties']['InstanceType'], event['ResourceProperties']['Architecture']), image['name']):",
+            "      if re.match('{}-v[0-9]*{}-{}-ssd-{}'.format(event['ResourceProperties']['OS'], ecs_tag, event['ResourceProperties']['InstanceType'], event['ResourceProperties']['Architecture']), image['name']):",
             "        print('Found image {} id {}'.format(image['name'], image['id']))",
             "        cfnresponse.send(event, context, cfnresponse.SUCCESS, { 'Id': format(image['id']) } )",
             "        return",
@@ -68,7 +68,7 @@
             "    cfnresponse.send(event, context, cfnresponse.FAILED, { 'Error': format(e) })",
             "    return",
             "  cfnresponse.send(event, context, cfnresponse.FAILED, { 'Error': 'No image matches criteria' })"
-	  ]]}
+          ]]}
         },
         "Handler": "index.handler",
         "Runtime": "python2.7",
