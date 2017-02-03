@@ -28,6 +28,8 @@ for channel in $@ ; do
     ;;
   sles12sp1)
     CHANNEL_LIST="$CHANNEL_LIST sles12-sp1-pool-x86_64 sles12-sp1-updates-x86_64 sle-manager-tools12-pool-x86_64-sp1 sle-manager-tools12-updates-x86_64-sp1"
+  sles12sp2)
+    CHANNEL_LIST="$CHANNEL_LIST sles12-sp2-pool-x86_64 sles12-sp2-updates-x86_64 sle-manager-tools12-pool-x86_64-sp2 sle-manager-tools12-updates-x86_64-sp2"
     ;;
   sles11sp4)
     CHANNEL_LIST="$CHANNEL_LIST sles11-sp4-pool-x86_64 sles11-sp4-updates-x86_64 sles11-sp4-suse-manager-tools-x86_64 sle-manager-tools11-updates-x86_64-sp4"
