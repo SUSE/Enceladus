@@ -29,10 +29,6 @@ CONFIG='
   "ParameterValue": "MY_EMAIL_ADDRESS"
 },
 {
-  "ParameterKey": "ManagerPassword",
-  "ParameterValue": "admin123"
-},
-{
   "ParameterKey": "SCCUser",
   "ParameterValue": "MY_SCC_ACCOUNT"
 },
@@ -97,5 +93,5 @@ CONFIG='
 
 aws --region $REGION cloudformation create-stack \
   --stack-name $STACK_NAME \
-  --template-body file://$HOME/Enceladus/CloudFormation/suma/suse_manager_full_bootstrap.templ \
+  --template-body file://$HOME/Enceladus/CloudFormation/suma/suse_manager.templ \
   --parameters "$CONFIG"

@@ -72,16 +72,20 @@
 
   "Mappings" : {
     "Regions2SUMa" : {
-      "us-east-1"      : { "HVM64": "ami-f04b7c9a" },
-      "us-west-1"      : { "HVM64": "ami-450c7d25" },
-      "us-west-2"      : { "HVM64": "ami-e147a781" },
-      "eu-central-1"   : { "HVM64": "ami-c6869daa" },
-      "eu-west-1"      : { "HVM64": "ami-c800b3bb" },
-      "ap-southeast-1" : { "HVM64": "ami-896fa1ea" },
-      "ap-southeast-2" : { "HVM64": "ami-14d2f577" },
-      "ap-northeast-1" : { "HVM64": "ami-401a1c2e" },
-      "ap-northeast-2" : { "HVM64": "ami-6a11df04" },
-      "sa-east-1"      : { "HVM64": "ami-10bd3e7c" } 
+      "ap-south-1"      : { "HVM64": "ami-3574055a" },
+      "eu-west-2"       : { "HVM64": "ami-285c494c" },
+      "eu-west-1"       : { "HVM64": "ami-a78bd3c1" },
+      "ap-northeast-2"  : { "HVM64": "ami-d827f6b6" },
+      "ap-northeast-1"  : { "HVM64": "ami-fc50179b" },
+      "sa-east-1"       : { "HVM64": "ami-286c0844" },
+      "ca-central-1"    : { "HVM64": "ami-48ca772c" },
+      "ap-southeast-1"  : { "HVM64": "ami-c819acab" },
+      "ap-southeast-2"  : { "HVM64": "ami-e8595f8b" },
+      "eu-central-1"    : { "HVM64": "ami-2cad6443" },
+      "us-east-1"       : { "HVM64": "ami-37cf3121" },
+      "us-east-2"       : { "HVM64": "ami-aa3b1ecf" },
+      "us-west-1"       : { "HVM64": "ami-7a732e1a" },
+      "us-west-2"       : { "HVM64": "ami-f405bd94" }
     }
   },
 
@@ -144,6 +148,7 @@
           "echo \"ENABLE_SCOUT='n'\" >> /root/proxy-conf\n",
           "chmod 600 /root/proxy-conf\n",
           "dd if=/dev/zero of=/SWAPFILE bs=1M count=" , { "Ref" : "SwapSize" }, "\n",
+          "chmod 600 /SWAPFILE\n",
           "mkswap -f /SWAPFILE\n",
           "echo \"/SWAPFILE swap swap defaults 0 0\" >> /etc/fstab\n",
           "swapon -a\n",
