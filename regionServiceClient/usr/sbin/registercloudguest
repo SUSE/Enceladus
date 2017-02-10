@@ -303,10 +303,10 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
 
         if res:
             failed_smts.append(registration_target.get_ip())
-            if len(failed_smts) == len(known_smt_servers):
+            if len(failed_smts) == len(region_smt_servers):
                 logging.error('Registration failed')
                 sys.exit(1)
-            for smt in known_smt_servers:
+            for smt in region_smt_servers:
                 if (
                         smt.get_ip() != registration_target.get_ip() and
                         smt.get_ip() not in failed_smts
@@ -364,11 +364,11 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         for entry in res:
             if error_exp.match(entry):
                 failed_smts.append(registration_target.get_ip())
-                if len(failed_smts) == len(known_smt_servers):
+                if len(failed_smts) == len(region_smt_servers):
                     logging.error('Baseproduct registration failed')
                     logging.error('\t%s' % entry)
                     sys.exit(1)
-                for smt in known_smt_servers:
+                for smt in region_smt_servers:
                     if (
                             smt.get_ip() != registration_target.get_ip() and
                             smt.get_ip() not in failed_smts
