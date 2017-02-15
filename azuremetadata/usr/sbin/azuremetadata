@@ -30,32 +30,41 @@ use AzureMetadata::AzureGeneral;
 sub main {
     my %options = parse_options();
     my %data;
+    my $agent_conf;
+
     if ($options{tag}) {
         # VHD disk tag discovery
         $data{billingTag} = AzureDisk::getVHDDiskTag($options{device});
-    } elsif ($options{cloudServiceName}) {
-        my $srvName = AzureNetwork::get_cloudservice_name(
-            AzureNetwork::import_config()
-        );
+    }
+
+    if ($options{cloudServiceName}) {
+        # Cloud Service Name
+        $agent_conf = AzureNetwork::import_config() if not defined $agent_conf;
+        my $srvName = AzureNetwork::get_cloudservice_name($agent_conf);
         $data{cloudservice} = $srvName;
-    } elsif ($options{external_ip}) {
+    }
+
+    if ($options{external_ip}) {
         # Public External IP discovery
-        my $ip = AzureNetwork::read_external_ip(
-            AzureNetwork::import_config()
-        );
+        $agent_conf = AzureNetwork::import_config() if not defined $agent_conf;
+        my $ip = AzureNetwork::read_external_ip($agent_conf);
         $data{external_ip} = $ip;
-    } elsif ($options{instance_name}) {
-        my $name = AzureGeneral::get_instance_name(
-            AzureNetwork::import_config()
-        );
+    }
+
+    if ($options{instance_name}) {
+        # Instance Name
+        $agent_conf = AzureNetwork::import_config() if not defined $agent_conf;
+        my $name = AzureGeneral::get_instance_name($agent_conf);
         $data{instance_name} = $name;
-    } elsif ($options{internal_ip}) {
+    }
+
+    if ($options{internal_ip}) {
         # Private Internal IP discovery
-        my $ip = AzureNetwork::read_internal_ip(
-            AzureNetwork::import_config()
-        );
+        $agent_conf = AzureNetwork::import_config() if not defined $agent_conf;
+        my $ip = AzureNetwork::read_internal_ip($agent_conf);
         $data{internal_ip} = $ip;
     }
+
     print writeMetaData(\%data, $options{output})
 }
 
