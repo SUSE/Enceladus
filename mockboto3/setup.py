@@ -34,7 +34,7 @@ setup(
     long_description=readme,
     author="SUSE",
     author_email='public-cloud-dev@susecloud.net',
-    url='https://github.com/suse/Enceladus/mockboto3',
+    url='https://github.com/SUSE/Enceladus/mockboto3',
     packages=find_packages(),
     package_dir={'mockboto3':
                  'mockboto3'},
