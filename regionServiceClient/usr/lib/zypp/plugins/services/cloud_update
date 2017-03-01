@@ -56,6 +56,7 @@ if utils.is_registered(current_smt):
             msg += new_target.get_ip()
             logging.info(msg)
             utils.replace_hosts_entry(current_smt, new_target)
+            utils.set_as_current_smt(new_target)
             sys.exit()
         else:
             # There is no equivalent SMT server, search for another one
