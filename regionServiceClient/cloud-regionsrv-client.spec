@@ -80,6 +80,16 @@ Requires:     cloud-regionsrv-client >= 6.0.0
 %description plugin-gce
 Guest registration plugin for images intended for Google Compute Engine
 
+%package plugin-ec2
+Version:      1.0.0
+License:      LGPL-3.0
+Summary:      Cloud Environment Guest Registration Plugin for GCE
+Group:        Productivity/Networking/Web/Servers
+Requires:     cloud-regionsrv-client >= 6.0.0
+
+%description plugin-ec2
+Guest registration plugin for images intended for Amazon EC2
+
 %prep
 %setup -q
 
@@ -152,6 +162,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0755,root,root) %{_initddir}/guestregister
 %{_sbindir}/rcguestregister
 %endif
+%dir %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info
+%dir %{python_sitelib}/cloudregister/
+%{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info/*
 
 %files generic-config
 %defattr(-,root,root,-)
@@ -161,10 +174,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%dir %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info
-%dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info/*
 %{python_sitelib}/cloudregister/google*
+
+%files plugin-ec2
+%defattr(-,root,root,-)
+%{python_sitelib}/cloudregister/amazon*
 
 %changelog
 
