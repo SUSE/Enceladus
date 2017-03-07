@@ -23,7 +23,12 @@ def generateRegionSrvArgs():
     zoneInfo = 'instance/zone'
     headers = {'Metadata-Flavor': 'Google'}
 
-    zoneResp = requests.get(metaDataUrl + zoneInfo, headers=headers)
+    try:
+        zoneResp = requests.get(metaDataUrl + zoneInfo, headers=headers)
+    except:
+        msg = 'Unable to determine zone information from "%s"'
+        logging.warning(msg % (metaDataUrl + zoneInfo))
+        return
 
     if zoneResp.status_code == 200:
         try:
