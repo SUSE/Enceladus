@@ -45,7 +45,7 @@ setup(
     extras_require={
         'dev': dev_requirements
     },
-    license="MIT license",
+    license="BSD license",
     zip_safe=False,
     keywords='mockboto3',
     classifiers=[

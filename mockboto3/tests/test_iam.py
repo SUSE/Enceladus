@@ -7,7 +7,7 @@ import pytest
 from mockboto3.core.exceptions import MockBoto3ClientError
 from mockboto3.core.utils import inflection
 from mockboto3.iam.constants import policy_document, signing_cert
-from mockboto3.iam.endpoints import MockIam, mock_iam
+from mockboto3.iam.endpoints import MockIAM, mock_iam
 
 
 class TestIam:
@@ -22,7 +22,7 @@ class TestIam:
               'CreateGecko operation: Operation not mocked.'
 
         try:
-            mocker = MockIam()
+            mocker = MockIAM()
             mocker.mock_make_api_call('CreateGecko',
                                       {'Name': 'gecko'})
 

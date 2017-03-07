@@ -13,12 +13,12 @@ from mockboto3.iam.models import AccessKey, Group, Policy, User
 from mockboto3.iam.utils import get_value_from_arn
 
 
-class MockIam(object):
+class MockIAM(object):
     """Class for mocking iam endpoints."""
 
     def __init__(self):
         """Initialize class."""
-        super(MockIam, self).__init__()
+        super(MockIAM, self).__init__()
         self.access_keys = {}
         self.groups = {}
         self.users = {}
@@ -427,7 +427,7 @@ class MockIam(object):
 def mock_iam(test):
     @wraps(test)
     def wrapper(*args, **kwargs):
-        mocker = MockIam()
+        mocker = MockIAM()
         with patch('botocore.client.BaseClient._make_api_call',
                    new=mocker.mock_make_api_call):
             test(*args, **kwargs)

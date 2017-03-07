@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""""Iam Classes."""
+""""IAM Classes."""
 
 from datetime import datetime, timezone
 
