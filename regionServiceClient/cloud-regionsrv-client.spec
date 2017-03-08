@@ -83,7 +83,7 @@ Guest registration plugin for images intended for Google Compute Engine
 %package plugin-ec2
 Version:      1.0.0
 License:      LGPL-3.0
-Summary:      Cloud Environment Guest Registration Plugin for GCE
+Summary:      Cloud Environment Guest Registration Plugin for Amazon EC2
 Group:        Productivity/Networking/Web/Servers
 Requires:     cloud-regionsrv-client >= 6.0.0
 

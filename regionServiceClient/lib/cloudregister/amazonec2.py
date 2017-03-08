@@ -1,4 +1,4 @@
-# Copyright (c) $2017, SUSE LLC, All rights reserved.
+# Copyright (c) 2017, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,8 @@ def generateRegionSrvArgs():
         return
 
     if zoneResp.status_code == 200:
+        # Remove the trailing availability zone letter identifier to get the
+        # region
         region = zoneResp.text[:-1]
     else:
         logging.warning('Unable to get availability zone metadata')
