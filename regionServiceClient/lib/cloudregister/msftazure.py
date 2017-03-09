@@ -1,4 +1,4 @@
-# Copyright (c) $2017, SUSE LLC, All rights reserved.
+# Copyright (c) 2017, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@ import urllib
 
 from HTMLParser import HTMLParser
 
-extensionSConfigRx = re.compile(
+extensionConfigRx = re.compile(
     r'.*<ExtensionsConfig>(.*?)</ExtensionsConfig>.*', re.S | re.M
 )
 locationRx = re.compile(
@@ -50,7 +50,9 @@ def generateRegionSrvArgs():
 
     if zoneResp:
         if zoneResp.status_code == 200:
-            region = zoneResp.text[:-1]
+            # At time of implementation the metadats service does not provide
+            # location information the implementatio is a place holder
+            return 'regionHint=' + zoneResp.text
         else:
             logging.warning('Unable to get availability zone metadata')
             logging.warning('\tReturn code: %d' % zoneResp.status_code)
@@ -74,10 +76,10 @@ def generateRegionSrvArgs():
                 logging.warning(msg)
                 continue
             if not goalStatResp.status_code == 200:
-                msg = '% error for goal state request: %s'
+                msg = '%s error for goal state request: %s'
                 logging.warning(msg % (nameserver, goalStatResp.status_code))
                 continue
-            match = extensionSConfigRx.match(goalStatResp.text)
+            match = extensionConfigRx.match(goalStatResp.text)
             if not match:
                 logging.warning('No "<ExtensionsConfig>" in goal state XML')
                 continue
