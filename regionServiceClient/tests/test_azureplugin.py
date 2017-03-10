@@ -156,7 +156,7 @@ def test_wire_request_extension_request_fail(
     """Test behavior with extension request triggering  exception"""
     mock_request.side_effect = [
         None,
-        _get_proper_goal_state_resposne(),
+        _get_proper_goal_state_response(),
         Exception
     ]
     mock_resolver.return_value = _get_nameserver_resolver()
@@ -181,7 +181,7 @@ def test_wire_request_extension_request_fail_server_error(
     """Test request for extension data triggering server error"""
     mock_request.side_effect = [
         None,
-        _get_proper_goal_state_resposne(),
+        _get_proper_goal_state_response(),
         _get_error_response()
     ]
     mock_resolver.return_value = _get_nameserver_resolver()
@@ -205,7 +205,7 @@ def test_wire_request_extension_request_success_no_match(
     """Test request for extension data success improper data"""
     mock_request.side_effect = [
         None,
-        _get_proper_goal_state_resposne(),
+        _get_proper_goal_state_response(),
         _get_unexpected_response()
     ]
     mock_resolver.return_value = _get_nameserver_resolver()
@@ -225,7 +225,7 @@ def test_wire_request_sucess(mock_logging, mock_request, mock_resolver):
     """Test success for info on the wire server"""
     mock_request.side_effect = [
         None,
-        _get_proper_goal_state_resposne(),
+        _get_proper_goal_state_response(),
         _get_proper_extensions_response()
     ]
     mock_resolver.return_value = _get_nameserver_resolver()
@@ -287,7 +287,7 @@ def _get_proper_extensions_response():
 
 
 # ----------------------------------------------------------------------------
-def _get_proper_goal_state_resposne():
+def _get_proper_goal_state_response():
     """Return a response that matches goal state config"""
     response = Response()
     response.status_code = 200
