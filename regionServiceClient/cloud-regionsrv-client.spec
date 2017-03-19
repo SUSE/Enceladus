@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 7.0.3
+%define base_version 7.0.4
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -89,6 +89,17 @@ Requires:     cloud-regionsrv-client >= 6.0.0
 
 %description plugin-ec2
 Guest registration plugin for images intended for Amazon EC2
+
+%package plugin-azure
+Version:      1.0.0
+License:      LGPL-3.0
+Summary:      Cloud Environment Guest Registration Plugin for Microsoft Azure
+Group:        Productivity/Networking/Web/Servers
+Requires:     cloud-regionsrv-client >= 6.0.0
+Requires:     python-dnspython
+
+%description plugin-azure
+Guest registration plugin for images intended for Microsoft Azure
 
 %prep
 %setup -q
@@ -179,6 +190,10 @@ rm -rf $RPM_BUILD_ROOT
 %files plugin-ec2
 %defattr(-,root,root,-)
 %{python_sitelib}/cloudregister/amazon*
+
+%files plugin-azure
+%defattr(-,root,root,-)
+%{python_sitelib}/cloudregister/msft*
 
 %changelog
 
