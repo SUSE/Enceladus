@@ -6,11 +6,11 @@ import pytest
 
 from mockboto3.core.exceptions import MockBoto3ClientError
 from mockboto3.core.utils import inflection
-from mockboto3.iam.constants import policy_document, signing_cert
+from mockboto3.iam.constants import POLICY_DOC, SIGNING_CERT
 from mockboto3.iam.endpoints import MockIAM, mock_iam
 
 
-class TestIam:
+class TestIAM:
 
     @classmethod
     def setup_class(cls):
@@ -359,7 +359,7 @@ class TestSigningCertificates:
         # Add signing cert
         response = self.client.upload_signing_certificate(
             UserName=self.user,
-            CertificateBody=signing_cert
+            CertificateBody=SIGNING_CERT
         )
 
         # Get cert id
@@ -419,7 +419,7 @@ class TestUserPolicy:
 
         # Attach user policy
         self.client.create_policy(PolicyName='Admins',
-                                  PolicyDocument=policy_document)
+                                  PolicyDocument=POLICY_DOC)
         self.client.attach_user_policy(UserName=self.user,
                                        PolicyArn=self.policy)
 

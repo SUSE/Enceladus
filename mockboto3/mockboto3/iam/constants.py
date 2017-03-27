@@ -2,10 +2,10 @@
 
 """"Constants."""
 
-policy_document = '{"Version":"2012-10-17","Statement":[' \
+POLICY_DOC = '{"Version":"2012-10-17","Statement":[' \
                   '{"Effect":"Allow","Action":"*","Resource":"*"}]}'
 
-signing_cert = '-----BEGIN CERTIFICATE-----' \
+SIGNING_CERT = '-----BEGIN CERTIFICATE-----' \
     'MIICdzCCAeCgAwIBAgIGANc+Ha2wMA0GCSqGSIb3DQEBBQUAMFMxCzAJBgNVBAYT' \
     'AlVTMRMwEQYDVQQKEwpBbWF6b24uY29tMQwwCgYDVQQLEwNBV1MxITAfBgNVBAMT' \
     'GEFXUyBMaW1pdGVkLUFzc3VyYW5jZSBDQTAeFw0wOTAyMDQxNzE5MjdaFw0xMDAy' \
