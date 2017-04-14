@@ -20,13 +20,7 @@
 #
 
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
-
-import mock
-import os
-import sys
-
-from mock import patch
-from nose.tools import *
+from nose.tools import assert_equals
 
 
 def test_api_version():

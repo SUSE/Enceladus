@@ -48,4 +48,3 @@ list_tests:
 
 %.py:
 	nosetests $@
-

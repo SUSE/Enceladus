@@ -20,16 +20,7 @@
 #
 
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
-
-import json
-import mock
-import os
-import re
-import sys
-
-from mock import patch
-from nose.tools import *
-from StringIO import StringIO
+from nose.tools import assert_equals
 
 
 def test_parse():
@@ -169,7 +160,8 @@ def test_parse():
         },
         {
             'deletedon': '',
-            'name': 'suse-sles-11-manager-server-2-1-byos-20150408-hvm-ssd-x86_64',
+            'name':
+                'suse-sles-11-manager-server-2-1-byos-20150408-hvm-ssd-x86_64',
             'region': 'us-west-1',
             'replacementname': '',
             'deprecatedon': '',
@@ -179,9 +171,13 @@ def test_parse():
             'id': 'ami-01ec0145'
         }
     ]
-    with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:
+    fixture_file = '../data/v1_amazon_us-west-1_images_active.json'
+    with open(fixture_file, 'r') as fixture:
         server_response = fixture.read()
-    parsed_result = ifsrequest.__parse_server_response_data(server_response, 'images')
+    parsed_result = ifsrequest.__parse_server_response_data(
+        server_response,
+        'images'
+    )
     assert_equals(expected, parsed_result)
 
 
