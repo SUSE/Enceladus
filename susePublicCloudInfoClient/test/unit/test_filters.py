@@ -265,6 +265,22 @@ def test_filter_images_on_name():
     assert_equals(expected, filtered_result)
 
 
+def test_filter_servers_on_type_substring():
+    filters = ifsrequest.__parse_command_arg_filter('type~sap')
+    with open('../data/v1_amazon_us-east-1_servers.json', 'r') as fixture:
+        superset = json.load(fixture)['servers']
+    filtered_result = ifsrequest.__apply_filters(superset, filters)
+    expected = [
+        {
+            'type': 'smt-sap',
+            'name': 'smt-ec2.susecloud.net',
+            'ip': '54.225.105.144',
+            'region': 'us-east-1'
+        }
+    ]
+    assert_equals(expected, filtered_result)
+
+
 def test_filter_images_on_publishedon():
     filters = ifsrequest.__parse_command_arg_filter('publishedon=20150420')
     with open('../data/v1_amazon_us-west-1_images_active.json', 'r') as fixture:

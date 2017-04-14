@@ -157,6 +157,7 @@ def __get_api_version():
 def __get_base_url():
     """Return the base url for the information service"""
     return 'https://susepubliccloudinfo.suse.com'
+    # return 'http://localhost:9292'
 
 
 def __get_data(url):
@@ -197,7 +198,8 @@ def __parse_command_arg_filter(command_arg_filter=None):
         'replacementname': '(?P<attr>replacementname)(?P<operator>[~!%])(?P<value>.+)$',
         'publishedon': '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
         'deprecatedon': '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
-        'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$'
+        'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'type': '^(?P<attr>type)(?P<operator>[~!%])(?P<value>.+)$',
     }
     # start with empty result set
     filters = []

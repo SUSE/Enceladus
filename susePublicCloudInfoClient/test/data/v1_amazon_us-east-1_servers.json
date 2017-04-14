@@ -1,1 +1,1 @@
-{"servers":[{"type":"smt","name":"smt-ec2.susecloud.net","ip":"54.197.240.216","region":"us-east-1"},{"type":"smt","name":"smt-ec2.susecloud.net","ip":"54.225.105.144","region":"us-east-1"},{"type":"regionserver","name":"","ip":"50.17.208.31","region":"us-east-1"}]}
+{"servers":[{"type":"smt-sles","name":"smt-ec2.susecloud.net","ip":"54.197.240.216","region":"us-east-1"},{"type":"smt-sap","name":"smt-ec2.susecloud.net","ip":"54.225.105.144","region":"us-east-1"},{"type":"regionserver","name":"","ip":"50.17.208.31","region":"us-east-1"}]}
