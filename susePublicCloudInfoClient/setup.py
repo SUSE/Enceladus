@@ -20,7 +20,6 @@
 
 import os
 import sys
-import version
 
 try:
     import setuptools
@@ -32,6 +31,8 @@ except ImportError:
 this_path = os.path.dirname(os.path.abspath(__file__))
 mod_path = this_path + os.sep + 'lib/susepubliccloudinfoclient'
 sys.path.insert(0, mod_path)
+
+import version
 src_version = version.VERSION
 
 description = 'Command-line tool to access SUSE Public Cloud Information '
