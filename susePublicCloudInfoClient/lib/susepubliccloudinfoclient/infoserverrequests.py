@@ -49,7 +49,9 @@ def __apply_filters(superset, filters):
 
 
 def __filter_exact(items, attr, value):
-    """select from items list where the attribute is an exact match to 'value'"""
+    """
+        select from items list where the attribute is an exact match to 'value'
+    """
     # start with an empty result set
     filtered_items = []
     # iterate over the list of items
@@ -73,8 +75,12 @@ def __filter_substring(items, attr, value):
     # return the filtered list
     return filtered_items
 
+
 def __filter_not_substring(items, attr, value):
-    """select from items list where 'value' is not a substring of the attribute"""
+    """
+        select from items list where 'value' is not a substring of the
+        attribute
+    """
     # start with an empty result set
     filtered_items = []
     # iterate over the list of items
@@ -85,8 +91,11 @@ def __filter_not_substring(items, attr, value):
     # return the filtered list
     return filtered_items
 
+
 def __filter_regex(items, attr, value):
-    """select from items list where 'value' is a regex matching the attribute"""
+    """
+        select from items list where 'value' is a regex matching the attribute
+    """
     # start with an empty result set
     filtered_items = []
     # iterate over the list of items
@@ -97,8 +106,12 @@ def __filter_regex(items, attr, value):
     # return the filtered list
     return filtered_items
 
+
 def __filter_less_than(items, attr, value):
-    """select from items list where the attribute is less than 'value' as integers"""
+    """
+        select from items list where the attribute is less than 'value' as
+        integers
+    """
     # start with an empty result set
     filtered_items = []
     # iterate over the list of items
@@ -111,7 +124,10 @@ def __filter_less_than(items, attr, value):
 
 
 def __filter_greater_than(items, attr, value):
-    """select from items list where the attribute is greater than 'value' as integers"""
+    """
+        select from items list where the attribute is greater than 'value' as
+        integers
+    """
     # start with an empty result set
     filtered_items = []
     # iterate over the list of items
@@ -157,6 +173,7 @@ def __get_api_version():
 def __get_base_url():
     """Return the base url for the information service"""
     return 'https://susepubliccloudinfo.suse.com'
+    # return 'http://localhost:9292'
 
 
 def __get_data(url):
@@ -169,7 +186,9 @@ def __get_data(url):
     except requests.exceptions.Timeout as e:
         __error("The server did not respond in a timely fashion.\n%s" % e)
     except requests.exceptions.SSLError as e:
-        __error("There was a problem with the security of this request:\n%s" % e)
+        __error(
+            "There was a problem with the security of this request:\n%s" % e
+        )
     except requests.exceptions.ConnectionError as e:
         __error(
             "There was a problem connecting to the server. " +
@@ -190,14 +209,24 @@ def __inflect(plural):
 def __parse_command_arg_filter(command_arg_filter=None):
     """Break down the --filter argument into a list of filters"""
     valid_filters = {
-        'id': '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
-        'replacementid': '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
-        'ip': '^(?P<attr>ip)(?P<operator>[=])(?P<value>\d+\.\d+\.\d+.\d+)$',
-        'name': '^(?P<attr>name)(?P<operator>[~!%])(?P<value>.+)$',
-        'replacementname': '(?P<attr>replacementname)(?P<operator>[~!%])(?P<value>.+)$',
-        'publishedon': '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
-        'deprecatedon': '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
-        'deletedon': '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$'
+        'id':
+            '^(?P<attr>id)(?P<operator>[=])(?P<value>.+)$',
+        'replacementid':
+            '^(?P<attr>replacementid)(?P<operator>[=])(?P<value>.+)$',
+        'ip':
+            '^(?P<attr>ip)(?P<operator>[=])(?P<value>\d+\.\d+\.\d+.\d+)$',
+        'name':
+            '^(?P<attr>name)(?P<operator>[~!%])(?P<value>.+)$',
+        'replacementname':
+            '(?P<attr>replacementname)(?P<operator>[~!%])(?P<value>.+)$',
+        'publishedon':
+            '(?P<attr>publishedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'deprecatedon':
+            '(?P<attr>deprecatedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'deletedon':
+            '(?P<attr>deletedon)(?P<operator>[<=>])(?P<value>\d+)$',
+        'type':
+            '^(?P<attr>type)(?P<operator>[~!%])(?P<value>.+)$',
     }
     # start with empty result set
     filters = []
@@ -252,8 +281,10 @@ def __error(str, out=sys.stderr):
 
 
 def __process(url, info_type, command_arg_filter, result_format):
-    # where the magic happens
-    """given a URL, the type of information, maybe some filters, and an expected format, do the right thing"""
+    """
+        given a URL, the type of information, maybe some filters, and an
+        expected format, do the right thing
+    """
     server_response_data = __get_data(url)
     resultset = __parse_server_response_data(server_response_data, info_type)
     if command_arg_filter:

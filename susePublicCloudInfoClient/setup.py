@@ -9,12 +9,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # ec2uploadimg is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with ec2uploadimg. If not, see <http://www.gnu.org/licenses/>.
 
@@ -31,6 +31,7 @@ except ImportError:
 this_path = os.path.dirname(os.path.abspath(__file__))
 mod_path = this_path + os.sep + 'lib/susepubliccloudinfoclient'
 sys.path.insert(0, mod_path)
+
 import version
 src_version = version.VERSION
 
@@ -50,5 +51,5 @@ if __name__ == '__main__':
         package_dir={
             '': 'lib',
         },
-        scripts=['bin/pint','bin/awscsvgen']
+        scripts=['bin/pint', 'bin/awscsvgen']
     )

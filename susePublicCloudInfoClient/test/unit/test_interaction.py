@@ -20,14 +20,9 @@
 #
 
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
-
-import os
-import mock
 import requests
-import sys
-
 from mock import patch
-from nose.tools import *
+from nose.tools import raises
 from StringIO import StringIO
 
 
