@@ -41,9 +41,12 @@ def test_form_url_servers_all_json():
 
 def test_form_url_servers_smt_xml():
     """Form the URL for all SMT servers in XML"""
-    url = ifsrequest.__form_url('hp', 'servers', server_type='smt')
+    url = ifsrequest.__form_url('google', 'servers', server_type='smt')
     # all requests are in JSON, regardless of output format
-    expected = 'https://susepubliccloudinfo.suse.com/v1/hp/servers/smt.json'
+    expected = (
+        'https://susepubliccloudinfo.suse.com'
+        '/v1/google/servers/smt.json'
+    )
     assert_equals(expected, url)
 
 

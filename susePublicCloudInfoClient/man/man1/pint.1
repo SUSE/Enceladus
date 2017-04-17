@@ -5,7 +5,7 @@
 .SH NAME
 pint \- Public-cloud INformation Tracker
 .SH SYNOPSIS
-.B pint amazon|google|hp|microsoft images|servers [options]
+.B pint amazon|google|microsoft images|servers [options]
 .SH DESCRIPTION
 .B pint
 A client for the SUSE Public Cloud Information service at
@@ -42,8 +42,7 @@ capabilities.
 .IP "<framework>"
 One of the supported cloud frameworks,
 .IR amazon ,
-.IR google ,
-.IR hp ,
+.IR google
 or
 .IR microsoft .
 The
@@ -93,7 +92,7 @@ are considered deprecated. The SUSE deprecation period is 6 months.
 .IP "--filter"
 Filter the information based on the given value(s). If the information is
 to be filtered on more than one entry type provide a comma separated
-list. The output is a subset of results that match all the filters. The filter 
+list. The output is a subset of results that match all the filters. The filter
 option specifies one or more of the valid data entries for the chosen
 .I <data-selector>
 and is a valid option for the
@@ -117,11 +116,11 @@ Valid filter values for
 are:
 
 .BR deletedon> ,
-.BR deletedon= ,  
+.BR deletedon= ,
 .BR deletedon< ,
 
-.BR deprecatedon> , 
-.BR deprecatedon= , 
+.BR deprecatedon> ,
+.BR deprecatedon= ,
 .BR deprecatedon< ,
 
 .BR id= ,
@@ -131,7 +130,7 @@ are:
 .BR name% ,
 
 .BR publishedon> ,
-.BR publishedon= , 
+.BR publishedon= ,
 .BR publishedon< ,
 
 .BR replacementid= ,
@@ -156,8 +155,8 @@ are:
 .B Note
 that the name for all update servers (SMT servers) is the same in each
 cloud framework. For example
-.I smt-hp.susecloud.net
-in the HP Helion Public Cloud framework. The names are not resolvable via
+.I smt-azure.susecloud.net
+in the Microsoft Azure Public Cloud framework. The names are not resolvable via
 DNS lookup. The name for all region servers are the same,
 .I regionserver
 across all cloud frameworks.
@@ -165,7 +164,7 @@ across all cloud frameworks.
 .P
 Example:
 .IP --filter="publishedon>20150101,name~11-sp3"
-Filters images to a subset with a name containing "11-sp3" and published after 
+Filters images to a subset with a name containing "11-sp3" and published after
 Jan 1, 2015.
 .RE
 .IP "-h --help"
