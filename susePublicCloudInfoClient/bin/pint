@@ -20,12 +20,12 @@
 #
 """
 usage: pint -h | --help
-       pint (amazon|google|hp|microsoft) servers
+       pint (amazon|google|microsoft) servers
           [ --filter=<filter> ]
           [ --json | --xml ]
           [ --region=<region> ]
           [ --smt | --regionserver ]
-       pint (amazon|google|hp|microsoft) images
+       pint (amazon|google|microsoft) images
           [ --active | --deleted | --deprecated ]
           [ --filter=<filter> ]
           [ --json | --xml ]
@@ -62,7 +62,7 @@ import susepubliccloudinfoclient.version as version
 command_args = docopt(__doc__, version=version.VERSION)
 
 framework = None
-cloud_providers = ['amazon', 'google', 'hp', 'microsoft']
+cloud_providers = ['amazon', 'google', 'microsoft']
 for csp in cloud_providers:
     if command_args[csp]:
         framework = csp
