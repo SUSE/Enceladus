@@ -318,7 +318,7 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
                             smt.get_ip()
                         )
                     )
-                    utils.remove_registration_data([registration_target])
+                    utils.remove_registration_data()
                     utils.add_hosts_entry(smt)
                     registration_target = smt
                     break
@@ -380,7 +380,7 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
                                 smt.get_ip()
                             )
                         )
-                        utils.remove_registration_data([registration_target])
+                        utils.remove_registration_data()
                         utils.add_hosts_entry(smt)
                         registration_target = smt
                         break
