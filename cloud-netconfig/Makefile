@@ -5,9 +5,9 @@ UDEVRULESDIR?=$(PREFIX)/lib/udev/rules.d
 NETCONFDIR?=$(SYSCONFDIR)/netconfig.d
 SCRIPTDIR?=$(SYSCONFDIR)/sysconfig/network/scripts
 DESTDIR?=
-DNETCONFDIR=$(DESTDIR)$(NETCONFDIR)
-DUDEVRULESDIR=$(DESTDIR)$(UDEVRULESDIR)
-DSCRIPTDIR=$(DESTDIR)$(SCRIPTDIR)
+DEST_NETCONFDIR=$(DESTDIR)$(NETCONFDIR)
+DEST_UDEVRULESDIR=$(DESTDIR)$(UDEVRULESDIR)
+DEST_SCRIPTDIR=$(DESTDIR)$(SCRIPTDIR)
 
 
 verSrc = $(shell cat VERSION)
@@ -27,21 +27,21 @@ help:
 	@echo "Use var DESTDIR for installing into a different root."
 
 common:
-	mkdir -p $(DNETCONFDIR)
-	mkdir -p $(DUDEVRULESDIR)
-	mkdir -p $(DSCRIPTDIR)
-	install -m 644 common/75-cloud-persistent-net-generator.rules $(DUDEVRULESDIR)
-	install -m 755 common/cloud-netconfig $(DNETCONFDIR)
-	install -m 755 common/cloud-netconfig-cleanup $(DSCRIPTDIR)
-	install -m 755 common/cloud-netconfig-hotplug $(DSCRIPTDIR)
+	mkdir -p $(DEST_NETCONFDIR)
+	mkdir -p $(DEST_UDEVRULESDIR)
+	mkdir -p $(DEST_SCRIPTDIR)
+	install -m 644 common/75-cloud-persistent-net-generator.rules $(DEST_UDEVRULESDIR)
+	install -m 755 common/cloud-netconfig $(DEST_NETCONFDIR)
+	install -m 755 common/cloud-netconfig-cleanup $(DEST_SCRIPTDIR)
+	install -m 755 common/cloud-netconfig-hotplug $(DEST_SCRIPTDIR)
 
 install-azure: common
-	install -m 644 azure/51-cloud-netconfig-hotplug.rules $(DUDEVRULESDIR)
-	install -m 755 azure/functions.cloud-netconfig $(DSCRIPTDIR)
+	install -m 644 azure/51-cloud-netconfig-hotplug.rules $(DEST_UDEVRULESDIR)
+	install -m 755 azure/functions.cloud-netconfig $(DEST_SCRIPTDIR)
 
 install-ec2: common
-	install -m 644 ec2/51-cloud-netconfig-hotplug.rules $(DUDEVRULESDIR)
-	install -m 755 ec2/functions.cloud-netconfig $(DSCRIPTDIR)
+	install -m 644 ec2/51-cloud-netconfig-hotplug.rules $(DEST_UDEVRULESDIR)
+	install -m 755 ec2/functions.cloud-netconfig $(DEST_SCRIPTDIR)
 
 tarball:
 	@test -n "$(verSrc)"
