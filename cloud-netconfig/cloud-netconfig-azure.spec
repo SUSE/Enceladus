@@ -21,8 +21,8 @@ Name:           %{base_name}-azure
 Version:        0.1
 Release:        0
 License:        GPL-3.0+
-Summary:        Network configuration scripts for Amazon EC2
-Url:            https://github.com/SUSE/pubcloud
+Summary:        Network configuration scripts for Microsoft Azure
+Url:            https://github.com/SUSE/Enceladus
 Group:          System/Management
 Source0:        %{base_name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build

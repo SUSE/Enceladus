@@ -108,8 +108,8 @@ get_free_priority()
 }
 
 # -------------------------------------------------------------------
-# configure interface with secondary IPv4 addresses configured in EC2
-# and set up routing policies
+# configure interface with secondary IPv4 addresses configured in the
+# cloud framework and set up routing policies
 # 
 configure_interface_ipv4()
 {
