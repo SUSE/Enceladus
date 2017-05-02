@@ -268,13 +268,13 @@ manage_interfaceconfig()
     local cfg
     test -z "$1" -o ! -d "$1" && return 1
     local ifcfg="/etc/sysconfig/network/ifcfg-${cfg##*/}"
+    local CLOUD_NETCONFIG_MANAGE
     if [[ -f "${ifcfg}" ]]; then
-        local CLOUD_AUTONET_MANAGE
         get_variable "CLOUD_NETCONFIG_MANAGE" "${ifcfg}"
-        if [[ "$CLOUD_NETCONFIG_MANAGE" == "no" ]]; then
-            # do not touch interface
-            return
-        fi
+    fi
+    if [[ "$CLOUD_NETCONFIG_MANAGE" != "yes" ]]; then
+        # do not touch interface
+        return
     fi
     for cfg in ${1}/* ; do
         get_variable "SERVICE" "$cfg"
