@@ -27,9 +27,15 @@ Group:          System/Management
 Source0:        %{base_name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
+%if 0%{?suse_version} == 1110
+BuildRequires:  sysconfig
+Requires:       sysconfig
+%define _udevrulesdir %{_sysconfdir}/udev/rules.d
+%else
 BuildRequires:  sysconfig-netconfig
-BuildRequires:  udev
 Requires:       sysconfig-netconfig
+%endif
+BuildRequires:  udev
 Requires:       udev
 # persistent net generator was split off from udev in Leap
 %if 0%{?leap_version} != 0
@@ -54,14 +60,18 @@ make install-ec2 \
 
 # Disable persistent net generator from udev-persistent-ifnames as
 # it does not work for xen interfaces. This will likely produce a warning.
+%if 0%{?suse_version} >= 1315
 mkdir -p %{buildroot}/%{_sysconfdir}/udev/rules.d
 ln -s /dev/null %{buildroot}/%{_sysconfdir}/udev/rules.d/75-persistent-net-generator.rules
+%endif
 
 %files
 %defattr(-,root,root)
 %{_sysconfdir}/netconfig.d/cloud-netconfig
-%{_sysconfdir}/sysconfig/network/scripts
+%{_sysconfdir}/sysconfig/network/scripts/*
+%if 0%{?suse_version} >= 1315
 %{_sysconfdir}/udev/rules.d
+%endif
 %{_udevrulesdir}/51-cloud-netconfig-hotplug.rules
 %{_udevrulesdir}/75-cloud-persistent-net-generator.rules
 %doc README.md LICENSE
