@@ -265,8 +265,8 @@ configure_interface_ipv6()
 # 
 manage_interfaceconfig()
 {
-    local cfg
-    test -z "$1" -o ! -d "$1" && return 1
+    local cfg="$1"
+    test -z "$cfg" -o ! -d "$cfg" && return 1
     local ifcfg="/etc/sysconfig/network/ifcfg-${cfg##*/}"
     local CLOUD_NETCONFIG_MANAGE
     if [[ -f "${ifcfg}" ]]; then
@@ -274,6 +274,7 @@ manage_interfaceconfig()
     fi
     if [[ "$CLOUD_NETCONFIG_MANAGE" != "yes" ]]; then
         # do not touch interface
+        debug "Not managing interface ${cfg##*/}"
         return
     fi
     for cfg in ${1}/* ; do
