@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-netconfig.  If not, see <http://www.gnu.org/licenses/
 
-logger -t "cloud-netconfig-cleanup" echo "cleaning up routing policies"
+logger -t "cloud-netconfig-cleanup" "cleaning up routing policies"
 
 get_all_addresses()
 {
@@ -40,6 +40,7 @@ contains_element()
 
 remove_unused_rules()
 {
+    ADDRESSES=($(get_all_addresses $1))
     ip $1 rule show | \
     while read -r prio from ip lookup table rest ; do
         [[ "$ip" == "all" ]] && continue
