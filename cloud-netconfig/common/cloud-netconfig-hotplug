@@ -75,10 +75,10 @@ if_up()
         case "$(get_network_service)" in
             "wicked")
                 logger -t cloud-netconfig echo "Bringing up interface $INTERFACE"
-                # use a short timeout here; wicked seems to consider the new
-                # xen interface as non-ready and refuses to ifup, but status
-                # changes after the timeout.
-                /usr/sbin/wicked ifup --timeout 5 $INTERFACE
+                # this ifup will not actually bring up the interface, since udev
+                # is not quite done yet; but it will inform wicked about the new
+                # interface configuration
+                /usr/sbin/wicked ifup --timeout 1 $INTERFACE || true
             ;;
              "netcontrol")
                 logger -t cloud-netconfig echo "Bringing up interface $INTERFACE"
