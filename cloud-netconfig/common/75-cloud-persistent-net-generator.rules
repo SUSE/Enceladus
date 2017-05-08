@@ -21,6 +21,10 @@ ACTION!="add", GOTO="persistent_net_generator_end"
 SUBSYSTEM!="net", GOTO="persistent_net_generator_end"
 KERNEL!="eth*", GOTO="persistent_net_generator_end"
 
+# no rule needed for primary interface
+# it would also create problems on cloned systems
+KERNEL=="eth0", GOTO="persistent_net_generator_end"
+
 # ignore the interface if a name has already been set
 NAME=="?*", GOTO="persistent_net_generator_end"
 
