@@ -17,3 +17,7 @@ Automate deployment of SUSE Manager in EC2
 
 Use AWS Lambda to look up AMI IDs from SUSE Public Cloud Information service.
 
+# vpc_suse_smt
+
+Sample templates to configure VPCs for access to SUSE SMT update
+infrastructure.
