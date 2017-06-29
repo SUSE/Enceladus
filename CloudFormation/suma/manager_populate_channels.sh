@@ -28,6 +28,7 @@ for channel in $@ ; do
     ;;
   sles12sp1)
     CHANNEL_LIST="$CHANNEL_LIST sles12-sp1-pool-x86_64 sles12-sp1-updates-x86_64 sle-manager-tools12-pool-x86_64-sp1 sle-manager-tools12-updates-x86_64-sp1"
+    ;;
   sles12sp2)
     CHANNEL_LIST="$CHANNEL_LIST sles12-sp2-pool-x86_64 sles12-sp2-updates-x86_64 sle-manager-tools12-pool-x86_64-sp2 sle-manager-tools12-updates-x86_64-sp2"
     ;;
@@ -42,18 +43,7 @@ for channel in $@ ; do
 done
 unset IFS
 echo "Selected channels: $CHANNEL_LIST"
-echo -n "Waiting for channels to appear "
-tick=0
-while [ -z "$(mgr-sync list channels -c | grep -v 'No channels found')" ] ; do
-  if [ $tick = 60 ]; then
-    echo " timeout waiting for channel refresh"
-    exit 1
-  fi
-  echo -n .
-  tick=$((tick+1))
-  sleep 60
-done
-echo
+mgr-sync refresh
 
 for channel in $CHANNEL_LIST ; do
   mgr-sync add channel $channel
@@ -88,7 +78,7 @@ done
 
 while [ $tick -lt $TIMEOUT_CHANNEL_SYNC -a "$DONE" = "0" ]; do
   for i in /var/log/rhn/reposync/* ; do
-    if ! tail -n 1 $i | grep -q -E '^Total time' ; then
+    if ! tail -n 1 $i | grep -q -E 'Sync completed' ; then
       echo -n '.'
       sleep 60
       tick=$((tick+1))

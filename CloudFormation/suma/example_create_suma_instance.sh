@@ -82,7 +82,7 @@ CONFIG='
 },
 {
   "ParameterKey": "ActivationKeyName",
-  "ParameterValue": "1-test_key"
+  "ParameterValue": "test_key"
 },
 {
   "ParameterKey": "ActivationKeyDescription",
@@ -93,5 +93,5 @@ CONFIG='
 
 aws --region $REGION cloudformation create-stack \
   --stack-name $STACK_NAME \
-  --template-body file://$HOME/Enceladus/CloudFormation/suma/suse_manager.templ \
+  --template-body file://`pwd`/suse_manager.templ \
   --parameters "$CONFIG"
