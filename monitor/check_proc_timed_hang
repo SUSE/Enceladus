@@ -59,7 +59,7 @@ allowed_runtime = command_args.get('RUN_TIME_ALLOWANCE', '1h')
 
 # Nagios states
 CRITICAL = 2
-OK = 1
+OK = 0
 UNKNOWN = 3
 
 
@@ -115,7 +115,7 @@ process_pid = get_pid(process_name)
 if not process_pid:
     clean_up(process_name)
     print 'Process %s is not runnning' % process_name
-    sys.exit(UNKNOWN)
+    sys.exit(OK)
 
 monitor_file_path = '/tmp/%s_%s.mon' % (process_name, process_pid)
 
