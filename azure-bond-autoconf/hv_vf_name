@@ -1,0 +1,5 @@
+#!/bin/sh
+# On HyperV/Azure VMs, we use VF serial number as the PCI domain. This number
+# is used as part of VF nic names for persistency.
+
+echo $DEVPATH | sed -r -e 's/(.*pci0*)([^:]*)(.*)/\2/'
