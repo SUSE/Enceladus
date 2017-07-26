@@ -18,7 +18,7 @@
 
 METADATA_BASE_URL="http://169.254.169.254/metadata/instance/network/interface/"
 URL_HDR="Metadata:true"
-URL_APX='?format=text'
+URL_APX='?format=text&api-version=2017-07-01'
 
 # -------------------------------------------------------------------
 # get the MAC address from the metadata server
@@ -29,7 +29,7 @@ get_iface_mac()
     local if_idx="$1"
     test -z "$if_idx" && return
 
-    curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/mac${URL_APX}" 2>/dev/null
+    curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/macAddress${URL_APX}" 2>/dev/null
 }
 
 # -------------------------------------------------------------------
@@ -41,10 +41,10 @@ get_ipv4_addresses_by_index()
     local if_idx="$1" count=0 prefixlen="$2"
     test -z "$if_idx" && return
 
-    curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/ipv4/ipaddress/${URL_APX}" 2>/dev/null | \
+    curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/ipv4/ipAddress/${URL_APX}" 2>/dev/null | \
     while read idx || [[ -n "$idx" ]] ; do
         [[ $count -ge 1 ]] && echo -n " "
-        curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/ipv4/ipaddress/${idx}/ipaddress${URL_APX}" 2>/dev/null
+        curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/ipv4/ipAddress/${idx}/privateIpAddress${URL_APX}" 2>/dev/null
         echo -n "/"
         curl -H "$URL_HDR" "${METADATA_BASE_URL}${if_idx}/ipv4/subnet/0/prefix${URL_APX}" 2>/dev/null
         count=$((count+1))
