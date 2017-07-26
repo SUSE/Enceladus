@@ -29,3 +29,9 @@ needs.
 
 The initial fork was maintained in https://github.com/rjschwei but has been
 removed as the code base will now be maintained as part of this project.
+
+
+Note
+----
+
+Must remain Python 2 based until EOL of SLES 11 in March 2019

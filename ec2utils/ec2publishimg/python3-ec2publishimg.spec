@@ -1,5 +1,5 @@
 #
-# spec file for package python-ec2deprecateimg
+# spec file for package python-ec2publishimg
 #
 # Copyright (c) 2015 SUSE Linux GmbH, Nuernberg, Germany.
 #
@@ -16,9 +16,9 @@
 #
 
 
-%define upstream_name ec2deprecateimg
-Name:           python-ec2deprecateimg
-Version:        4.0.0
+%define upstream_name ec2publishimg
+Name:           python3-ec2publishimg
+Version:        2.0.0
 Release:        0
 Summary:        Tag image as deprected in EC2
 License:        GPL-3.0+
@@ -34,10 +34,14 @@ BuildRequires:  python3-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
+# Package renamed in SLE 12, do not remove Provides, Obsolete directives
+# until after SLE 12 EOL
+Provides:       python-ec2publishimg = %{version}
+Obsoletes:      python-ec2publishimg < %{version}
 
 %description
-Deprecate images owned by the specified account by adding tags named
-"Deprecated on", "Removal date", and "Replacement image"
+Publish images owned by the specified account by adding tags named
+"Publishd on", "Removal date", and "Replacement image"
 
 %prep
 %setup -q -n %{upstream_name}-%{version}
@@ -48,8 +52,8 @@ python3 setup.py build
 %install
 python3 setup.py install --prefix=%{_prefix} --root=%{buildroot}
 install -d -m 755 %{buildroot}/%{_mandir}/man1
-install -m 644 man/man1/ec2deprecateimg.1 %{buildroot}/%{_mandir}/man1
-gzip %{buildroot}/%{_mandir}/man1/ec2deprecateimg.1
+install -m 644 man/man1/ec2publishimg.1 %{buildroot}/%{_mandir}/man1
+gzip %{buildroot}/%{_mandir}/man1/ec2publishimg.1
 
 %files
 %defattr(-,root,root,-)
