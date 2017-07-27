@@ -36,7 +36,7 @@ common:
 	install -m 755 common/cloud-netconfig-hotplug $(DEST_SCRIPTDIR)
 
 install-azure: common
-	install -m 644 azure/51-cloud-netconfig-hotplug.rules $(DEST_UDEVRULESDIR)
+	install -m 644 azure/61-cloud-netconfig-hotplug.rules $(DEST_UDEVRULESDIR)
 	install -m 755 azure/functions.cloud-netconfig $(DEST_SCRIPTDIR)
 
 install-ec2: common

@@ -72,7 +72,7 @@ ln -s /dev/null %{buildroot}/%{_sysconfdir}/udev/rules.d/75-persistent-net-gener
 %if 0%{?suse_version} >= 1315
 %{_sysconfdir}/udev/rules.d
 %endif
-%{_udevrulesdir}/51-cloud-netconfig-hotplug.rules
+%{_udevrulesdir}/61-cloud-netconfig-hotplug.rules
 %{_udevrulesdir}/75-cloud-persistent-net-generator.rules
 %doc README.md LICENSE
 
