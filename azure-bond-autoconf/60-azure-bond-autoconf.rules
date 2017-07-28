@@ -1,2 +1,2 @@
 # Assign Hyper-V VF NICs to stable names
-SUBSYSTEM=="net", DRIVERS=="hv_pci", ACTION=="add", PROGRAM="hv_vf_name", NAME:="vf%c", RUN+="/etc/sysconfig/network/scripts/azure-hv-create-bond-cfg vf%c"
+SUBSYSTEM=="net", DRIVERS=="hv_pci", ACTION=="add", PROGRAM="hv_vf_name", NAME:="vf%c", RUN+="/etc/sysconfig/network/scripts/azure-hv-bond-create-cfg vf%c"
