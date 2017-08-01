@@ -18,7 +18,7 @@
 %define base_name azure-bond-autoconf
 
 Name:           %{base_name}
-Version:        0.1
+Version:        0.2
 Release:        0
 License:        GPL-3.0+
 Summary:        Network bonding configuration scripts for Microsoft Azure
