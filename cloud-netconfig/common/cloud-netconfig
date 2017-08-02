@@ -205,7 +205,7 @@ configure_interface_ipv4()
 }
 
 # -------------------------------------------------------------------
-# set up IPv6 routing policies for secondary interfaces
+# set up IPv6 routing policies
 # 
 configure_interface_ipv6()
 {
@@ -213,10 +213,14 @@ configure_interface_ipv6()
     test -z "$cfg" -o ! -f "$cfg" && return 1
     get_variable "INTERFACE" "$cfg"
 
-    if [[ "$INTERFACE" == "eth0" ]]; then
-        # no routing policies needed for primary interface
-        return
-    fi
+    # NOTE: unlike with IPv4, we set up routing policies even for the primary
+    # interface. Default routes for IPv6 will likely have the same metric, so
+    # unlike with the IPv4 routes, where we use higher metrics for the non
+    # primary interfaces, we may run into the situation where the kernel picks
+    # the default route of a non primary interface as the main default. Using
+    # routing policies prevents that, but it means there will be a routing
+    # policy even if you do not have a secondary interface at all (not a
+    # problem, just not as nice as it could be).
 
     local RTABLE="10${INTERFACE: -1}"
 
