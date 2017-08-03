@@ -22,9 +22,11 @@ detected that does not have a configuration in `/etc/sysconfig/network`, a
 configuration will be generated with DHCP (v4 and v6) enabled. Additionally,
 for all interfaces including the primary one, **cloud-netconfig** looks up
 secondary IPv4 addresses from the metadata server and configures them on the
-interface, if any. Secondary IPv6 addresses are delivered via DHCP.  For any
+interface, if any. Secondary IPv6 addresses are delivered via DHCP. For any
 seconday interface, routing policies for each IP address will be created to
 ensure packets from those get routed via the corresponding network interface.
+For IPv6 addresses on the primary interface, routing policies will also be
+created to ensure correct routing.
 
 Interface configurations will be checked periodically on each DHCP lease
 renewal, and in case the configuration in the cloud framework changed, the
