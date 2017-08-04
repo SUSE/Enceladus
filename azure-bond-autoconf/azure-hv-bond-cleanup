@@ -46,7 +46,7 @@ done
 if [ ! -f "${SYSCONFDIR}/ifcfg-eth0" ]; then
 	logger -s -t $LOGNAME -p info "Creating DHCP interface configuration for eth0"
 	cat > "${SYSCONFDIR}/ifcfg-eth0" << EOF
-STARTMODE="autp"
+STARTMODE="auto"
 BOOTPROTO="dhcp"
 CLOUD_NETCONFIG_MANAGE="yes"
 EOF
