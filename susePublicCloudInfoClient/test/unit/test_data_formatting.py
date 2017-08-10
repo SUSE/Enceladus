@@ -218,7 +218,7 @@ def test_reformat_to_xml():
         }
     ]
     result = ifsrequest.__reformat(images, 'images', 'xml')
-    assert "<?xml version='1.0' encoding='UTF-8'?>" in result
-    assert '<images>' in result
-    assert 'id="ami-b97c8ffd"' in result
-    assert 'name="suse-sles-11-sp4-byos-v20150714-pv-ssd-x86_64"' in result
+    assert "<?xml version='1.0' encoding='UTF-8'?>".encode() in result
+    assert '<images>'.encode() in result
+    assert 'id="ami-b97c8ffd"'.encode() in result
+    assert 'name="suse-sles-11-sp4-byos-v20150714-pv-ssd-x86_64"'.encode() in result

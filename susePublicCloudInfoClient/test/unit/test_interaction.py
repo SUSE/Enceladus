@@ -21,7 +21,7 @@
 
 import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
 import requests
-from mock import patch
+from unittest.mock import patch
 from nose.tools import raises
 from io import StringIO
 
