@@ -58,8 +58,9 @@ process_name = command_args.get('PROCESS_NAME')
 allowed_runtime = command_args.get('RUN_TIME_ALLOWANCE', '1h')
 
 # Nagios states
-CRITICAL = 2
 OK = 0
+WARNING = 1
+CRITICAL = 2
 UNKNOWN = 3
 
 
