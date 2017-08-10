@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Setup module for pint"""
 
 # Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>

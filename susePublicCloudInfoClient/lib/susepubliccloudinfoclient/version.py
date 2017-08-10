@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
 #
