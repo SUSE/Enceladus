@@ -1,7 +1,7 @@
 #
-# spec file for package python-susepubcloudinfo
+# spec file for package python3-susepubcloudinfo
 #
-# Copyright (c) 2015 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# Copyright (c) 2017 SUSE LINUX Products GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
