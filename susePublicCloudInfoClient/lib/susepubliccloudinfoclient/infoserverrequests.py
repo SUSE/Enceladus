@@ -155,7 +155,7 @@ def __form_url(
     if region == 'all':
         region = None
     if region:
-        url_components.append(urllib.quote(region))
+        url_components.append(urllib.parse.quote(region))
     url_components.append(info_type)
     doc_type = image_state or server_type
     if doc_type:
@@ -235,7 +235,7 @@ def __parse_command_arg_filter(command_arg_filter=None):
         for phrase in command_arg_filter.split(','):
             # compare each comma-separated 'phrase' against the valid filters
             # defined by regular expressions
-            for attr, regex in valid_filters.iteritems():
+            for attr, regex in list(valid_filters.items()):
                 match = re.match(regex, phrase)
                 if match:
                     filters.append(match.groupdict())

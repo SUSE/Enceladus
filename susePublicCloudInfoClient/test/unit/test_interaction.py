@@ -23,7 +23,7 @@ import lib.susepubliccloudinfoclient.infoserverrequests as ifsrequest
 import requests
 from mock import patch
 from nose.tools import raises
-from StringIO import StringIO
+from io import StringIO
 
 
 def test_warn_includes_warning():
