@@ -1,5 +1,5 @@
 #
-# spec file for package python-ec2publishimg
+# spec file for package python-ec2deprecateimg
 #
 # Copyright (c) 2015 SUSE Linux GmbH, Nuernberg, Germany.
 #
@@ -16,51 +16,51 @@
 #
 
 
-%define upstream_name ec2publishimg
-Name:           python-ec2publishimg
-Version:        1.1.3
+%define upstream_name ec2deprecateimg
+Name:           python3-ec2deprecateimg
+Version:        4.0.0
 Release:        0
 Summary:        Tag image as deprected in EC2
 License:        GPL-3.0+
 Group:          System/Management
 Url:            https://github.com/SUSE/Enceladus
 Source0:        %{upstream_name}-%{version}.tar.bz2
-Requires:       python
-Requires:       python-boto3
-Requires:       python-dateutil
-Requires:       python-ec2utilsbase >= 2.0.2
-Requires:       python-ec2utilsbase < 3.0.0
-BuildRequires:  python-setuptools
+Requires:       python3
+Requires:       python3-boto3
+Requires:       python3-dateutil
+Requires:       python-ec2utilsbase >= 3.0.0
+Requires:       python-ec2utilsbase < 4.0.0
+BuildRequires:  python3-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-
-%if 0%{?suse_version} && 0%{?suse_version} <= 1110
-%{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%else
 BuildArch:      noarch
-%endif
+
+# Package renamed in SLE 12, do not remove Provides, Obsolete directives
+# until after SLE 12 EOL
+Provides:       python-ec2deprecateimg = %{version}
+Obsoletes:      python-ec2deprecateimg < %{version}
 
 %description
-Publish images owned by the specified account by adding tags named
-"Publishd on", "Removal date", and "Replacement image"
+Deprecate images owned by the specified account by adding tags named
+"Deprecated on", "Removal date", and "Replacement image"
 
 %prep
 %setup -q -n %{upstream_name}-%{version}
 
 %build
-python setup.py build
+python3 setup.py build
 
 %install
-python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+python3 setup.py install --prefix=%{_prefix} --root=%{buildroot}
 install -d -m 755 %{buildroot}/%{_mandir}/man1
-install -m 644 man/man1/ec2publishimg.1 %{buildroot}/%{_mandir}/man1
-gzip %{buildroot}/%{_mandir}/man1/ec2publishimg.1
+install -m 644 man/man1/ec2deprecateimg.1 %{buildroot}/%{_mandir}/man1
+gzip %{buildroot}/%{_mandir}/man1/ec2deprecateimg.1
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
 %{_mandir}/man*/*
-%{python_sitelib}/ec2utils
-%{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}*
+%dir %{python3_sitelib}/ec2utils
+%{python3_sitelib}/*
 %{_bindir}/*
 
 %changelog

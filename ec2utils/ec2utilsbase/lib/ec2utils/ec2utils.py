@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2017 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of ec2utilsbase.
 #
@@ -16,10 +16,10 @@
 # along with ec2utilsbase.  If not, see <http://www.gnu.org/licenses/>.
 
 import boto3
-import ConfigParser
+import configparser
 import os
 
-from .ec2UtilsExceptions import *
+from ec2utils.ec2UtilsExceptions import *
 
 
 class EC2Utils:
@@ -74,7 +74,7 @@ class EC2Utils:
             return True
 
         if self.verbose:
-            print 'Using EC2 region: ', region
+            print('Using EC2 region: ', region)
             
         self.region = region
 

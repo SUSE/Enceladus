@@ -15,6 +15,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+# MUST remain Python 2 based until EOL of SLES 11 in March 2019
 
 %define upstream_name ec2metadata
 Name:           python-ec2metadata
