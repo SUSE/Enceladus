@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Copyright (c) 2017 SUSE Linux GmbH
+#
+# This file is part of azure-bond-autoconf.
+#
+# azure-bond-autoconf is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# azure-bond-autoconf is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with azure-bond-autoconf.  If not, see <http://www.gnu.org/licenses/
+
+# This script removes interface configuration files auto-generated
+# by azure-bond-autoconf.
+
+SYSCONFDIR=/etc/sysconfig/network
+LOGNAME="${0##*/}"
+
+get_variable()
+{
+        local line
+        while read line; do
+                 eval $line
+        done < <(grep "^[[:space:]]*$1=" $2 2>/dev/null)
+}
+
+shopt -s nullglob
+
+for i in ${SYSCONFDIR}/ifcfg-* ; do
+	unset AZURE_BOND_AUTOCONF
+	get_variable AZURE_BOND_AUTOUPDATE $i
+	iface="${i##*-}"
+	if [ "$AZURE_BOND_AUTOCONF" == "yes" ]; then
+		logger -s -t $LOGNAME -p info "Removing interface configuration for $iface"
+	fi
+done
+
+# make sure there's always a config for eth0
+if [ ! -f "${SYSCONFDIR}/ifcfg-eth0" ]; then
+	logger -s -t $LOGNAME -p info "Creating DHCP interface configuration for eth0"
+	cat > "${SYSCONFDIR}/ifcfg-eth0" << EOF
+STARTMODE="auto"
+BOOTPROTO="dhcp"
+CLOUD_NETCONFIG_MANAGE="yes"
+EOF
+fi
+
+exit 0

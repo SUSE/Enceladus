@@ -1,0 +1,12 @@
+[Unit]
+Description=Azure bonding setup cleanup
+Before=pre-network.service
+After=local-fs.target
+
+[Service]
+ExecStart=/etc/sysconfig/network/scripts/azure-hv-bond-cleanup
+RemainAfterExit=true
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
