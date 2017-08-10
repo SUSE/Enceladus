@@ -40,7 +40,7 @@ description += 'Service'
 
 if __name__ == '__main__':
     setuptools.setup(
-        name='susepubliccloudinfoclient',
+        name='susepubliccloudinfo',
         description=(description),
         url='https://github.com/SUSE/Enceladus',
         license='GPL-3.0+',
