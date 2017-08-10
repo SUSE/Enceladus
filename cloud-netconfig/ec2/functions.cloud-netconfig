@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Copyright (c) 2017 SUSE Linux GmbH
+#
+# This file is part of cloud-netconfig.
+#
+# cloud-netconfig is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-netconfig is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+
+METADATA_URL_BASE="http://169.254.169.254/latest/meta-data/network/interfaces/macs/"
+
+# -------------------------------------------------------------------
+# get IPv4 address from the EC2 meta data server and return them
+# 
+get_ipv4_addresses_from_metadata()
+{
+    local addr count=0 hwaddr="$1" prefixlen
+    test -z "$hwaddr" && return 1
+
+    local cidr_block=$(curl "${METADATA_URL_BASE}/$hwaddr/subnet-ipv4-cidr-block" 2>/dev/null)
+    prefixlen=${cidr_block##*/}
+    curl "${METADATA_URL_BASE}/$hwaddr/local-ipv4s" 2>/dev/null | \
+    while read -r addr || [[ -n "$addr" ]]; do
+        [[ $count -ge 1 ]] && echo -n " "
+        echo -n "${addr}/${prefixlen}"
+        count=$((count+1))
+    done
+}
+
+# -------------------------------------------------------------------
+# check if metadata server is available
+# 
+metadata_available()
+{   
+    local resp=$(curl "http://169.254.169.254/latest/meta-data/" 2>/dev/null)
+    [[ "$resp" == *ami-id* ]]
+    return $?
+}
+
