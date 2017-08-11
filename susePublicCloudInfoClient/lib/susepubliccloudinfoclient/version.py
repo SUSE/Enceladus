@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
 #
@@ -18,4 +17,4 @@
 # along with susePublicCloudInfoClient. If not, see
 # <http://www.gnu.org/licenses/>.
 #
-VERSION = '0.4.0'
+VERSION = '1.0.0'

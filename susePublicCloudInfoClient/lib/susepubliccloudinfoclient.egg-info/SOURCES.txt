@@ -1,6 +1,7 @@
-pint
 setup.cfg
 setup.py
+bin/awscsvgen
+bin/pint
 lib/susepubliccloudinfoclient/__init__.py
 lib/susepubliccloudinfoclient/infoserverrequests.py
 lib/susepubliccloudinfoclient/version.py
