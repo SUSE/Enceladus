@@ -254,6 +254,7 @@ class GCEMetadata:
         if devID not in knownIDs:
             msg = 'Requested device "%s" not available for query. ' %devID
             msg += 'Available disks: %s' %knownIDs
+            raise GCEMetadataException(msg)
 
         self.diskDevID = devID
 
@@ -263,5 +264,6 @@ class GCEMetadata:
         if devID not in knownIDs:
             msg = 'Requested device "%s" not available for query. ' %devID
             msg += 'Available network interfaces: %s' %knownIDs
+            raise GCEMetadataException(msg)
 
         self.netDevID = devID

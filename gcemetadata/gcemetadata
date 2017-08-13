@@ -135,13 +135,13 @@ def main():
             sys.exit(0)
         elif opt == '--diskid':
             try:
-                meta.setDiskDevice(opt)
+                meta.setDiskDevice(val)
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
             continue
         elif opt == '--netid':
             try:
-                meta.setNetDevice(opt)
+                meta.setNetDevice(val)
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
             continue
