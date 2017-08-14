@@ -27,6 +27,7 @@ from gcemetadata.gcemetaExceptions import *
 
 generalOptions = ['api', 'help', 'listapis', 'output=',
                   'version', 'xml']
+opts_with_args = ['identity']
 
 def printOption(level, indent, options):
     prefix = '--'
@@ -47,6 +48,8 @@ def printOption(level, indent, options):
                     printOption(level + 2, indent, options[opt][devID])
             else:
                 printOption(level + 1, indent, options[opt])
+        if opt in opts_with_args:
+            opt += ' VALUE'
         print >> sys.stdout, indent * level + prefix + opt
 
 def usage(options, categories, e=None):
@@ -105,9 +108,15 @@ def main():
         getopt_metaopts.append('diskid=')
         getopt_metaopts.append('netid=')
         getopt_metaopts.append('query=')
+#        getopt_metaopts.append('xml')
+        command_line_opts = []
+        for opt in getopt_metaopts:
+            if opt in opts_with_args:
+                opt += '='
+            command_line_opts.append(opt)
         opts, args = getopt.gnu_getopt(sys.argv[1:],
                                        'hlo:vq:x',
-                                       getopt_metaopts
+                                       command_line_opts
         )
     except getopt.GetoptError, e:
         usage(meta.getAPIMap(), meta.getOptionCategories(), e)
@@ -139,6 +148,11 @@ def main():
             except gcemetadata.GCEMetadataException, e:
                 usage(meta.getAPIMap(), meta.getOptionCategories(), e)
             continue
+        elif opt == '--identity':
+            if not val:
+                print >> sys.stderr, '--identity argument must have a value'
+                sys.exit(1)
+            meta.set_identity_arg(val)
         elif opt == '--netid':
             try:
                 meta.setNetDevice(val)
@@ -166,7 +180,7 @@ def main():
             genXML = True
             continue
         
-        metaopts.append(opt.replace('--', ''))
+        metaopts.append(opt.replace('--', '').replace('=',''))
 
     if not foundQuery:
         print 'The use of --query is required.'

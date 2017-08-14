@@ -34,6 +34,7 @@ class GCEMetadata:
         self.defaultNetID   = '0'
         self.diskDevID      = -1
         self.header         = {'Metadata-Flavor' : 'Google'}
+        self.identity_arg = None
         self.netDevID       = -1
         self.options        = {}
         self.server         = 'metadata.google.internal'
@@ -64,6 +65,15 @@ class GCEMetadata:
 
         return False
 
+
+    def _add_arguments(self, option):
+        """Add an argument to the uri"""
+        arg_map = { 'identity' : self.identity_arg }
+        if option in arg_map.keys():
+            return '?%s' %arg_map[option]
+
+        return ''
+        
     def _addOptions(self, path, devID=None):
         """Collect all options in the given path"""
         options = {}
@@ -191,7 +201,7 @@ class GCEMetadata:
             msg = 'No query path for option "%s", please file a bug' %option
             raise GCEMetadataException(msg)
 
-        path += option
+        path += option + self._add_arguments(option)
 
         return self._get(self._buildFullURL(path))
         
@@ -261,6 +271,10 @@ class GCEMetadata:
             raise GCEMetadataException(msg)
 
         self.diskDevID = devID
+
+    def set_identity_arg(self, audience):
+        """Set the argument for the JWT generation"""
+        self.identity_arg = 'audience=%s' %audience
 
     def setNetDevice(self, devID):
         """Set the network device ID to query"""
