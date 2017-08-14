@@ -1,7 +1,12 @@
-python-gcemetadata
+cloud-regionsrv-client-plugin-gce
 gcimagebundle
 google-cloud-sdk
+google-compute-engine-init
+google-compute-engine-oslogin
 google-daemon
 google-startup-scripts
-cloud-regionsrv-client-plugin-gce
+python-gcemetadata
+python3-gcemetadata
 regionServiceClientConfigGCE
+regionServiceClientConfigSAPGCE
+supportutils-plugin-suse-public-cloud

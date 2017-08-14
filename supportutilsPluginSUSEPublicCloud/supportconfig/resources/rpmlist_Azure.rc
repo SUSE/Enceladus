@@ -2,5 +2,8 @@ azuremetadata
 python-azure-agent
 python-azure-sdk
 python-azurectl
+python3g-azurectl
 regionServiceClientConfigAzure
+regionServiceClientConfigSAPAzure
+supportutils-plugin-suse-public-cloud
 WALinuxAgent
