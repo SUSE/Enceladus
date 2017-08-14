@@ -46,10 +46,14 @@ python setup.py build
 
 %install
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+install -d -m 755 %{buildroot}/%{_mandir}/man1
+install -m 644 man/man1/gcemetadata.1 %{buildroot}/%{_mandir}/man1
+gzip %{buildroot}/%{_mandir}/man1/gcemetadata.1
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE README.md
+%{_mandir}/man*/*
 %dir %{python_sitelib}/%{upstream_name}
 %dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
 %{_bindir}/*
