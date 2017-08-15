@@ -39,7 +39,7 @@ class GCEMetadata:
         self.server         = 'metadata.google.internal'
 
         if apiv not in self.getAvailableAPIVersions():
-            msg = 'Given API version "%s" not available' %s
+            msg = 'Given API version "%s" not available' %apiv
             raise GCEMetadataException(msg)
 
         if not self._test_connectivity(self.server, 80):
@@ -118,7 +118,11 @@ class GCEMetadata:
     def _genList(self, valueStr):
         """Return a list from a new line separated string with no trailing /"""
         values = valueStr.split('\n')
-        return [value.rstrip('/') for value in values]
+        items = []
+        for value in values:
+            if value:
+                items.append(value.rstrip('/'))
+        return items
 
     def _get(self, url):
         """Return the value for the requested uri"""
