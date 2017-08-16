@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2017 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of gcemetadata.
 #
@@ -24,8 +24,10 @@ unnecessary state out of the metadata class
 import gcemetadata
 import sys
 
+from gcemetaExceptions import *
+
 def _cleanUpOptions(metadata, options):
-    """Removes options with overloaded semantics is a suboption is provided"""
+    """Removes options with overloaded semantics if a suboption is provided"""
     if '--disks' in options:
         diskOpts = metadata.getDiskOptions()
         for dOpt in diskOptions:
@@ -40,17 +42,76 @@ def _cleanUpOptions(metadata, options):
                 break
 
     return options
+
+def _genXML(metadata, metaopts):
+    """Use the option name as a tag name to wrap the data."""
+
+    xml = ''
+    for metaopt in metaopts:
+        value = metadata.get(metaopt)
+        if not value:
+            value = "unavailable"
+        xml += '<%s>' %metaopt
+        xml += str(value)
+        xml += '</%s>\n' %metaopt
         
-def displayAll(metadata):
+    return xml
+
+def _open_file(path):
+    """Open a file for the given path"""
+    fout = None
+    try:
+        fout = open(path, 'w')
+    except:
+        msg = 'Unable to open file "%s" for writing' % filePath
+        raise GCEMetadataException(msg)
+
+    return fout
+
+def _write(filePath, data):
+    """Write the data to the given file"""
+    fout = None
+    close_file = False
+    if type(filePath) is str:
+        fout = _open_file(filePath)
+        close_file = True
+    elif type(filePath) is file:
+        if filePath.closed:
+            fout = _open_file(filePath.name)
+            close_file = True
+        else:
+            fout = filePath
+    try:
+        fout.write(data)
+    except:
+        if close_file:
+            fout.close()
+        msg = 'Unable to write to file "%s"' %fout.name
+        raise GCEMetadataException(msg)
+
+    if close_file:
+        fout.close()
+
+def displayAll(metadata, outfile=sys.stdout, gen_xml=False):
     """Display all metdata values"""
     apiMap = metadata.getAPIMap()
     categories = metadata.getOptionCategories()
+    data = ''
     categories.sort()
     for cat in categories:
         metadata.setDataCat(cat)
         for option in apiMap[cat].keys():
             if option != 'disks' and option != 'network-interfaces':
-                display(metadata, [option], True)
+                if gen_xml:
+                    data += _genXML(metadata, [option])
+                else:
+                    try:
+                        value = metadata.get(option)
+                    except gcemetadata.GCEMetadataException, e:
+                        print >> sys.stderr, "Error:", e
+                    if not value:
+                        value = "unavailable"
+                    data += "%s: %s\n" % (option, value)
             else:
                 ids = apiMap[cat][option].keys()
                 for devID in ids:
@@ -59,14 +120,43 @@ def displayAll(metadata):
                     else:
                         metadata.setNetDevice(devID)
                     for entry in apiMap[cat][option][devID]:
-                        display(metadata, [entry], True)
+                        if gen_xml:
+                            data += _genXML(metadata, [option])
+                        else:
+                            try:
+                                value = metadata.get(option)
+                            except gcemetadata.GCEMetadataException, e:
+                                print >> sys.stderr, "Error:", e
+                            if not value:
+                                value = "unavailable"
+                            data += "%s: %s\n" % (option, value) 
+
+    try:
+        _write(outfile, data)
+    except:
+        print sys.stderr, 'Could not write file "%s"' %outfile
+        sys.exit(1)
                             
     
 def display(metadata, metaopts, prefix=False):
     """primitive: display metaopts (list) values with optional prefix"""
 
+    write_file(sys.stdout, metadata, metaopts, prefix)
+
+def display_xml(metadata, metaopts):
+    """Collect the requested data and display it as XML"""
+
     options = _cleanUpOptions(metadata, metaopts)
 
+    data = _genXML(metadata, options)
+    _write(sys.stdout, data)
+
+def write_file(filePath, metadata, metaopts, prefix=False):
+    """Collect the requested data and write it to the given file."""
+
+    options = _cleanUpOptions(metadata, metaopts)
+
+    data = ''
     for metaopt in options:
         value = None
         try:
@@ -77,6 +167,16 @@ def display(metadata, metaopts, prefix=False):
             value = "unavailable"
 
         if prefix:
-            print "%s: %s" % (metaopt, value)
+            data += "%s: %s\n" %(metaopt, value)
         else:
-            print value
+            data += "%s\n" %value
+
+    _write(filePath, data)
+
+def write_xml_file(filePath, metadata, metaopts):
+    """Collect the requested data and write it to the given file as XML"""
+
+    options = _cleanUpOptions(metadata, metaopts)
+
+    data = _genXML(metadata, options)
+    _write(filePath, data)
