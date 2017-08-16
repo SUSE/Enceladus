@@ -24,6 +24,8 @@ unnecessary state out of the metadata class
 import gcemetadata
 import sys
 
+from gcemetaExceptions import *
+
 def _cleanUpOptions(metadata, options):
     """Removes options with overloaded semantics if a suboption is provided"""
     if '--disks' in options:
@@ -55,15 +57,40 @@ def _genXML(metadata, metaopts):
         
     return xml
 
+def _open_file(path):
+    """Open a file for the given path"""
+    fout = None
+    try:
+        fout = open(path, 'w')
+    except:
+        msg = 'Unable to open file "%s" for writing' % filePath
+        raise GCEMetadataException(msg)
+
+    return fout
+
 def _write(filePath, data):
     """Write the data to the given file"""
     fout = None
+    close_file = False
     if type(filePath) is str:
-        fout = open(filePath, 'w')
+        fout = _open_file(filePath)
+        close_file = True
     elif type(filePath) is file:
-        fout = filePath
-    fout.write(data)
-    fout.close()
+        if filePath.closed:
+            fout = _open_file(filePath.name)
+            close_file = True
+        else:
+            fout = filePath
+    try:
+        fout.write(data)
+    except:
+        if close_file:
+            fout.close()
+        msg = 'Unable to write to file "%s"' %fout.name
+        raise GCEMetadataException(msg)
+
+    if close_file:
+        fout.close()
 
 def displayAll(metadata, outfile=sys.stdout, gen_xml=False):
     """Display all metdata values"""
@@ -107,7 +134,7 @@ def displayAll(metadata, outfile=sys.stdout, gen_xml=False):
     try:
         _write(outfile, data)
     except:
-        print syst.stderr, 'Could not write file "%s"' %outfile
+        print sys.stderr, 'Could not write file "%s"' %outfile
         sys.exit(1)
                             
     
@@ -151,5 +178,5 @@ def write_xml_file(filePath, metadata, metaopts):
 
     options = _cleanUpOptions(metadata, metaopts)
 
-    data = _genXML(metadata, metaopts)
+    data = _genXML(metadata, options)
     _write(filePath, data)

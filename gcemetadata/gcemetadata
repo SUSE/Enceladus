@@ -127,11 +127,11 @@ def main():
         return
     elif len(opts) == 1:
         option = opts[0]
-        if option[0] in ['-o', '--output', '-x', '--xml']:
-            if option[0] in ['-o', '--output']:
-                gcemetautils.displayAll(meta, outfile=option[1])
-            else:
-                gcemetautils.displayAll(meta, gen_xml=True)
+        if option[0] in ['-o', '--output']:
+            gcemetautils.displayAll(meta, outfile=option[1])
+            return
+        elif option[0] in ['-x', '--xml']:
+            gcemetautils.displayAll(meta, gen_xml=True)
             return
     elif len(opts) == 2:
         found_xml = None
