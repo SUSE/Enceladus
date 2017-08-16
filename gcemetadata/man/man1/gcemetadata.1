@@ -10,26 +10,35 @@ gcemetadata \- Query the Google Compute Engine metadata server
 .B gcemetadata
 is used to query the Google Compute Engine metadata server. The available
 data is documented at 
-https://cloud.google.com/compute/docs/storing-retrieving-metadata. The
-command line options the tool accepts are for the most part dynamically and
-therefore will change as more endpoints are added. The static command line
-options are documented in this man page while the dynamic options are not
-documented here. The tool will display all information available if no
-command line options other than
+https://cloud.google.com/compute/docs/storing-retrieving-metadata . The
+command line options the tool accepts are for the most part dynamically
+generated and therefore will change as more endpoints are added. The static
+command line options are documented in this man page while the dynamic
+options are not documented here. The tool will display all information
+available if no command line options other than
 .I --output
 or
 .I --xml
 are specified. If any specific option is given the
 .I --query
-option must be given. If a specific query does not produce any value or
+option must be used as well. If a specific query does not produce any value or
 the query results in an error the data for the requested option will be
 set to
-.I unavailable.
+.IR unavailable .
 .SH OPTIONS
 .IP "-a --api"
 Specify the version of the metadata server API to use.
 .IP "--help"
 Print all available command line options to standard out.
+.IP "--identity-format"
+Set the format for the identity token. Supported values are
+.I full
+or
+.IR standard .
+This changes the amount of information encoded in the identity token. The
+default value is
+.I standard
+, providing the smallest possible amount of information.
 .IP "--listapis"
 List the available api versions.
 .IP "--output"
@@ -38,7 +47,7 @@ Write the requested information to the given file.
 Specify whether to query the project or the instance, possible values are
 .I project
 or
-.I instance.
+.IR instance .
 If any option, other than
 .I --output
 or
@@ -47,7 +56,7 @@ is specified the
 .I --query
 option is required.
 .IP "--version"
-Print he version of the tool.
+Print the version of the tool.
 .IP "--xml"
 Specify that the tool should produce XML snippets. Using this option produces
 information that is wrapped in tags that match the API endpoint option. For
@@ -63,5 +72,15 @@ Will print the name of the project the instance is running in.
 gcemetadata --query instance --netid 0 --external-ip
 
 Will print the external IPv4 address of the instance.
+.SH CAVEAT
+When requesting all possible information, i.e no argument or only
+.I --output
+and/or
+.I --xml
+are given the identity information in the resulting output will be shown
+as
+.IR unavailable .
+The reason is that a valid identifier for the identity token generation
+is not know and thus no valid token can be generated.
 .SH AUTHOR
 Robert Schweikert (rjschwei@suse.com)
