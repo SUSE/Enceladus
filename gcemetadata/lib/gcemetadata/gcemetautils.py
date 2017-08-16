@@ -34,6 +34,12 @@ def _cleanUpOptions(metadata, options):
             if dOpt in options:
                 options.remove('disks')
                 break
+    elif '--licenses' in options:
+        license_opts = metadata.get_license_options()
+        for l_opts in license_opts:
+            if l_opt in options:
+                options.remove('licenses')
+                break
     elif '--network-interfaces' in options:
         netOpts = metadata.getNetOptions()
         for nOpt in netOptions:
@@ -94,14 +100,15 @@ def _write(filePath, data):
 
 def displayAll(metadata, outfile=sys.stdout, gen_xml=False):
     """Display all metdata values"""
+    metadata.query_all_sub_options(True)
     apiMap = metadata.getAPIMap()
     categories = metadata.getOptionCategories()
     data = ''
     categories.sort()
     for cat in categories:
         metadata.setDataCat(cat)
-        for option in apiMap[cat].keys():
-            if option != 'disks' and option != 'network-interfaces':
+        for option, item in apiMap[cat].items():
+            if type(item) is not dict:
                 if gen_xml:
                     data += _genXML(metadata, [option])
                 else:
@@ -117,19 +124,21 @@ def displayAll(metadata, outfile=sys.stdout, gen_xml=False):
                 for devID in ids:
                     if option == 'disks':
                         metadata.setDiskDevice(devID)
+                    elif option == 'licenses':
+                        metadata.set_license_id(devID)
                     else:
                         metadata.setNetDevice(devID)
-                    for entry in apiMap[cat][option][devID]:
+                    for entry in apiMap[cat][option][devID].keys():
                         if gen_xml:
-                            data += _genXML(metadata, [option])
+                            data += _genXML(metadata, [entry])
                         else:
                             try:
-                                value = metadata.get(option)
+                                value = metadata.get(entry)
                             except gcemetadata.GCEMetadataException, e:
                                 print >> sys.stderr, "Error:", e
                             if not value:
                                 value = "unavailable"
-                            data += "%s: %s\n" % (option, value) 
+                            data += "%s: %s\n" % (entry, value) 
 
     try:
         _write(outfile, data)
