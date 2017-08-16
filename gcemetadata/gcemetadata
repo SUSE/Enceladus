@@ -53,7 +53,6 @@ def printOption(level, indent, options):
                         )
                         print >> sys.stdout, info
                     printOption(level + 2, indent, options[opt][devID])
-                    continue
             else:
                 printOption(level + 1, indent, options[opt])
         if opt in opts_with_args:

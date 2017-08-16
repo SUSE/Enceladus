@@ -36,7 +36,7 @@ def _cleanUpOptions(metadata, options):
                 break
     elif '--licenses' in options:
         license_opts = metadata.get_license_options()
-        for l_opts in license_opts:
+        for l_opt in license_opts:
             if l_opt in options:
                 options.remove('licenses')
                 break

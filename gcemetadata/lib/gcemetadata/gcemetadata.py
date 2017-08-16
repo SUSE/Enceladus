@@ -298,9 +298,10 @@ class GCEMetadata:
 
     def query_all_sub_options(self, on_off=False):
         """If set enables the querying of all suboptions"""
-        self.query_disk_data = True
-        self.query_license_data = True
-        self.query_net_data = True
+        if on_off:
+            self.query_disk_data = True
+            self.query_license_data = True
+            self.query_net_data = True
 
     def setAPIVersion(self, apiv):
         """Set the API Version to use for the query"""
@@ -345,7 +346,7 @@ class GCEMetadata:
     def set_license_id(self, license_id):
         """Set the id for the license to query"""
         known_ids = self._get_item_id_list('licenses')
-        if not license_id in known_ids:
+        if license_id not in known_ids:
             msg = 'Requested license "%s" not available for query. ' %license_id
             msg += 'Available license: %s' %known_ids
             raise GCEMetadataException(msg)
