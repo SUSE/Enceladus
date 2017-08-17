@@ -25,7 +25,7 @@ import gcemetadata.gcemetautils as gcemetautils
 
 from gcemetadata.gcemetaExceptions import *
 
-generalOptions = ['api', 'help', 'listapis', 'output=',
+generalOptions = ['api', 'help', 'identity-format=', 'listapis', 'output=',
                   'version', 'xml']
 opts_with_args = ['identity']
 opts_with_id_targets = ['disks','licenses', 'network-interfaces']
@@ -115,9 +115,7 @@ def main():
         getopt_metaopts.append('diskid=')
         getopt_metaopts.append('licenseid=')
         getopt_metaopts.append('netid=')
-        getopt_metaopts.append('output=')
         getopt_metaopts.append('query=')
-        getopt_metaopts.append('xml')
         command_line_opts = []
         for opt in getopt_metaopts:
             if opt in opts_with_args:
@@ -180,6 +178,14 @@ def main():
                 print >> sys.stderr, '--identity argument must have a value'
                 sys.exit(1)
             meta.set_identity_arg(val)
+        elif opt == '--identity-format':
+            supported_vals = ['full', 'standard']
+            if val not in supported_vals:
+                msg = '--identity-format possible values: "%s"' %supported_vals
+                print >> sys.stderr, msg
+                sys.exit(1)
+            meta.set_identity_format(val)
+            continue
         elif opt == '--licenseid':
             try:
                meta.set_license_id(val)
