@@ -28,12 +28,13 @@ from gcemetadata.gcemetaExceptions import *
 generalOptions = ['api', 'help', 'listapis', 'output=',
                   'version', 'xml']
 opts_with_args = ['identity']
+opts_with_id_targets = ['disks','licenses', 'network-interfaces']
 
 def printOption(level, indent, options):
     prefix = '--'
     for opt in options.keys():
         if type(options[opt]) == dict:
-            if opt == 'disks' or opt == 'network-interfaces':
+            if opt in opts_with_id_targets:
                 # Figure out the ID
                 devIDs = options[opt].keys()
                 devIDs.sort()
@@ -42,8 +43,14 @@ def printOption(level, indent, options):
                     if opt == 'disks':
                         info = indent * (level + 1) + prefix + 'diskid ' + devID
                         print >> sys.stdout, info
-                    else:
+                    elif opt == 'network-interfaces':
                         info = indent * (level + 1) + prefix + 'netid ' + devID
+                        print >> sys.stdout, info
+                    elif opt == 'licenses':
+                        info = (
+                            indent * (level + 1) +
+                            prefix + 'licenseid ' + devID
+                        )
                         print >> sys.stdout, info
                     printOption(level + 2, indent, options[opt][devID])
             else:
@@ -106,6 +113,7 @@ def main():
         getopt_metaopts = meta.getFlatenedOpts()
         getopt_metaopts += generalOptions
         getopt_metaopts.append('diskid=')
+        getopt_metaopts.append('licenseid=')
         getopt_metaopts.append('netid=')
         getopt_metaopts.append('output=')
         getopt_metaopts.append('query=')
@@ -172,6 +180,12 @@ def main():
                 print >> sys.stderr, '--identity argument must have a value'
                 sys.exit(1)
             meta.set_identity_arg(val)
+        elif opt == '--licenseid':
+            try:
+               meta.set_license_id(val)
+            except gcemetadata.GCEMetadataException, e:
+                usage(meta.getAPIMap(), meta.getOptionCategories(), e)
+            continue   
         elif opt == '--netid':
             try:
                 meta.setNetDevice(val)
