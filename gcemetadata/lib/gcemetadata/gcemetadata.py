@@ -353,7 +353,7 @@ class GCEMetadata:
 
         self.license_id = license_id
         self.query_license_data = True
-        self.license_data_shown
+        self.license_data_shown = []
 
     def setNetDevice(self, devID):
         """Set the network device ID to query"""
