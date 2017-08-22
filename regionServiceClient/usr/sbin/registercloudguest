@@ -93,11 +93,11 @@ def get_products():
 
 # ----------------------------------------------------------------------------
 # Support custom config file with -f command line option
-configFile = None
+config_file = None
 
 if '-f' in sys.argv:
     idx = sys.argv.index('-f')
-    configFile = sys.argv[idx+1]
+    config_file = sys.argv[idx+1]
 
 force_new_registration = False
 if '--force-new' in sys.argv:
@@ -108,7 +108,28 @@ if '--delay' in sys.argv:
     delay_time = sys.argv[arg_index + 1]
     time.sleep(int(delay_time))
 
-cfg = utils.get_config(configFile)
+user_smt_ip = None
+if '--smt-ip' in sys.argv:
+    arg_index = sys.argv.index('--smt-ip')
+    user_smt_ip = sys.argv[arg_index + 1]
+    # Validation has to wait for Python 3 implementation
+
+user_smt_fqdn = None
+if '--smt-fqdn' in sys.argv:
+    arg_index = sys.argv.index('--smt-fqdn')
+    user_smt_fqdn = sys.argv[arg_index + 1]
+
+user_smt_fp = None
+if '--smt-fp' in sys.argv:
+    arg_index = sys.argv.index('--smt-fp')
+    user_smt_fp = sys.argv[arg_index + 1]
+
+if user_smt_ip or user_smt_fqdn or user_smt_fp:
+    if not (user_smt_ip and user_smt_fqdn and user_smt_fp):
+        msg = '--smt-ip, --smt-fqdn, and --smt-fp must be used together'
+        print >> sys.stderr, msg
+
+cfg = utils.get_config(config_file)
 utils.start_logging()
 
 if not os.path.isdir(utils.REGISTRATION_DATA_DIR):
@@ -117,9 +138,17 @@ if not os.path.isdir(utils.REGISTRATION_DATA_DIR):
 if force_new_registration:
     logging.info('Forced new registration')
 
+if user_smt_ip:
+    msg = 'Using user specified SMT server:\n'
+    msg += '\n\t"IP:%s"' % user_smt_ip
+    msg += '\n\t"FQDN:%s"' % user_smt_fqdn
+    msg += '\n\t"Fingerprint:%s"' % user_smt_fp
+    logging.info(msg)
+
 cached_smt_servers = utils.get_available_smt_servers()
-# This is a forced re-registration clear out all existing data
-if force_new_registration and cached_smt_servers:
+# Forced registration or user specified SMT, clear existing registration
+# data
+if (force_new_registration and cached_smt_servers) or user_smt_ip:
     if utils.is_zypper_running():
         msg = 'zypper is running: Registration with the update '
         msg += 'infrastructure is only possible if zypper is not running.\n'
@@ -141,10 +170,19 @@ if proxy:
                'https_proxy': https_proxy}
     logging.info('Using proxy settings: %s' % proxies)
 
-# Check if we are in the same region
-# This implies that at least one of the cached servers is also in the
-# data received from the SMT data server
-region_smt_data = utils.fetch_smt_data(cfg, proxies)
+if user_smt_ip:
+    smt_xml = '<regionSMTdata><smtInfo '
+    smt_xml += 'fingerprint="%s" ' % user_smt_fp
+    smt_xml += 'SMTserverIP="%s" ' % user_smt_ip
+    smt_xml += 'SMTserverName="%s"' % user_smt_fqdn
+    smt_xml += '/></regionSMTdata>'
+    region_smt_data = etree.fromstring(smt_xml)
+else:
+    # Check if we are in the same region
+    # This implies that at least one of the cached servers is also in the
+    # data received in the SMT data server
+    region_smt_data = utils.fetch_smt_data(cfg, proxies)
+
 registration_smt = utils.get_current_smt()
 
 region_smt_servers = {'cached': [], 'new': []}
@@ -427,4 +465,3 @@ if utils.has_nvidia_support():
             logging.info(msg % (url.hostname, repo_name))
         else:
             utils.enable_repository(repo_name)
-        
