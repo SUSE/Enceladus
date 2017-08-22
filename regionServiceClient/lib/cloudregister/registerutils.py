@@ -154,6 +154,7 @@ def exec_subprocess(cmd, return_output=False):
 # ----------------------------------------------------------------------------
 def fetch_smt_data(cfg, proxies):
     """Retrieve the data for the region SMT servers from a remote host"""
+    response = None
     if cfg.has_option('server', 'metadata_server'):
         metadata_url = cfg.get('server', 'metadata_server')
         msg = 'Using metadata server "%s" to obtain SMT information'
