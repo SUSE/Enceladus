@@ -2,7 +2,12 @@ aws-cli
 cloud-init
 python-ec2deprecateimg
 python-ec2metadata
-python-ec2metadata
 python-ec2publishimg
 python-ec2uploadimg
+python3-ec2deprecateimg
+python3-ec2metadata
+python3-ec2publishimg
+python3-ec2uploadimg
 regionServiceClientConfigEC2
+regionServiceClientConfigSAPEC2
+supportutils-plugin-suse-public-cloud
