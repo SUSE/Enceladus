@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with gcemetadata.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 try:
     import setuptools
 except ImportError:
@@ -37,7 +39,7 @@ if __name__ == '__main__':
         author_email='public-cloud-dev@susecloud.net',
         version=version,
         packages=setuptools.find_packages('lib'),
-        package_data={'gcemetadata' : ['VERSION']},
+        package_data={'gcemetadata': ['VERSION']},
         package_dir={
             '': 'lib',
         },
