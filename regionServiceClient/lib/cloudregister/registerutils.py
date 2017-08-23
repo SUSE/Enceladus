@@ -390,6 +390,7 @@ def has_nvidia_support():
 
     return False
 
+
 # ----------------------------------------------------------------------------
 def has_repos(smt_server_name):
     """Check if repositories exist."""

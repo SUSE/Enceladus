@@ -28,7 +28,6 @@ class SMT:
         self._fingerprint = smtXMLNode.attrib['fingerprint']
         self._cert = None
 
-
     # --------------------------------------------------------------------
     def __eq__(self, other_smt):
         if not isinstance(other_smt, SMT):
@@ -40,7 +39,7 @@ class SMT:
             return True
 
         return False
-    
+
     # --------------------------------------------------------------------
     def get_cert(self):
         """Return the CA certificate for the SMT server"""
@@ -77,7 +76,6 @@ class SMT:
     def get_ip(self):
         """Return the IP address"""
         return self._ip
-
 
     # --------------------------------------------------------------------
     def is_equivalent(self, smt_server):
