@@ -1,7 +1,7 @@
 DESTDIR=
 PREFIX=
 NAME=gcemetadata
-dirs = lib
+dirs = lib man
 files = Makefile README.md LICENSE gcemetadata setup.py
 
 nv = $(shell rpm -q --specfile --qf '%{NAME}-%{VERSION}\n' *.spec)
@@ -19,3 +19,6 @@ tar:
 
 install:
 	python setup.py install --prefix="$(PREFIX)" --root="$(DESTDIR)"
+	install -d -m 755 "$(DESTDIR)"/"$(MANDIR)"/man1
+	install -m 644 man/man1/gcemetadata.1 "$(DESTDIR)"/"$(MANDIR)"/man1
+	gzip "$(DESTDIR)"/"$(MANDIR)"/man1/gcemetadata.1
