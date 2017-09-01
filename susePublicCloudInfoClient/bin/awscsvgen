@@ -42,6 +42,8 @@ options:
        Virtualization type para|hvm, default hvm
 """
 
+import sys
+
 from docopt import docopt
 from lxml import etree
 
@@ -90,7 +92,7 @@ for region in ec2_regions:
 for image in image_info.findall('image'):
     region_data[image.get('region')].append(image)
 
-print('ami-name,ami-id,region,arch,virt-typ,backing-store')
+print 'ami-name,ami-id,region,arch,virt-typ,backing-store'
 for region in ec2_regions:
     for image in region_data[region.name]:
         name = image.get('name')
@@ -108,9 +110,9 @@ for region in ec2_regions:
             backing_store = 'gp2'
         else:
             backing_store = 'standard'
-        print('%s,%s,%s,%s,%s,%s' % (name,
+        print '%s,%s,%s,%s,%s,%s' % (name,
                                      image.get('id'),
                                      region.name,
                                      arch,
                                      virt_type,
-                                     backing_store))
+                                     backing_store)

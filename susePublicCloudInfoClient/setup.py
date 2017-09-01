@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Setup module for pint"""
 
 # Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
@@ -40,7 +40,7 @@ description += 'Service'
 
 if __name__ == '__main__':
     setuptools.setup(
-        name='susepubliccloudinfo',
+        name='susepubliccloudinfoclient',
         description=(description),
         url='https://github.com/SUSE/Enceladus',
         license='GPL-3.0+',

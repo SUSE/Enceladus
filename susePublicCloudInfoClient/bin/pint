@@ -52,6 +52,8 @@ options:
        Show program version
 """
 
+import sys
+
 from docopt import docopt
 
 import susepubliccloudinfoclient.infoserverrequests as ifsrequest
@@ -92,16 +94,16 @@ if command_args['--region']:
     region = command_args['--region']
 
 if command_args['images']:
-    print(ifsrequest.get_image_data(
+    print ifsrequest.get_image_data(
         framework,
         image_state,
         output_format,
         region,
-        command_args['--filter']))
+        command_args['--filter'])
 else:
-    print(ifsrequest.get_server_data(
+    print ifsrequest.get_server_data(
         framework,
         server_type,
         output_format,
         region,
-        command_args['--filter']))
+        command_args['--filter'])

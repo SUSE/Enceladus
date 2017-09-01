@@ -1,2 +1,0 @@
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*", IMPORT{program}="/bin/sleep 1"
-SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/etc/sysconfig/network/scripts/cloud-netconfig-hotplug"
