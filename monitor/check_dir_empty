@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2017 SUSE LLC  All rights reserved.
+#
+# check_dir_empty is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, version 2 of
+# the License.
+#
+# check_dir_empty is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with susePublicCloudInfoClient. If not, see
+# <http://www.gnu.org/licenses/>.
+#
+"""
+usage: check_dir_empty -h | --help
+       check_dir_empty -d DIRECTORY_PATH
+
+options:
+    -h --help
+       Show help
+    -d
+       The path to the directory to be monitored to be empty or non existent
+"""
+
+import glob
+import os
+import sys
+
+from docopt import docopt
+
+# Command line processing
+command_args = docopt(__doc__)
+
+# Nagios states
+OK = 0
+WARNING = 1
+CRITICAL = 2
+UNKNOWN = 3
+
+dir_to_monitor = command_args.get('DIRECTORY_PATH')
+
+if not dir_to_monitor:
+    print(__doc__)
+    sys.exit(WARNING)
+
+if not os.path.exists(dir_to_monitor):
+    sys.exit(OK)
+else:
+    content = glob.glob('%s/*' % dir_to_monitor)
+    if content:
+        print('The directory "%s" does exist an is not empty' % dir_to_monitor)
+        sys.exit(CRITICAL)
+    # Directory is empty, all is well
+    sys.exit(OK)
