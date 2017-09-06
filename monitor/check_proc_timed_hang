@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-# Copyright (c) 2015 SUSE LLC  All rights reserved.
+# Copyright (c) 2017 SUSE LLC  All rights reserved.
 #
 # check_proc_timed_hang is free software: you can redistribute it
 # and/or modify it under the terms of the GNU General Public License
@@ -105,7 +105,7 @@ def get_pid(process_name):
     pid_data = proc.communicate()
     all_pids = pid_data[0].strip().split('\n')
     if len(all_pids) > 1:
-        print 'Multiple "%s" running this is not suported' % process_name
+        print('Multiple "%s" running this is not suported' % process_name)
         sys.exit(CRITICAL)
 
     return all_pids[0].strip()
@@ -115,7 +115,7 @@ def get_pid(process_name):
 process_pid = get_pid(process_name)
 if not process_pid:
     clean_up(process_name)
-    print 'Process %s is not runnning' % process_name
+    print('Process %s is not runnning' % process_name)
     sys.exit(OK)
 
 monitor_file_path = '/tmp/%s_%s.mon' % (process_name, process_pid)
@@ -138,19 +138,19 @@ if expire:
             process_pid = get_pid(process_name)
             if process_pid:
                 msg = 'Process "%s" still running after kill attempt'
-                print msg % process_name
+                print(msg % process_name)
                 sys.exit(CRITICAL)
             else:
                 msg = 'Process "%s" successfully removed'
-                print msg % process_name
+                print(msg % process_name)
                 sys.exit(OK)
 
         msg = 'Process "%s" exceeded expiration time "%s"'
-        print msg % (process_name, get_isodata_from_int(expire))
+        print(msg % (process_name, get_isodata_from_int(expire)))
         sys.exit(CRITICAL)
     else:
         msg = 'Process "%s" withing runtime allotment'
-        print msg % process_name
+        print(msg % process_name)
         sys.exit(OK)
 
 if allowed_runtime[-1] == 's':
@@ -176,5 +176,5 @@ fout.write('%d' % expire)
 fout.close()
 
 msg = 'Process "%s" has an exit window until: "%s"'
-print msg % (process_name, get_isodata_from_int(expire))
+print(msg % (process_name, get_isodata_from_int(expire)))
 sys.exit(OK)
