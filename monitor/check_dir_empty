@@ -53,7 +53,9 @@ if not os.path.exists(dir_to_monitor):
 else:
     content = glob.glob('%s/*' % dir_to_monitor)
     if content:
-        print('The directory "%s" does exist an is not empty' % dir_to_monitor)
+        print(
+            'The directory "%s" does exist and is not empty' % dir_to_monitor
+        )
         sys.exit(CRITICAL)
     # Directory is empty, all is well
     sys.exit(OK)
