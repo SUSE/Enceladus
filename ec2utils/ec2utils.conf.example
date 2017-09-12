@@ -11,6 +11,7 @@ access_key_id =
 secret_access_key = 
 ssh_key_name =
 ssh_private_key =
+subnet_id_us-east-1 = subnet-123456
 
 # The aki IDs are published by Amazon on the following page:
 # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedKernels.html#AmazonKernelImageIDs
