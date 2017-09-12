@@ -272,11 +272,11 @@ def __reformat(items, info_type, result_format):
 
 
 def __warn(str, out=sys.stdout):
-    out.write("Warning: %s" % str)
+    out.write("Warning: %s\n" % str)
 
 
 def __error(str, out=sys.stderr):
-    out.write("Error: %s" % str)
+    out.write("Error: %s\n" % str)
     sys.exit(1)
 
 
