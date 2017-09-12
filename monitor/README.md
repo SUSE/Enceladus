@@ -18,3 +18,8 @@ to have an idea about the expected run time of the process. This is not useful
 for monitoring time critical processes. The check can only be used on processes
 that have a singular instance, i.e. there can only be one entry in the process
 table for the process with the given name.
+
+# check_dir_empty
+
+The script monitors that the given directory is/remains empty or does not
+exist
