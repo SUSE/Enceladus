@@ -30,6 +30,7 @@ import time
 import cloudregister.registerutils as utils
 
 utils.start_logging()
+utils.set_proxy()
 
 current_smt = utils.get_current_smt()
 if not current_smt:
