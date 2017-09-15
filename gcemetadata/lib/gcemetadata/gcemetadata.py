@@ -18,9 +18,9 @@
 import os
 import socket
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
-from gcemetaExceptions import *
+from gcemetadata.gcemetaExceptions import *
 
 
 class GCEMetadata:
@@ -157,13 +157,13 @@ class GCEMetadata:
 
     def _get(self, url):
         """Return the value for the requested uri"""
-        req = urllib2.Request(url, headers=self.header)
+        req = urllib.request.Request(url, headers=self.header)
         try:
-            value = urllib2.urlopen(req).read()
+            value = urllib.request.urlopen(req).read()
         except:
             return None
 
-        return value
+        return value.decode()
 
     def _get_item_id_list(self, item_name):
         """Return a list of device IDs for the given device name"""
@@ -273,10 +273,10 @@ class GCEMetadata:
     def get_available_api_versions(self):
         """Return a list of available API versions"""
         value = self._get('http://%s/%s' % (self.server, self.api))
-        apiVers = None
+        api_versions = None
         if value:
-            apiVers = self._generate_list_from_str(value)
-        return apiVers
+            api_versions = self._generate_list_from_str(value)
+        return api_versions
 
     def get_disk_options(self):
         """Return a list of available query options for the selected disk"""

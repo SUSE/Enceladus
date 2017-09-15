@@ -21,10 +21,11 @@ Utilities to implement convenience functionality. Also allows us to keep
 unnecessary state out of the metadata class
 """
 
-import gcemetadata
 import sys
+from io import IOBase
 
-from gcemetaExceptions import *
+import gcemetadata
+from gcemetadata.gcemetaExceptions import *
 
 
 def _clean_up_options(metadata, options):
@@ -85,7 +86,7 @@ def _write(file_path, data):
     if type(file_path) is str:
         fout = _open_file(file_path)
         close_file = True
-    elif type(file_path) is file:
+    elif isinstance(file_path, IOBase):
         if file_path.closed:
             fout = _open_file(file_path.name)
             close_file = True
@@ -119,8 +120,8 @@ def display_all(metadata, outfile=sys.stdout, gen_xml=False):
                 else:
                     try:
                         value = metadata.get(option)
-                    except gcemetadata.GCEMetadataException, e:
-                        print >> sys.stderr, "Error:", e
+                    except gcemetadata.GCEMetadataException as e:
+                        print("Error:", e, file=sys.stderr)
                     if not value:
                         value = "unavailable"
                     data += "%s: %s\n" % (option, value)
@@ -139,8 +140,8 @@ def display_all(metadata, outfile=sys.stdout, gen_xml=False):
                         else:
                             try:
                                 value = metadata.get(entry)
-                            except gcemetadata.GCEMetadataException, e:
-                                print >> sys.stderr, "Error:", e
+                            except gcemetadata.GCEMetadataException as e:
+                                print("Error:", e, file=sys.stderr)
                             if not value:
                                 value = "unavailable"
                             data += "%s: %s\n" % (entry, value)
@@ -148,7 +149,7 @@ def display_all(metadata, outfile=sys.stdout, gen_xml=False):
     try:
         _write(outfile, data)
     except:
-        print sys.stderr, 'Could not write file "%s"' % outfile
+        print(sys.stderr, 'Could not write file "%s"' % outfile)
         sys.exit(1)
 
 
@@ -177,8 +178,8 @@ def write_file(filePath, metadata, metaopts, prefix=False):
         value = None
         try:
             value = metadata.get(metaopt)
-        except gcemetadata.GCEMetadataException, e:
-            print >> sys.stderr, "Error:", e
+        except gcemetadata.GCEMetadataException as e:
+            print("Error:", e, file=sys.stderr)
         if not value:
             value = "unavailable"
 
