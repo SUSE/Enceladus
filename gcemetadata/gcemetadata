@@ -37,52 +37,52 @@ def print_option(level, indent, options):
         if type(options[opt]) == dict:
             if opt in opts_with_id_targets:
                 # Figure out the ID
-                option_ids = options[opt].keys()
+                option_ids = list(options[opt].keys())
                 option_ids.sort()
                 for option_id in option_ids:
-                    print(indent * level + prefix + opt, file=sys.stdout)
+                    print(indent * level + prefix + opt)
                     if opt == 'disks':
                         info = indent * (level + 1)
                         info += prefix + 'diskid ' + option_id
-                        print(info, file=sys.stdout)
+                        print(info)
                     elif opt == 'network-interfaces':
                         info = indent * (level + 1)
                         info += prefix + 'netid ' + option_id
-                        print(info, file=sys.stdout)
+                        print(info)
                     elif opt == 'licenses':
                         info = (
                             indent * (level + 1) +
                             prefix + 'licenseid ' + option_id
                         )
-                        print(info, file=sys.stdout)
+                        print(info)
                     print_option(level + 2, indent, options[opt][option_id])
             else:
                 print_option(level + 1, indent, options[opt])
         if opt in opts_with_args:
             opt += ' VALUE'
-        print(indent * level + prefix + opt, file=sys.stdout)
+        print(indent * level + prefix + opt)
 
 
 def usage(options, categories, e=None):
     if e:
         print("Error:", e, file=sys.stderr)
 
-    print("Syntax: %s [--options]" % sys.argv[0], file=sys.stdout)
-    print(__doc__.strip(), file=sys.stdout)
+    print("Syntax: %s [--options]" % sys.argv[0])
+    print(__doc__.strip())
 
-    print("Options:", file=sys.stdout)
+    print("Options:")
     indent = '    '
     for cat in categories:
         level = 1
-        print(indent + '--query ' + cat[:-1], file=sys.stdout)
+        print(indent + '--query ' + cat[:-1])
         level += 1
         print_option(level, indent, options[cat])
 
-    print(indent + 'General options:', file=sys.stdout)
+    print(indent + 'General options:')
     for item in general_options:
         if item[-1] == '=':
             item = item[:-1]
-        print(indent * 2 + '--' + item, file=sys.stdout)
+        print(indent * 2 + '--' + item)
     if e:
         sys.exit(1)
 
@@ -166,11 +166,11 @@ def main():
         elif opt in ('-l', '--listapis'):
             apis = meta.get_available_api_versions()
             if apis:
-                print('Available APIs:', file=sys.stdout)
+                print('Available APIs:')
                 for api in apis:
-                    print('    %s' % api, file=sys.stdout)
+                    print('    %s' % api)
             else:
-                print('No APIs available', file=sys.stdout)
+                print('No APIs available')
             sys.exit(0)
         elif opt == '--diskid':
             try:

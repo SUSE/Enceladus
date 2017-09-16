@@ -149,7 +149,7 @@ def display_all(metadata, outfile=sys.stdout, gen_xml=False):
     try:
         _write(outfile, data)
     except:
-        print(sys.stderr, 'Could not write file "%s"' % outfile)
+        print('Could not write file "%s"' % outfile, file=sys.stderr)
         sys.exit(1)
 
 
