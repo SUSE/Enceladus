@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 #
 # Copyright (c) 2017 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
@@ -37,52 +37,52 @@ def print_option(level, indent, options):
         if type(options[opt]) == dict:
             if opt in opts_with_id_targets:
                 # Figure out the ID
-                option_ids = options[opt].keys()
+                option_ids = list(options[opt].keys())
                 option_ids.sort()
                 for option_id in option_ids:
-                    print >> sys.stdout, indent * level + prefix + opt
+                    print(indent * level + prefix + opt)
                     if opt == 'disks':
                         info = indent * (level + 1)
                         info += prefix + 'diskid ' + option_id
-                        print >> sys.stdout, info
+                        print(info)
                     elif opt == 'network-interfaces':
                         info = indent * (level + 1)
                         info += prefix + 'netid ' + option_id
-                        print >> sys.stdout, info
+                        print(info)
                     elif opt == 'licenses':
                         info = (
                             indent * (level + 1) +
                             prefix + 'licenseid ' + option_id
                         )
-                        print >> sys.stdout, info
+                        print(info)
                     print_option(level + 2, indent, options[opt][option_id])
             else:
                 print_option(level + 1, indent, options[opt])
         if opt in opts_with_args:
             opt += ' VALUE'
-        print >> sys.stdout, indent * level + prefix + opt
+        print(indent * level + prefix + opt)
 
 
 def usage(options, categories, e=None):
     if e:
-        print >> sys.stderr, "Error:", e
+        print("Error:", e, file=sys.stderr)
 
-    print >> sys.stdout, "Syntax: %s [--options]" % sys.argv[0]
-    print >> sys.stdout, __doc__.strip()
+    print("Syntax: %s [--options]" % sys.argv[0])
+    print(__doc__.strip())
 
-    print >> sys.stdout, "Options:"
+    print("Options:")
     indent = '    '
     for cat in categories:
         level = 1
-        print >> sys.stdout, indent + '--query ' + cat[:-1]
+        print(indent + '--query ' + cat[:-1])
         level += 1
         print_option(level, indent, options[cat])
 
-    print >> sys.stdout, indent + 'General options:'
+    print(indent + 'General options:')
     for item in general_options:
         if item[-1] == '=':
             item = item[:-1]
-        print >> sys.stdout, indent * 2 + '--' + item
+        print(indent * 2 + '--' + item)
     if e:
         sys.exit(1)
 
@@ -103,14 +103,14 @@ def main():
     if api:
         try:
             meta = gcemetadata.GCEMetadata(api)
-        except gcemetadata.GCEMetadataException, e:
-            print >> sys.stderr, e
+        except gcemetadata.GCEMetadataException as e:
+            print(e, file=sys.stderr)
             sys.exit(1)
     else:
         try:
             meta = gcemetadata.GCEMetadata()
-        except gcemetadata.GCEMetadataException, e:
-            print >> sys.stderr, e
+        except gcemetadata.GCEMetadataException as e:
+            print(e, file=sys.stderr)
             sys.exit(1)
 
     try:
@@ -130,7 +130,7 @@ def main():
             'hlo:vq:x',
             command_line_opts
         )
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         usage(meta.get_api_map(), meta.get_option_categories(), e)
 
     if len(opts) == 0:
@@ -166,41 +166,41 @@ def main():
         elif opt in ('-l', '--listapis'):
             apis = meta.get_available_api_versions()
             if apis:
-                print >> sys.stdout, 'Available APIs:'
+                print('Available APIs:')
                 for api in apis:
-                    print >> sys.stdout, '    %s' % api
+                    print('    %s' % api)
             else:
-                print >> sys.stdout, 'No APIs available'
+                print('No APIs available')
             sys.exit(0)
         elif opt == '--diskid':
             try:
                 meta.set_disk_device(val)
-            except gcemetadata.GCEMetadataException, e:
+            except gcemetadata.GCEMetadataException as e:
                 usage(meta.get_api_map(), meta.get_option_categories(), e)
             continue
         elif opt == '--identity':
             if not val:
-                print >> sys.stderr, '--identity argument must have a value'
+                print('--identity argument must have a value', file=sys.stderr)
                 sys.exit(1)
             meta.set_identity_arg(val)
         elif opt == '--identity-format':
             supported_vals = ['full', 'standard']
             if val not in supported_vals:
                 msg = '--identity-format possible values: "%s"'
-                print >> sys.stderr, msg % supported_vals
+                print(msg % supported_vals, file=sys.stderr)
                 sys.exit(1)
             meta.set_identity_format(val)
             continue
         elif opt == '--licenseid':
             try:
                 meta.set_license_id(val)
-            except gcemetadata.GCEMetadataException, e:
+            except gcemetadata.GCEMetadataException as e:
                 usage(meta.get_api_map(), meta.get_option_categories(), e)
             continue
         elif opt == '--netid':
             try:
                 meta.set_net_device(val)
-            except gcemetadata.GCEMetadataException, e:
+            except gcemetadata.GCEMetadataException as e:
                 usage(meta.get_api_map(), meta.get_option_categories(), e)
             continue
         elif opt in ('-o', '--output'):
@@ -210,14 +210,14 @@ def main():
             found_query = 1
             try:
                 meta.set_data_category(val)
-            except gcemetadata.GCEMetadataException, e:
+            except gcemetadata.GCEMetadataException as e:
                 usage(meta.get_api_map(), meta.get_option_categories(), e)
             continue
         elif opt in ('-v', '--version'):
             try:
-                print meta.get_version()
+                print(meta.get_version())
             except:
-                print 'Cannot find version data file, please report a bug'
+                print('Cannot find version data file, please report a bug')
                 sys.exit(1)
             sys.exit(0)
         elif opt in ('-x', '--xml'):
@@ -227,7 +227,7 @@ def main():
         metaopts.append(opt.replace('--', '').replace('=', ''))
 
     if not found_query:
-        print 'The use of --query is required.'
+        print('The use of --query is required.')
         sys.exit(1)
 
     if out_file:
@@ -237,7 +237,7 @@ def main():
             else:
                 gcemetautils.write_file(out_file, meta, metaopts, True)
         except IOError as e:
-            print >> sys.stderr, e
+            print(e, file=sys.stderr)
             sys.exit(1)
     else:
         if gen_xml:
