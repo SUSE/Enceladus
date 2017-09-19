@@ -18,23 +18,24 @@
 # MUST remain Python 2 based until EOL of SLES 11 in March 2019
 
 %define upstream_name ec2metadata
-Name:           python-ec2metadata
-Version:        1.5.4
+Name:           python3-ec2metadata
+Version:        2.0.0
 Release:        0
 Summary:        Collect instance metadata in EC2
 License:        GPL-3.0+
 Group:          System/Management
 Url:            https://github.com/SUSE/Enceladus
 Source0:        %{upstream_name}-%{version}.tar.bz2
-Requires:       python
-BuildRequires:  python-setuptools
+Requires:       python3
+BuildRequires:  python3-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-
-%if 0%{?suse_version} && 0%{?suse_version} <= 1110
-%{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%else
 BuildArch:      noarch
-%endif
+
+# Package renamed in SLE 12, do not remove Provides, Obsolete directives
+# until after SLE 12 EOL
+Provides:       python-ec2metadata = %{version}
+Obsoletes:      python-ec2metadata < %{version}
+
 
 %description
 Collect instance meta data in Amazon Compute CLoud instances
@@ -43,18 +44,18 @@ Collect instance meta data in Amazon Compute CLoud instances
 %setup -q -n %{upstream_name}-%{version}
 
 %build
-python setup.py build
+python3 setup.py build
 
 %install
-python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+python3 setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %files
 %defattr(-,root,root,-)
 %doc README.md LICENSE
-%dir %{python_sitelib}/%{upstream_name}
-%dir %{python_sitelib}/%{upstream_name}-%{version}-py%{py_ver}.egg-info
+%dir %{python3_sitelib}/%{upstream_name}
+%dir %{python3_sitelib}/%{upstream_name}-%{version}-py%{py3_ver}.egg-info
 %{_bindir}/*
-%{python_sitelib}/%{upstream_name}/*
-%{python_sitelib}/*egg-info/*
+%{python3_sitelib}/%{upstream_name}/*
+%{python3_sitelib}/*egg-info/*
 
 %changelog
