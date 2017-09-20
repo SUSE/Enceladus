@@ -71,13 +71,11 @@ def _write(file_path, data):
     try:
         fout.write(data)
     except:
-        if close_file:
-            fout.close()
         msg = 'Unable to write to file "%s"' % fout.name
         raise ec2metadata.EC2MetadataError(msg)
-
-    if close_file:
-        fout.close()
+    finally:
+        if close_file:
+            fout.close()
 
 
 def display(metadata, metaopts, prefix=False):
