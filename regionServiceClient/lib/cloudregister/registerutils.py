@@ -565,7 +565,7 @@ def start_logging():
             format='%(asctime)s %(levelname)s:%(message)s'
         )
     except IOError:
-        print 'Could not open log file ', logFile, ' for writing.'
+        print 'Could not open log file "', log_filename, '" for writing.'
         sys.exit(1)
 
 
