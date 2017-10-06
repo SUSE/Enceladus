@@ -13,7 +13,7 @@
 
 """Utility functions for the cloud guest registration"""
 
-import ConfigParser
+import configparser
 import base64
 import glob
 import logging
@@ -287,17 +287,17 @@ def get_config(configFile=None):
     if not configFile:
         configFile = '/etc/regionserverclnt.cfg'
 
-    cfg = ConfigParser.RawConfigParser()
+    cfg = configparser.RawConfigParser()
     try:
         parsed = cfg.read(configFile)
     except:
-        print 'Could not parse configuration file %s' % configFile
+        print('Could not parse configuration file %s' % configFile)
         type, value, tb = sys.exc_info()
-        print value.message
+        print(format(value))
         sys.exit(1)
 
     if not parsed:
-        print 'Error parsing config file: %s' % configFile
+        print('Error parsing config file: %s' % configFile)
         sys.exit(1)
 
     return cfg
@@ -348,7 +348,7 @@ def get_smt_from_store(smt_store_file_path):
         return None
 
     smt = None
-    with open(smt_store_file_path, 'r') as smt_file:
+    with open(smt_store_file_path, 'rb') as smt_file:
         u = pickle.Unpickler(smt_file)
         try:
             smt = u.load()
@@ -377,14 +377,14 @@ def get_zypper_pid():
     zyppPID = subprocess.Popen(zyppPIDCmd, stdout=subprocess.PIPE)
     pidData = zyppPID.communicate()
 
-    return pidData[0].strip()
+    return pidData[0].strip().decode()
 
 
 # ----------------------------------------------------------------------------
 def has_nvidia_support():
     """Check if the instance has Nvida capabilities"""
     pci_info, errors = exec_subprocess(['lspci'], True)
-    if 'NVIDIA' in pci_info:
+    if 'NVIDIA' in pci_info.decode():
         logging.info('Instance has Nvidia support')
         return True
 
@@ -565,14 +565,14 @@ def start_logging():
             format='%(asctime)s %(levelname)s:%(message)s'
         )
     except IOError:
-        print 'Could not open log file "', log_filename, '" for writing.'
+        print('Could not open log file "', log_filename, '" for writing.')
         sys.exit(1)
 
 
 # ----------------------------------------------------------------------------
 def store_smt_data(smt_data_file_path, smt):
     """Store the given SMT server information to the given file"""
-    smt_data = open(smt_data_file_path, 'w')
+    smt_data = open(smt_data_file_path, 'wb')
     os.fchmod(smt_data.fileno(), stat.S_IREAD | stat.S_IWRITE)
     p = pickle.Pickler(smt_data)
     p.dump(smt)
