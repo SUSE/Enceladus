@@ -1,1 +1,1 @@
-SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/etc/sysconfig/network/scripts/cloud-netconfig-hotplug"
+SUBSYSTEM=="net", KERNEL=="eth*", DRIVERS=="hv_netvsc", RUN+="/etc/sysconfig/network/scripts/cloud-netconfig-hotplug"

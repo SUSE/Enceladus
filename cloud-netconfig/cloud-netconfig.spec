@@ -17,11 +17,25 @@
 
 %define base_name cloud-netconfig
 
-Name:           %{base_name}-azure
+%if "@BUILD_FLAVOR@" == ""
+%define flavor_suffix %nil
+%define csp_string None
+ExclusiveArch:  do-not-build
+%endif
+%if "@BUILD_FLAVOR@" == "azure"
+%define flavor_suffix -azure
+%define csp_string Microsoft Azure
+%endif
+%if "@BUILD_FLAVOR@" == "ec2"
+%define flavor_suffix -ec2
+%define csp_string Amazon EC2
+%endif
+
+Name:           %{base_name}%{flavor_suffix}
 Version:        0.4
 Release:        0
 License:        GPL-3.0+
-Summary:        Network configuration scripts for Microsoft Azure
+Summary:        Network configuration scripts for %{csp_string}
 Url:            https://github.com/SUSE/Enceladus
 Group:          System/Management
 Source0:        %{base_name}-%{version}.tar.bz2
@@ -42,9 +56,9 @@ Requires:       udev
 Requires:       udev-persistent-ifnames
 %endif
 
-%description
+%description -n %{base_name}%{flavor_suffix}
 This package contains scripts for automatically configuring network interfaces
-in Microsoft Azure.
+in %{csp_string} with full support for hotplug.
 
 %prep
 %setup -q -n %{base_name}-%{version}
@@ -52,7 +66,7 @@ in Microsoft Azure.
 %build
 
 %install
-make install-azure \
+make install%{flavor_suffix} \
   DESTDIR=%{buildroot} \
   PREFIX=%{_usr} \
   SYSCONFDIR=%{_sysconfdir} \
@@ -65,15 +79,14 @@ mkdir -p %{buildroot}/%{_sysconfdir}/udev/rules.d
 ln -s /dev/null %{buildroot}/%{_sysconfdir}/udev/rules.d/75-persistent-net-generator.rules
 %endif
 
-%files
+%files -n %{base_name}%{flavor_suffix}
 %defattr(-,root,root)
 %{_sysconfdir}/netconfig.d/cloud-netconfig
 %{_sysconfdir}/sysconfig/network/scripts/*
 %if 0%{?suse_version} >= 1315
 %{_sysconfdir}/udev/rules.d
 %endif
-%{_udevrulesdir}/61-cloud-netconfig-hotplug.rules
-%{_udevrulesdir}/75-cloud-persistent-net-generator.rules
+%{_udevrulesdir}/*
 %doc README.md LICENSE
 
 %changelog

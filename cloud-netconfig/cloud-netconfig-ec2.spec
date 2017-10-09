@@ -18,7 +18,7 @@
 %define base_name cloud-netconfig
 
 Name:           %{base_name}-ec2
-Version:        0.3
+Version:        0.4
 Release:        0
 License:        GPL-3.0+
 Summary:        Network configuration scripts for Amazon EC2
