@@ -46,6 +46,7 @@ install-ec2: common
 tarball:
 	@test -n "$(verSrc)"
 	@ln -s . cloud-netconfig-$(verSrc)
+	@touch cloud-netconfig-$(verSrc).tar.bz2
 	@tar chjf cloud-netconfig-$(verSrc).tar.bz2 \
 		--warning=no-file-changed \
 		--exclude cloud-netconfig-$(verSrc)/cloud-netconfig-$(verSrc) \
