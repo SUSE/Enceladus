@@ -18,7 +18,7 @@
 
 METADATA_BASE_URL="http://169.254.169.254/metadata/instance/network/interface/"
 URL_HDR="Metadata:true"
-URL_APX='?format=text&api-version=2017-07-01'
+URL_APX='?format=text&api-version=2017-08-01'
 
 # -------------------------------------------------------------------
 # get the MAC address from the metadata server
