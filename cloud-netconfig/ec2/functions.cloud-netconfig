@@ -26,6 +26,19 @@ get_ipv4_addresses_from_metadata()
     local addr count=0 hwaddr="$1" prefixlen
     test -z "$hwaddr" && return 1
 
+    # sometimes the entry for a newly attach NIC is not there yet
+    local check_md=$(curl "${METADATA_URL_BASE}" 2>/dev/null | grep "$hwaddr")
+    local attempts=0
+    while [ -z "$check_md" ]; do
+        if [ $attempts -ge 5 ]; then
+            log "Could not get metadata for nic $hwaddr"
+            return
+        fi
+        attempts=$((attempts+1))
+        sleep 1
+        check_md=$(curl "${METADATA_URL_BASE}" 2>/dev/null | grep "$hwaddr")
+    done
+
     local cidr_block=$(curl "${METADATA_URL_BASE}/$hwaddr/subnet-ipv4-cidr-block" 2>/dev/null)
     prefixlen=${cidr_block##*/}
     curl "${METADATA_URL_BASE}/$hwaddr/local-ipv4s" 2>/dev/null | \
