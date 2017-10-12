@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-# Copyright (c) 2016, SUSE LLC, All rights reserved.
+# Copyright (c) 2017, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,7 @@
    2.) Check if already registered
    3.) Register"""
 
-import ConfigParser
+import configparser
 import base64
 import copy
 import glob
@@ -41,7 +41,7 @@ import stat
 import subprocess
 import sys
 import time
-import urlparse
+import urllib.parse
 import uuid
 
 import cloudregister.registerutils as utils
@@ -77,7 +77,7 @@ def get_products():
         logging.error(errMsg)
         return
 
-    product_tree = etree.fromstring(str(product_xml[0]))
+    product_tree = etree.fromstring(product_xml[0].decode())
     for child in product_tree.find("product-list"):
         name = child.attrib['name']
         if name == baseprodName:
@@ -127,7 +127,7 @@ if '--smt-fp' in sys.argv:
 if user_smt_ip or user_smt_fqdn or user_smt_fp:
     if not (user_smt_ip and user_smt_fqdn and user_smt_fp):
         msg = '--smt-ip, --smt-fqdn, and --smt-fp must be used together'
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
 
 cfg = utils.get_config(config_file)
 utils.start_logging()
@@ -154,7 +154,7 @@ if (force_new_registration and cached_smt_servers) or user_smt_ip:
         msg += 'infrastructure is only possible if zypper is not running.\n'
         msg += 'Please re-run the force registration process after zypper '
         msg += 'has completed'
-        print msg
+        print(msg)
         sys.exit(1)
     utils.remove_registration_data()
     utils.clean_smt_cache()
@@ -399,7 +399,8 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         res = p.communicate()
-        for entry in res:
+        for item in res:
+            entry = item.decode()
             if error_exp.match(entry):
                 failed_smts.append(registration_target.get_ip())
                 if len(failed_smts) == len(region_smt_servers):
@@ -444,7 +445,8 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
             stderr=subprocess.PIPE)
         res = p.communicate()
 
-        for entry in res:
+        for item in res:
+            entry = item.decode()
             if 'Error:' in entry:
                 logging.error('\tRegistration failed: %s' % entry)
 else:
@@ -458,7 +460,7 @@ if os.path.exists(instance_data_filepath):
 if utils.has_nvidia_support():
     nvidia_repo_names = utils.find_repos('nvidia')
     for repo_name in nvidia_repo_names:
-        url = urlparse.urlparse(utils.get_repo_url(repo_name))
+        url = urllib.parse.urlparse(utils.get_repo_url(repo_name))
         cmd = ['ping', '-c', '2', url.hostname]
         if utils.exec_subprocess(cmd):
             msg = 'Cannot reach host: "%s", will not enable repo "%s"'

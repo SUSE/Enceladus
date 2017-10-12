@@ -16,9 +16,9 @@ import logging
 import requests
 import re
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 extensionConfigRx = re.compile(
     r'.*<ExtensionsConfig>(.*?)</ExtensionsConfig>.*', re.S | re.M
@@ -84,9 +84,9 @@ def generateRegionSrvArgs():
                 logging.warning('No "<ExtensionsConfig>" in goal state XML')
                 continue
             h = HTMLParser()
-            extensionsURI = urllib.unquote(
+            extensionsURI = urllib.parse.unquote(
                 h.unescape(match.groups()[0])
-            ).decode('utf8')
+            )
             try:
                 extensionsResp = requests.get(
                     extensionsURI,

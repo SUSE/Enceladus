@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 7.0.7
+%define base_version 8.0.0
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -26,32 +26,18 @@ URL:            http://www.github.com:SUSE/Enceladus
 Group:          Productivity/Networking/Web/Servers
 Source0:        %{name}-%{version}.tar.bz2
 Requires:       cloud-regionsrv-client-config
-Requires:       python
-Requires:       python-lxml
-Requires:       python-requests
+Requires:       python3
+Requires:       python3-lxml
+Requires:       python3-M2Crypto
+Requires:       python3-requests
 Requires:       regionsrv-certs
-%if 0%{?suse_version} >= 1315
 Requires:       SUSEConnect
-Requires:       python-M2Crypto
 BuildRequires:  systemd
-%endif
 %{?systemd_requires}
-%if 0%{?suse_version} < 1315
-Requires:       insserv
-Requires:       python-m2crypto
-Requires:       sysvinit
-Requires:       suseRegister
-%endif
-BuildRequires:  python
-BuildRequires:  python-setuptools
+BuildRequires:  python3-setuptools
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
-
-%if 0%{?suse_version} && 0%{?suse_version} <= 1110
-%{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-%else
 BuildArch:      noarch
-%endif
 
 %description
 Obtain cloud SMT server information from the region server configured in
@@ -96,7 +82,7 @@ License:      LGPL-3.0
 Summary:      Cloud Environment Guest Registration Plugin for Microsoft Azure
 Group:        Productivity/Networking/Web/Servers
 Requires:     cloud-regionsrv-client >= 6.0.0
-Requires:     python-dnspython
+Requires:     python3-dnspython
 
 %description plugin-azure
 Guest registration plugin for images intended for Microsoft Azure
@@ -105,54 +91,26 @@ Guest registration plugin for images intended for Microsoft Azure
 %setup -q
 
 %build
-python setup.py build
+python3 setup.py build
 
 %install
 cp -r etc %{buildroot}
 cp -r usr %{buildroot}
-python setup.py install --prefix=%{_prefix}  --root=%{buildroot}
-%if 0%{?suse_version} < 1140
-    rm -rf %{buildroot}/usr/lib/systemd
-    pushd %{buildroot}
-    ln -s %{_initddir}/guestregister %{buildroot}/%{_sbindir}/rcguestregister 
-    popd
-%else
-%if 0%{?suse_version} < 1230
-    mkdir -p %{buildroot}/%{_unitdir}
-    mv %{buildroot}/usr/lib/systemd/system/* %{buildroot}/%{_unitdir}
-    rm -rf %{buildroot}/usr/lib/systemd
-%endif
-    rm -rf %{buildroot}/etc/init.d
-%endif
+python3 setup.py install --prefix=%{_prefix}  --root=%{buildroot}
 mkdir -p %{buildroot}/var/lib/regionService/certs
 mkdir -p %{buildroot}/var/lib/cloudregister
 
 %pre
-%if 0%{?suse_version} > 1140
-    %service_add_pre guestregister.service
-%endif
+%service_add_pre guestregister.service
 
 %post
-%if 0%{?suse_version} > 1140
-    %service_add_post guestregister.service
-%endif
+%service_add_post guestregister.service
 
 %preun
-%if 0%{?suse_version} > 1140
-    %service_del_preun guestregister.service
-%else
-    %stop_on_removal
-%endif
+%service_del_preun guestregister.service
 
 %postun
-%if 0%{?suse_version} > 1140
-    %service_del_postun guestregister.service
-%else
-    %insserv_cleanup
-%endif
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+%service_del_postun guestregister.service
 
 %files
 %defattr(-,root,root,-)
@@ -163,19 +121,14 @@ rm -rf $RPM_BUILD_ROOT
 %dir /var/lib/cloudregister
 %{_sbindir}/registercloudguest
 %{_usr}/lib/zypp/plugins/services/cloud_update
-%{python_sitelib}/cloudregister/__*
-%{python_sitelib}/cloudregister/reg*
-%{python_sitelib}/cloudregister/smt*
-%{python_sitelib}/cloudregister/VERSION
-%if 0%{?suse_version} > 1140
+%{python3_sitelib}/cloudregister/__*
+%{python3_sitelib}/cloudregister/reg*
+%{python3_sitelib}/cloudregister/smt*
+%{python3_sitelib}/cloudregister/VERSION
 %{_unitdir}/guestregister.service
-%else
-%attr(0755,root,root) %{_initddir}/guestregister
-%{_sbindir}/rcguestregister
-%endif
-%dir %{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info
-%dir %{python_sitelib}/cloudregister/
-%{python_sitelib}/cloudregister-%{base_version}-py%{py_ver}.egg-info/*
+%dir %{python3_sitelib}/cloudregister-%{base_version}-py%{py3_ver}.egg-info
+%dir %{python3_sitelib}/cloudregister/
+%{python3_sitelib}/cloudregister-%{base_version}-py%{py3_ver}.egg-info/*
 
 %files generic-config
 %defattr(-,root,root,-)
@@ -185,15 +138,15 @@ rm -rf $RPM_BUILD_ROOT
 
 %files plugin-gce
 %defattr(-,root,root,-)
-%{python_sitelib}/cloudregister/google*
+%{python3_sitelib}/cloudregister/google*
 
 %files plugin-ec2
 %defattr(-,root,root,-)
-%{python_sitelib}/cloudregister/amazon*
+%{python3_sitelib}/cloudregister/amazon*
 
 %files plugin-azure
 %defattr(-,root,root,-)
-%{python_sitelib}/cloudregister/msft*
+%{python3_sitelib}/cloudregister/msft*
 
 %changelog
 
