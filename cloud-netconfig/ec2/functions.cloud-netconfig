@@ -16,7 +16,8 @@
 #
 # You should have received a copy of the GNU General Public License
 
-METADATA_URL_BASE="http://169.254.169.254/latest/meta-data/network/interfaces/macs/"
+API_VERSION="2016-09-02"
+METADATA_URL_BASE="http://169.254.169.254/${API_VERSION}/meta-data/network/interfaces/macs/"
 
 # -------------------------------------------------------------------
 # get IPv4 address from the EC2 meta data server and return them
