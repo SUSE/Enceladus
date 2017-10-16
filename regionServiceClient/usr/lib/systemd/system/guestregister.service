@@ -2,7 +2,7 @@
 Description=Obtain Cloud SMT info and register with the SMT server
 Requires=network.service
 After=network.service
-Before=cloud-final.service waagent.service
+Before=cloud-final.service waagent.service google-startup-scripts.service
 
 [Service]
 ExecStart=/usr/sbin/registercloudguest
