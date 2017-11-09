@@ -25,10 +25,14 @@ ExclusiveArch:  do-not-build
 %if "@BUILD_FLAVOR@" == "azure"
 %define flavor_suffix -azure
 %define csp_string Microsoft Azure
+Provides:       cloud-netconfig
+Conflicts:      otherproviders(cloud-netconfig)
 %endif
 %if "@BUILD_FLAVOR@" == "ec2"
 %define flavor_suffix -ec2
 %define csp_string Amazon EC2
+Provides:       cloud-netconfig
+Conflicts:      otherproviders(cloud-netconfig)
 %endif
 
 Name:           %{base_name}%{flavor_suffix}
