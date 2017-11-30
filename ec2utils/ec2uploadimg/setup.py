@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Setup module for ec2uploadimg"""
 
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2017 SUSE LLC
 #
 # This file is part of ec2uploadimg.
 #
@@ -26,6 +26,13 @@ except ImportError:
     sys.stderr.write('Python setuptools required, please install.')
     sys.exit(1)
 
+requires = [
+    'boto3>=1.4.1',
+    'paramiko',
+    'python-dateutil',
+    'ec2utilsbase>=3.0.0,<4.0.0'
+]
+
 version = open('lib/ec2utils/upload_VERSION').read().strip()
 
 if __name__ == '__main__':
@@ -33,10 +40,12 @@ if __name__ == '__main__':
         name='ec2uploadimg',
         description=(
             'Command-line tool to upload EC2 images'),
-        url='https://github.com/SUSE/Enceladus',
+        long_description=open('README.md').read(),
+        url='https://github.com/SUSE/Enceladus/tree/master/ec2utils',
         license='GPL-3.0+',
-        author='Robert Schweikert',
-        author_email='rjschwei@suse.com',
+        install_requires=requires,
+        author='SUSE Public Cloud Team',
+        author_email='public-cloud-dev@susecloud.net',
         version=version,
         packages=setuptools.find_packages('lib'),
         package_data={'ec2utils'  : ['upload_VERSION']},
@@ -44,5 +53,19 @@ if __name__ == '__main__':
             '': 'lib',
         },
         scripts=['ec2uploadimg'],
-        namespace_packages = ['ec2utils']
+        namespace_packages = ['ec2utils'],
+        classifiers=(
+            'Development Status :: 5 - Production/Stable',
+            'Intended Audience :: Developers',
+            'Natural Language :: English',
+            'License :: OSI Approved :: GPL-3.0+',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.3',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: Implementation :: CPython',
+            'Programming Language :: Python :: Implementation :: PyPy',
+        )
     )
