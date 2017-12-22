@@ -32,7 +32,7 @@ if __name__ == '__main__':
         description=(
             'Command-line tool to collect EC2 instance meta data'),
         url='https://github.com/SUSE/Enceladus',
-        license='GPL-3.0+',
+        license='GPLv3+',
         author='Alon Swartz, SUSE',
         author_email='alon@turnkeylinux.org, public-cloud-dev@susecloud.net',
         version=version,
