@@ -41,7 +41,7 @@ if __name__ == '__main__':
             'Command-line tool to publish EC2 images'),
         long_description=open('README.md').read(),
         url='https://github.com/SUSE/Enceladus/tree/master/ec2utils',
-        license='GPL-3.0+',
+        license='GPLv3+',
         install_requires=requires,
         author='SUSE Public Cloud Team',
         author_email='public-cloud-dev@susecloud.net',

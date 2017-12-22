@@ -1,1 +1,19 @@
-*.pyc
+### Python ###
+*.py[cod]
+__pycache__/
+
+# Distribution / packaging
+bin/
+build/
+develop-eggs/
+dist/
+include/
+eggs/
+lib64
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
