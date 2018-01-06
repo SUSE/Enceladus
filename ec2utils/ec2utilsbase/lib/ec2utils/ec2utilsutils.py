@@ -181,10 +181,15 @@ def get_regions(command_args, access_key, secret_key):
     if command_args.regions:
         regions = command_args.regions.split(',')
     else:
-        regions = boto3.session.Session(
+        session = boto3.session.Session(
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key
-        ).get_available_regions('ec2')
+        )
+        client = session.client('sts')
+        partition = client.get_caller_identity()['Arn'].split(':')[1]
+        regions = session.get_available_regions(
+            'ec2', partition_name=partition
+        )
 
     return regions
 
