@@ -174,7 +174,7 @@ def get_from_config(account, config, region, entry, cmd_line_arg):
 
 
 # -----------------------------------------------------------------------------
-def get_regions(command_args, access_key, secret_key):
+def get_regions(command_args, access_key, secret_key, partition=None):
     """Return a list of connected regions if no regions are specified
        on the command line"""
     regions = None
@@ -185,8 +185,11 @@ def get_regions(command_args, access_key, secret_key):
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key
         )
-        client = session.client('sts')
-        partition = client.get_caller_identity()['Arn'].split(':')[1]
+
+        if not partition:
+            client = session.client('sts')
+            partition = client.get_caller_identity()['Arn'].split(':')[1]
+
         regions = session.get_available_regions(
             'ec2', partition_name=partition
         )
