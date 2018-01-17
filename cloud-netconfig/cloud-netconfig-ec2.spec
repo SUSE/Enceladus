@@ -37,10 +37,9 @@ Requires:       sysconfig-netconfig
 %endif
 BuildRequires:  udev
 Requires:       udev
-# persistent net generator was split off from udev in Leap
-%if 0%{?leap_version} != 0
-Requires:       udev-persistent-ifnames
-%endif
+Requires:       curl
+Provides:       cloud-netconfig
+Conflicts:      cloud-netconfig
 
 %description
 This package contains scripts for automatically configuring network interfaces
