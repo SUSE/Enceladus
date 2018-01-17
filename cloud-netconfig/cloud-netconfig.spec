@@ -53,7 +53,7 @@ BuildRequires:  udev
 Requires:       udev
 Requires:       curl
 %if 0%{?sles_version} == 11
-# RPM in SLES 11 does not support self conflict, user otherproviders()
+# RPM in SLES 11 does not support self conflict, use otherproviders()
 # workaround
 Provides:       cloud-netconfig
 Conflicts:      otherproviders(cloud-netconfig)
