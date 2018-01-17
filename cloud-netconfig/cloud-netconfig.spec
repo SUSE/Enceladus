@@ -25,14 +25,10 @@ ExclusiveArch:  do-not-build
 %if "@BUILD_FLAVOR@" == "azure"
 %define flavor_suffix -azure
 %define csp_string Microsoft Azure
-Provides:       cloud-netconfig
-Conflicts:      otherproviders(cloud-netconfig)
 %endif
 %if "@BUILD_FLAVOR@" == "ec2"
 %define flavor_suffix -ec2
 %define csp_string Amazon EC2
-Provides:       cloud-netconfig
-Conflicts:      otherproviders(cloud-netconfig)
 %endif
 
 Name:           %{base_name}%{flavor_suffix}
@@ -55,9 +51,15 @@ Requires:       sysconfig-netconfig
 %endif
 BuildRequires:  udev
 Requires:       udev
-# persistent net generator was split off from udev in Leap
-%if 0%{?leap_version} != 0
-Requires:       udev-persistent-ifnames
+Requires:       curl
+%if 0%{?sles_version} == 11
+# RPM in SLES 11 does not support self conflict, user otherproviders()
+# workaround
+Provides:       cloud-netconfig
+Conflicts:      otherproviders(cloud-netconfig)
+%else
+Provides:       cloud-netconfig
+Conflicts:      cloud-netconfig
 %endif
 
 %description -n %{base_name}%{flavor_suffix}
