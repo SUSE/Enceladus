@@ -268,7 +268,7 @@ def __reformat(items, info_type, result_format):
             root,
             xml_declaration=True,
             encoding='UTF-8',
-            pretty_print=True)
+            pretty_print=True).decode()
 
 
 def __warn(str, out=sys.stdout):
