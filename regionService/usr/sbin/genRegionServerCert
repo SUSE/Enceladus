@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
-# This file is part of ec2utilsbase.
+# This file is part of regionService.
 #
-# ec2utilsbase is free software: you can redistribute it and/or modify
+# regionService is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with ec2utilsbase.  If not, see <http://www.gnu.org/licenses/>.
+# along with regionService.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Script to generate a server certificate for the region server. Must be run
@@ -29,6 +29,7 @@ Convenience implementation
 
 from OpenSSL import crypto, SSL
 import getpass
+import ipaddress
 import optparse
 import os
 import sys
@@ -43,6 +44,14 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 2048)
 
+    # Figure setting for subjectAltName
+    san = 'IP:%s'
+    try:
+        i = ipaddress.ip_address(options.hostname)
+    except ValueError:
+        san = 'DNS:%s'
+    alt_name = san % options.hostname
+
     # create a self-signed cert
     cert = crypto.X509()
     cert.get_subject().C = options.country
@@ -51,22 +60,28 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     cert.get_subject().O = options.org
     cert.get_subject().OU = options.department
     cert.get_subject().CN = options.hostname
+    cert.add_extensions([
+        crypto.X509Extension(
+            b'subjectAltName',
+            False,
+            alt_name.encode())
+    ])
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(10*365*24*60*60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
-    cert.sign(k, 'sha1')
+    cert.sign(k, 'sha256')
 
     open('%s/%s' % (cert_dir, cert_file), "wt").write(
-            crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+            crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode())
     open('%s/%s' % (cert_dir, cert_key), "wt").write(
-            crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode())
 
 # Must be root, the script modifies the Apache vhost config file
 uName = getpass.getuser()
 if uName != 'root':
-    print 'Must execute this script as root'
+    print('Must execute this script as root')
     sys.exit(1)
 
 # Set up command line argument parsing
@@ -112,13 +127,13 @@ cert_file = options.hostname.strip() + '.crt'
 key_file = options.hostname.strip() + '.key'
 
 if os.path.exists('/etc/apache2/ssl.crt/%s' % cert_file):
-    print 'Certificate for this server already exists, taking no action'
-    print '/etc/apache2/ssl.crt/%s' % cert_file
+    print('Certificate for this server already exists, taking no action')
+    print('/etc/apache2/ssl.crt/%s' % cert_file)
     sys.exit(1)
 
 if os.path.exists('/etc/apache2/ssl.key/%s' % key_file):
-    print 'Key for this server already exists, taking no action'
-    print '/etc/apache2/ssl.crt/%s' % key_file
+    print('Key for this server already exists, taking no action')
+    print('/etc/apache2/ssl.crt/%s' % key_file)
     sys.exit(1)
 
 if not os.path.exists('/root/regionServCert'):
@@ -175,4 +190,4 @@ if os.path.exists('/usr/bin/systemctl'):
 else:
     os.system('/etc/init.d/apache2 restart')
 
-print 'Include /root/regionServCert/%s.pem in the client' % options.hostname
+print('Include /root/regionServCert/%s.pem in the client' % options.hostname)

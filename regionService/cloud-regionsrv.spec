@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        7.0.1
+Version:        8.0.0
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
@@ -25,12 +25,11 @@ URL:            https://github.com/SUSE/Enceladus
 Group:          Productivity/Networking/Web/Servers
 Source0:        %{name}-%{version}.tar.bz2
 Requires:       apache2
-Requires:       apache2-mod_wsgi     >= 4.2.8
+Requires:       apache2-mod_wsgi-python3     >= 4.2.8
 Requires:       openssl
-Requires:       python
-Requires:       python-Flask
-Requires:       python-netaddr
-Requires:       python-pyOpenSSL
+Requires:       python3
+Requires:       python3-Flask
+Requires:       python3-pyOpenSSL
 Requires:       cloud-region-config
 Requires(pre):  pwdutils
 Recommends:     cspApacheAccessConfig
