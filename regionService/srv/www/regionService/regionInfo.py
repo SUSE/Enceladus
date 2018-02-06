@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of ec2utilsbase.
 #
@@ -43,11 +43,11 @@ smt-server-name = HOSTNAME_OF_SMT_SERVER_FOR_THIS_REGION
 smt-fingerprint = SMT_CERT_FINGERPRINT
 """
 
-import ConfigParser
+import configparser
 import getopt
 import hashlib
+import ipaddress
 import logging
-import netaddr
 import os
 import random
 import sys
@@ -66,7 +66,7 @@ def create_smt_region_map(conf):
              maps all region names to their respective SMT server info"""
     ip_to_smt_data_map = {}
     region_name_to_smt_data_map = {}
-    region_data_cfg = ConfigParser.RawConfigParser()
+    region_data_cfg = configparser.RawConfigParser()
     try:
         parsed = region_data_cfg.read(conf)
     except:
@@ -134,12 +134,12 @@ def create_smt_region_map(conf):
         region_name_to_smt_data_map[section] = smtInfo
         for ipRange in region_public_ip_ranges.split(','):
             try:
-                net = netaddr.IPNetwork(ipRange)
-            except netaddr.core.AddrFormatError:
+                net = ipaddress.ip_network(ipRange)
+            except ValueError:
                 msg = 'Could not proces range, improper format: %s'
                 logging.error(msg % ipRange)
                 continue
-            for host in net.iter_hosts():
+            for host in net.hosts():
                 ip_to_smt_data_map[str(host)] = smtInfo
 
     return ip_to_smt_data_map, region_name_to_smt_data_map
@@ -152,7 +152,7 @@ def usage():
     msg += '-h, --help       -> print this message\n'
     msg += '-l, --log        -> specify the log file\n'
     msg += '-r, --regiondata -> specify the region data configuration file\n'
-    print msg
+    print(msg)
 
 # ============================================================================
 # Process the command line options
@@ -160,7 +160,7 @@ try:
     cmd_opts, args = getopt.getopt(sys.argv[1:], 'f:hl:r:',
                                ['file=', 'help', 'log=', 'regiondata='])
 except getopt.GetoptError as err:
-    print err
+    print(err)
     usage()
     sys.exit(1)
 
@@ -172,7 +172,7 @@ for option, option_value in cmd_opts:
         region_info_config_name = option_value
         if not os.path.isfile(region_info_config_name):
             msg = 'Could not find specified configuration file "%s"'
-            print msg % region_info_config_name
+            print(msg % region_info_config_name)
             sys.exit(1)
     elif option in ('-h', '--help'):
         usage()
@@ -181,27 +181,27 @@ for option, option_value in cmd_opts:
         log_name = option_value
         log_dir = os.path.dirname(os.path.abspath(log_name))
         if not os.access(log_dir, os.W_OK):
-            print 'Log directory "%s" is not writable' % log_dir
+            print('Log directory "%s" is not writable' % log_dir)
             sys.exit(1)
     elif option in ('-r', '--regiondata'):
         region_data_config_name = option_value
         if not os.path.isfile(region_data_config_name):
             msg = 'Could not find specified configuration file "%s"'
-            print msg % region_data_config_name
+            print(msg % region_data_config_name)
             sys.exit(1)
 
-srvConfig = ConfigParser.RawConfigParser()
+srvConfig = configparser.RawConfigParser()
 try:
     parsed = srvConfig.read(region_info_config_name)
 except:
     msg = 'Could not parse configuration file "%s"'
-    print msg % region_info_config_name
+    print(msg % region_info_config_name)
     type, value, tb = sys.exc_info()
-    print value.message
+    print(value.message)
     sys.exit(1)
 
 if not parsed:
-    print 'Error parsing configuration file "%s"' % region_info_config_name
+    print('Error parsing configuration file "%s"' % region_info_config_name)
     sys.exit(1)
 
 # Assign default log file if not provided
@@ -213,7 +213,7 @@ if not region_data_config_name:
     region_data_config_name = srvConfig.get('server', 'regionConfig')
     if not os.path.isfile(region_data_config_name):
         msg = 'Default configuration file "%s" not found'
-        print msg % region_data_config_name
+        print(msg % region_data_config_name)
         sys.exit(1)
 
 # Set up logging
@@ -224,7 +224,7 @@ try:
         format='%(asctime)s %(levelname)s:%(message)s'
     )
 except IOError:
-    print 'Could not open log file "%s" for writing.' % log_name
+    print('Could not open log file "%s" for writing.' % log_name)
     sys.exit(1)
 
 
