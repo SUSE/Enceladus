@@ -152,12 +152,12 @@ def find_longest_prefix_ipv4(requester, ip_range_map):
         3: []
     }
     results_map = {}
-    requester_prts = requester.split('.')
+    requester_parts = requester.split('.')
     for ip_range in ip_range_map.keys():
-        ip_range_prts = ip_range.split('.')
+        ip_range_parts = ip_range.split('.')
         match_cnt = 0
         for i in range(3):
-            if requester_prts[i] == ip_range_prts[i]:
+            if requester_parts[i] == ip_range_parts[i]:
                 match_cnt += 1
         if match_cnt:
             potential_ranges[match_cnt].append(ip_range)
