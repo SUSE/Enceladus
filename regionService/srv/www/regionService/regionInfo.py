@@ -45,13 +45,11 @@ smt-fingerprint = SMT_CERT_FINGERPRINT
 
 import configparser
 import getopt
-import hashlib
 import ipaddress
 import logging
 import os
 import random
 import sys
-import threading
 
 from flask import Flask
 from flask import request
@@ -61,15 +59,15 @@ from flask import request
 def create_smt_region_map(conf):
     """Create two mappings:
          ip_to_smt_data_map:
-             maps all IP addresses to their respctive SMT server info
+             maps all IP ranges to their respctive SMT server info
          region_name_to_smt_data_map:
              maps all region names to their respective SMT server info"""
-    ip_to_smt_data_map = {}
+    ip_range_to_smt_data_map = {}
     region_name_to_smt_data_map = {}
     region_data_cfg = configparser.RawConfigParser()
     try:
         parsed = region_data_cfg.read(conf)
-    except:
+    except Exception:
         logging.error('Could not parse configuration file %s' % conf)
         type, value, tb = sys.exc_info()
         logging.error(value.message)
@@ -84,17 +82,17 @@ def create_smt_region_map(conf):
                 section,
                 'public-ips'
             )
-        except:
+        except Exception:
             logging.error('Missing public-ips data in section %s' % section)
             sys.exit(1)
         try:
             region_smt_ips = region_data_cfg.get(section, 'smt-server-ip')
-        except:
+        except Exception:
             logging.error('Missing smt-server-ip data in section %s' % section)
             sys.exit(1)
         try:
             region_smt_names = region_data_cfg.get(section, 'smt-server-name')
-        except:
+        except Exception:
             logging.error(
                 'Missing smt-server-name data in section %s' % section
             )
@@ -104,7 +102,7 @@ def create_smt_region_map(conf):
                 section,
                 'smt-fingerprint'
             )
-        except:
+        except Exception:
             logging.error(
                 'Missing smt-fingerprint data in section %s' % section
             )
@@ -132,17 +130,43 @@ def create_smt_region_map(conf):
             region_smt_cert_fingerprints
         )
         region_name_to_smt_data_map[section] = smtInfo
-        for ipRange in region_public_ip_ranges.split(','):
+        for ip_range in region_public_ip_ranges.split(','):
             try:
-                net = ipaddress.ip_network(ipRange)
+                ipaddress.ip_network(ip_range)
             except ValueError:
                 msg = 'Could not proces range, improper format: %s'
-                logging.error(msg % ipRange)
+                logging.error(msg % ip_range)
                 continue
-            for host in net.hosts():
-                ip_to_smt_data_map[str(host)] = smtInfo
+            ip_range_to_smt_data_map[ip_range] = smtInfo
 
-    return ip_to_smt_data_map, region_name_to_smt_data_map
+    return ip_range_to_smt_data_map, region_name_to_smt_data_map
+
+
+# ============================================================================
+def find_longest_prefix_ipv4(requester, ip_range_map):
+    """Find IP ranges for IPv4 adresses that are likely to contain the
+       requester address"""
+    potential_ranges = {
+        1: [],
+        2: [],
+        3: []
+    }
+    results_map = {}
+    requester_prts = requester.split('.')
+    for ip_range in ip_range_map.keys():
+        ip_range_prts = ip_range.split('.')
+        match_cnt = 0
+        for i in range(3):
+            if requester_prts[i] == ip_range_prts[i]:
+                match_cnt += 1
+        if match_cnt:
+            potential_ranges[match_cnt].append(ip_range)
+    for match_len in [3, 2, 1]:
+        if not potential_ranges[match_len]:
+            continue
+        for ip_range in potential_ranges[match_len]:
+            results_map[ip_range] = ip_range_map[ip_range]
+        return results_map
 
 
 # ============================================================================
@@ -154,11 +178,12 @@ def usage():
     msg += '-r, --regiondata -> specify the region data configuration file\n'
     print(msg)
 
+
 # ============================================================================
 # Process the command line options
 try:
     cmd_opts, args = getopt.getopt(sys.argv[1:], 'f:hl:r:',
-                               ['file=', 'help', 'log=', 'regiondata='])
+                                   ['file=', 'help', 'log=', 'regiondata='])
 except getopt.GetoptError as err:
     print(err)
     usage()
@@ -193,7 +218,7 @@ for option, option_value in cmd_opts:
 srvConfig = configparser.RawConfigParser()
 try:
     parsed = srvConfig.read(region_info_config_name)
-except:
+except Exception:
     msg = 'Could not parse configuration file "%s"'
     print(msg % region_info_config_name)
     type, value, tb = sys.exc_info()
@@ -229,7 +254,7 @@ except IOError:
 
 
 # Build the map initially
-ip_to_smt_data_map, region_name_to_smt_data_map = create_smt_region_map(
+ip_range_to_smt_data_map, region_name_to_smt_data_map = create_smt_region_map(
     region_data_config_name
 )
 
@@ -240,7 +265,7 @@ app = Flask(__name__)
 @app.route('/regionInfo')
 def index():
     """Provide the SMT server information based on the IP address
-       region association."""
+       region association. This path only suports IPv4"""
     requester = request.remote_addr
     logging.info('Data request from: %s' % requester)
     url = request.url
@@ -250,7 +275,16 @@ def index():
         logging.info('\tRegion hint: %s' % region_hint)
         smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
     if not smt_server_data:
-        smt_server_data = ip_to_smt_data_map.get(requester, None)
+        range_matches_map = find_longest_prefix_ipv4(
+            requester,
+            ip_range_to_smt_data_map
+        )
+        ip_addr = ipaddress.ip_address(requester)
+        for ip_range, smt_data in range_matches_map.items():
+            net = ipaddress.ip_network(ip_range)
+            if ip_addr in net:
+                smt_server_data = smt_data
+                break
     if not smt_server_data:
         logging.info('\tDenied')
         return 'Not found', 404
@@ -285,6 +319,7 @@ def index():
 
     logging.info('Provided: %s' % smt_info_xml)
     return smt_info_xml, 200
+
 
 # Run the service
 if __name__ == '__main__':
