@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        8.0.1
+Version:        8.0.3
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
@@ -30,6 +30,7 @@ Requires:       openssl
 Requires:       python3
 Requires:       python3-Flask
 Requires:       python3-pyOpenSSL
+Requires:       python3-pytricia
 Requires:       cloud-region-config
 Requires(pre):  pwdutils
 Recommends:     cspApacheAccessConfig
