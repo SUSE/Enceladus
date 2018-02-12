@@ -127,7 +127,7 @@ def create_smt_region_map(conf):
                 msg = 'Number of configured SMT IPv4 adresses does not '
                 msg += 'match number of configured IPv6 addresses for '
                 msg += 'section "%s"'
-                logging.error(msg  % section)
+                logging.error(msg % section)
                 sys.exit(1)
         if len(smt_ips) > 1:
             smt_names = region_smt_names.split(',')
@@ -146,10 +146,10 @@ def create_smt_region_map(conf):
                 )
                 sys.exit(1)
         smt_info = {
-            'smt_ipsv4':region_smt_ips,
-            'smt_ipsv6':region_smt_ipsv6,
-            'smt_names':region_smt_names,
-            'smt_fps':region_smt_cert_fingerprints
+            'smt_ipsv4': region_smt_ips,
+            'smt_ipsv6': region_smt_ipsv6,
+            'smt_names': region_smt_names,
+            'smt_fps': region_smt_cert_fingerprints
         }
         region_name_to_smt_data_map[section] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
@@ -179,18 +179,22 @@ def get_smt_data_xml(requester_ip, request_url, with_ipv6=False):
     if not smt_server_data:
         logging.info('\tDenied')
         return None
-    smt_ips = smt_server_data['smt_ipsv4'].split(',')
-    num_smt_ips = len(smt_ips)
+    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
+    if smt_server_data['smt_ipsv6']:
+        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
+    num_smt_ipsv4 = len(smt_ipsv4)
+    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
     smt_names = smt_server_data['smt_names'].split(',')
     num_smt_names = len(smt_names)
     smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
     num_smt_fingerprints = len(smt_cert_fingerprints)
     smt_info_xml = '<regionSMTdata>'
     # Randomize the order of the SMT server information provided to the client
-    while num_smt_ips:
-        entry = random.randint(0, num_smt_ips-1)
-        smt_ip = smt_ips[entry]
-        del(smt_ips[entry])
+    while num_smt_ipsv4:
+        entry = random.randint(0, num_smt_ipsv4-1)
+        smt_ip = smt_ipsv4[entry]
+        smt_ipv6 = smt_ipsv6[entry]
+        del(smt_ipsv4[entry])
         if num_smt_names > 1:
             smt_name = smt_names[entry]
             del(smt_names[entry])
@@ -201,8 +205,10 @@ def get_smt_data_xml(requester_ip, request_url, with_ipv6=False):
             del(smt_cert_fingerprints[entry])
         else:
             smt_fingerprint = smt_cert_fingerprints[0]
-        num_smt_ips -= 1
+        num_smt_ipsv4 -= 1
         smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
+        if with_ipv6:
+            smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
         smt_info_xml += 'SMTserverName="%s" ' % smt_name
         smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
     smt_info_xml += '</regionSMTdata>'
@@ -309,6 +315,17 @@ def index():
     requester = request.remote_addr
     url = request.url
     smt_data = get_smt_data_xml(requester, url)
+    if not smt_data:
+        return 'Not found', 404
+    return smt_data, 200
+
+
+@app.route('/v2/regionInfo')
+def index():
+    # requester and url should probably work inside get_smt_data_xml
+    requester = request.remote_addr
+    url = request.url
+    smt_data = get_smt_data_xml(requester, url, True)
     if not smt_data:
         return 'Not found', 404
     return smt_data, 200
