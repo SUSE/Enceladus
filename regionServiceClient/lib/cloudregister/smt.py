@@ -23,7 +23,16 @@ from M2Crypto import X509
 class SMT:
     """Store smt information"""
     def __init__(self, smtXMLNode):
-        self._ip = smtXMLNode.attrib['SMTserverIP']
+        self._ipv4 = None
+        try:
+            self._ipv4 = smtXMLNode.attrib['SMTserverIP']
+        except KeyError:
+            pass
+        self._ipv6 = None
+        try:
+            self._ipv6 = smtXMLNode.attrib['SMTserverIPv6']
+        except KeyError:
+            pass
         self._fqdn = smtXMLNode.attrib['SMTserverName']
         self._fingerprint = smtXMLNode.attrib['fingerprint']
         self._cert = None
@@ -33,9 +42,11 @@ class SMT:
         if not isinstance(other_smt, SMT):
             return False
         if (
-                self.get_ip() == other_smt.get_ip() and
+                self.get_ipv4() == other_smt.get_ipv4() and
+                self.get_ipv6() == other_smt.get_ipv6() and
                 self.get_FQDN() == other_smt.get_FQDN() and
-                self.get_fingerprint() == other_smt.get_fingerprint()):
+                self.get_fingerprint() == other_smt.get_fingerprint()
+        ):
             return True
 
         return False
@@ -73,9 +84,14 @@ class SMT:
         return self._fqdn.split('.', 1)[0]
 
     # --------------------------------------------------------------------
-    def get_ip(self):
+    def get_ipv4(self):
         """Return the IP address"""
-        return self._ip
+        return self._ipv4
+
+    # --------------------------------------------------------------------
+    def get_ipv6(self):
+        """Return the IP address"""
+        return self._ipv6
 
     # --------------------------------------------------------------------
     def is_equivalent(self, smt_server):
@@ -83,7 +99,8 @@ class SMT:
            FQDN is the same they are equivalent."""
         if (
                 self.get_FQDN() == smt_server.get_FQDN() and
-                self.get_fingerprint() == smt_server.get_fingerprint()):
+                self.get_fingerprint() == smt_server.get_fingerprint()
+        ):
             return True
 
         return False
@@ -104,9 +121,18 @@ class SMT:
     def write_cert(self, target_dir):
         """Write the certificate to the given directory"""
         logging.info('Writing SMT rootCA: %s' % target_dir)
+        cert_id = 1
+        ipv4 = self.get_ipv4()
+        if ipv4:
+            cert_id = ipv4.replace('.', '_')
+        if cert_id != 1:
+            ipv6 = self.get_ipv6()
+            if ipv6:
+                cert_id = ipv6.replace(':', '_')
         ca_file_path = (
             target_dir +
-            '/registration_server_%s.pem' % self.get_ip().replace('.', '_'))
+            '/registration_server_%s.pem' % cert_id
+        )
         try:
             smt_ca_file = open(ca_file_path, 'w')
             smt_ca_file.write(self.get_cert())
@@ -126,7 +152,7 @@ class SMT:
         try:
             x509 = X509.load_cert_string(str(cert))
             x509_fingerprint = x509.get_fingerprint('sha1')
-        except:
+        except Exception:
             errMsg = 'Could not read X509 fingerprint from cert'
             logging.error(errMsg)
             return False
@@ -147,12 +173,15 @@ class SMT:
         while attempts < retries:
             attempts += 1
             try:
-                cert_rq = requests.get('http://%s/smt.crt' % self.get_ip())
-            except:
+                ip = self.get_ipv4()
+                if not ip:
+                    ip = self.get_ipv6()
+                cert_rq = requests.get('http://%s/smt.crt' % ip)
+            except Exception:
                 # No response from server
                 logging.error('=' * 20)
                 logging.error('Attempt %s of %s' % (attempts, retries))
-                logging.error('Server %s is unreachable' % self.get_ip())
+                logging.error('Server %s is unreachable' % ip)
             if cert_rq and cert_rq.status_code == 200:
                 attempts = retries
 
