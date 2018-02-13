@@ -1,4 +1,4 @@
-# Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+ # Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of ec2utilsbase.
 #
@@ -165,59 +165,6 @@ def create_smt_region_map(conf):
 
 
 # ============================================================================
-def get_smt_data_xml(requester_ip, request_url, with_ipv6=False):
-    """Provide the SMT server information based on the IP address
-       region association. This path only suports IPv4"""
-    logging.info('Data request from: %s' % requester_ip)
-    region_hint = request_url.split('regionHint=')[-1]
-    smt_server_data = None
-    if region_hint != request_url:
-        logging.info('\tRegion hint: %s' % region_hint)
-        smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
-    if not smt_server_data:
-        smt_server_data = ip_range_to_smt_data_map.get(requester_ip)
-    if not smt_server_data:
-        logging.info('\tDenied')
-        return None
-    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
-    if smt_server_data['smt_ipsv6']:
-        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
-    num_smt_ipsv4 = len(smt_ipsv4)
-    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
-    smt_names = smt_server_data['smt_names'].split(',')
-    num_smt_names = len(smt_names)
-    smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
-    num_smt_fingerprints = len(smt_cert_fingerprints)
-    smt_info_xml = '<regionSMTdata>'
-    # Randomize the order of the SMT server information provided to the client
-    while num_smt_ipsv4:
-        entry = random.randint(0, num_smt_ipsv4-1)
-        smt_ip = smt_ipsv4[entry]
-        smt_ipv6 = smt_ipsv6[entry]
-        del(smt_ipsv4[entry])
-        if num_smt_names > 1:
-            smt_name = smt_names[entry]
-            del(smt_names[entry])
-        else:
-            smt_name = smt_names[0]
-        if num_smt_fingerprints > 1:
-            smt_fingerprint = smt_cert_fingerprints[entry]
-            del(smt_cert_fingerprints[entry])
-        else:
-            smt_fingerprint = smt_cert_fingerprints[0]
-        num_smt_ipsv4 -= 1
-        smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
-        if with_ipv6:
-            smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
-        smt_info_xml += 'SMTserverName="%s" ' % smt_name
-        smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
-    smt_info_xml += '</regionSMTdata>'
-
-    logging.info('Provided: %s' % smt_info_xml)
-    return smt_info_xml
-
-
-# ============================================================================
 def usage():
     """Print a usage message"""
     msg = '-f, --file       -> specify the service configuration file\n'
@@ -312,23 +259,54 @@ app = Flask(__name__)
 
 @app.route('/regionInfo')
 def index():
-    requester = request.remote_addr
-    url = request.url
-    smt_data = get_smt_data_xml(requester, url)
-    if not smt_data:
-        return 'Not found', 404
-    return smt_data, 200
+    requester_ip = request.remote_addr
+    request_url = request.url
+    logging.info('Data request from: %s' % requester_ip)
+    region_hint = request_url.split('regionHint=')[-1]
+    smt_server_data = None
+    if region_hint != request_url:
+        logging.info('\tRegion hint: %s' % region_hint)
+        smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
+    if not smt_server_data:
+        smt_server_data = ip_range_to_smt_data_map.get(requester_ip)
+    if not smt_server_data:
+        logging.info('\tDenied')
+        return 404
+    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
+    num_smt_ipsv4 = len(smt_ipsv4)
+    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
+    if smt_server_data['smt_ipsv6']:
+        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
+    smt_names = smt_server_data['smt_names'].split(',')
+    num_smt_names = len(smt_names)
+    smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
+    num_smt_fingerprints = len(smt_cert_fingerprints)
+    smt_info_xml = '<regionSMTdata>'
+    # Randomize the order of the SMT server information provided to the client
+    while num_smt_ipsv4:
+        entry = random.randint(0, num_smt_ipsv4-1)
+        smt_ip = smt_ipsv4[entry]
+        smt_ipv6 = smt_ipsv6[entry]
+        del(smt_ipsv4[entry])
+        if num_smt_names > 1:
+            smt_name = smt_names[entry]
+            del(smt_names[entry])
+        else:
+            smt_name = smt_names[0]
+        if num_smt_fingerprints > 1:
+            smt_fingerprint = smt_cert_fingerprints[entry]
+            del(smt_cert_fingerprints[entry])
+        else:
+            smt_fingerprint = smt_cert_fingerprints[0]
+        num_smt_ipsv4 -= 1
+        smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
+        smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
+        smt_info_xml += 'SMTserverName="%s" ' % smt_name
+        smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
+    smt_info_xml += '</regionSMTdata>'
 
-
-@app.route('/v2/regionInfo')
-def index():
-    # requester and url should probably work inside get_smt_data_xml
-    requester = request.remote_addr
-    url = request.url
-    smt_data = get_smt_data_xml(requester, url, True)
-    if not smt_data:
-        return 'Not found', 404
-    return smt_data, 200
+    logging.info('Provided: %s' % smt_info_xml)
+    return smt_info_xml, 200
 
 
 # Run the service

@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        8.0.3
+Version:        8.0.4
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
