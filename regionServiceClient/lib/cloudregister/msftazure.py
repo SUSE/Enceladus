@@ -32,15 +32,17 @@ def generateRegionSrvArgs():
     """
     Generate arguments to be sent to the region server.
     """
-    metaDataUrl = 'http://169.254.169.254/metadata/instance/'
-    zoneInfo = 'location'
+    meta_data_url = 'http://169.254.169.254/metadata/instance/'
+    zone_info = 'compute/location'
     headers = {'Metadata': 'true'}
+    params = { "format": "text", "api-version": "2017-04-02" }
 
-    zoneResp = None
+    zone_response = None
     try:
-        zoneResp = requests.get(
-            metaDataUrl + zoneInfo,
+        zone_response = requests.get(
+            meta_data_url + zone_info,
             headers=headers,
+            params=params,
             timeout=5
         )
     except:
@@ -48,15 +50,13 @@ def generateRegionSrvArgs():
         msg += 'server "%s"'
         logging.warning(msg % (metaDataUrl + zoneInfo))
 
-    if zoneResp:
-        if zoneResp.status_code == 200:
-            # At time of implementation the metadats service does not provide
-            # location information the implementatio is a place holder
-            return 'regionHint=' + zoneResp.text
+    if zone_response:
+        if zone_response.status_code == 200:
+            return 'regionHint=' + zone_response.text
         else:
             logging.warning('Unable to get availability zone metadata')
-            logging.warning('\tReturn code: %d' % zoneResp.status_code)
-            logging.warning('\tMessage: %s' % zoneResp.text)
+            logging.warning('\tReturn code: %d' % zone_response.status_code)
+            logging.warning('\tMessage: %s' % zone_response.text)
     else:
         logging.info('Falling back to XML data from wire server')
         resolver = dns.resolver.get_default_resolver()
