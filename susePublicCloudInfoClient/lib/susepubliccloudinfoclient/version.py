@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+# Copyright (c) 2018 SUSE Linux GmbH.  All rights reserved.
 #
 # This file is part of susePublicCloudInfoClient
 #
@@ -17,4 +17,4 @@
 # along with susePublicCloudInfoClient. If not, see
 # <http://www.gnu.org/licenses/>.
 #
-VERSION = '1.0.2'
+VERSION = '1.0.3'
