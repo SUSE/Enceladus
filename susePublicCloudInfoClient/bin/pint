@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
-# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+# Copyright (c) 2018 SUSE Linux GmbH.  All rights reserved.
 #
 # This file is part of susePublicCloudInfoClient
 #
@@ -91,17 +91,20 @@ region = 'all'
 if command_args['--region']:
     region = command_args['--region']
 
-if command_args['images']:
-    print(ifsrequest.get_image_data(
-        framework,
-        image_state,
-        output_format,
-        region,
-        command_args['--filter']))
-else:
-    print(ifsrequest.get_server_data(
-        framework,
-        server_type,
-        output_format,
-        region,
-        command_args['--filter']))
+try:
+    if command_args['images']:
+        print(ifsrequest.get_image_data(
+            framework,
+            image_state,
+            output_format,
+            region,
+            command_args['--filter']))
+    else:
+        print(ifsrequest.get_server_data(
+            framework,
+            server_type,
+            output_format,
+            region,
+            command_args['--filter']))
+except Exception:
+    sys.exit(1)

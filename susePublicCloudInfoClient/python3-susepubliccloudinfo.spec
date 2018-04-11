@@ -18,7 +18,7 @@
 
 %define upstream_name susepubliccloudinfo
 Name:           python3-susepubliccloudinfo
-Version:        1.0.2
+Version:        1.0.3
 Release:        1
 Summary:        Query SUSE Public Cloud Info Service
 License:        GPL-3.0+

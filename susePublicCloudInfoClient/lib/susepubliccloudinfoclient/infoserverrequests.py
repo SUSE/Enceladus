@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+# Copyright (c) 2018 SUSE Linux GmbH.  All rights reserved.
 #
 # This file is part of susePublicCloudInfoClient
 #
@@ -277,7 +277,7 @@ def __warn(str, out=sys.stdout):
 
 def __error(str, out=sys.stderr):
     out.write("Error: %s\n" % str)
-    sys.exit(1)
+    raise LookupError(str)
 
 
 def __process(url, info_type, command_arg_filter, result_format):
