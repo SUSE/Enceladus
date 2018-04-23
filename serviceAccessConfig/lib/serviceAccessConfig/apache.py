@@ -45,9 +45,9 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
         """Figure out the version of Apache and return the appropriate
            Apache directive for IP address filtering"""
         apachectl = None
-        closing_directive = None
+        closing_directive = ''
         directive = 'Allow from'
-        opening_directive = None
+        opening_directive = ''
         if os.path.exists('/usr/sbin/apache2ctl'):
             apachectl = '/usr/sbin/apache2ctl'
         else:
@@ -98,12 +98,12 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
             indent_mul += 1
         indentation = space * indent * indent_mul
         while len(cidr_blocks) > 300:
-            allow += indentation + '%s %s\n\n' % (ip_directive,
-                                            space.join(cidr_blocks[:300]))
+            allow += '%s%s %s\n\n' % (indentation, ip_directive,
+                                      space.join(cidr_blocks[:300]))
             del cidr_blocks[:300]
 
-        allow += indentation + '%s %s\n' % (ip_directive,
-                                                   space.join(cidr_blocks))
+        allow += '%s%s %s\n' % (indentation, ip_directive,
+                                space.join(cidr_blocks))
         if closing_directive:
             allow += closing_directive + '\n'
 
@@ -126,6 +126,16 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                         found_order = 1
                         if ip_directive == 'Allow from':
                             new_content += order
+                    # Strip opening and closing directive from new
+                    # access restriction list if they exist and are in the
+                    # config file
+                    elif ( ln.startswith(opening_directive) ):
+                        allow = allow[
+                            len(opening_directive) + 1:
+                            -(len(closing_directive) +1)
+                        ]
+                        new_content += ln
+                        continue
                     # Replace the Allow from directive if it exists
                     elif (
                             ('Allow from' in ln or

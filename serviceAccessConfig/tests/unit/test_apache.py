@@ -72,7 +72,7 @@ def test_get_apache_ip_directive_apachectl_call_22(
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == (None, 'Allow from', None)
+    assert ip_directive == ('', 'Allow from', '')
 
 
 # ======================================================================
@@ -120,7 +120,7 @@ def test_get_apache_ip_directive_upgrade_file_22(
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == (None, 'Allow from', None)
+    assert ip_directive == ('', 'Allow from', '')
 
 
 # ======================================================================
