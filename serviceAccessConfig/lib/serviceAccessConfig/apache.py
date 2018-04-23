@@ -129,7 +129,7 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                     # Strip opening and closing directive from new
                     # access restriction list if they exist and are in the
                     # config file
-                    elif ( ln.startswith(opening_directive) ):
+                    elif ( ln.strip().startswith(opening_directive) ):
                         allow = allow[
                             len(opening_directive) + 1:
                             -(len(closing_directive) +1)
