@@ -45,7 +45,9 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
         """Figure out the version of Apache and return the appropriate
            Apache directive for IP address filtering"""
         apachectl = None
+        closing_directive = ''
         directive = 'Allow from'
+        opening_directive = ''
         if os.path.exists('/usr/sbin/apache2ctl'):
             apachectl = '/usr/sbin/apache2ctl'
         else:
@@ -57,9 +59,11 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
             for scr in upgradeScript:
                 toVer = scr.split('-')[2]
                 if int(toVer) >= 24:
+                    opening_directive = '    <RequireAny>'
                     directive = 'Require ip'
+                    closing_directive = '    </RequireAny>'
                     break
-            return directive
+            return opening_directive, directive, closing_directive
 
         apacheInfo = os.popen('%s -V' % apachectl).readlines()
         for ln in apacheInfo:
@@ -68,10 +72,12 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                 major, minor, release = ver.split('.')
                 base_version = '%s%s' % (major, minor)
                 if int(base_version) >= 24:
+                    opening_directive = '    <RequireAny>'
                     directive = 'Require ip'
+                    closing_directive = '    </RequireAny>'
                     break
 
-        return directive
+        return opening_directive, directive, closing_directive
 
     # ======================================================================
     def _update_service_config(self, cidr_blocks):
@@ -81,13 +87,25 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
         cidr_blocks = cidr_blocks.split(',')
         allow = ''
         space = ' '
-        ip_directive = self._get_apache_ip_directive()
+        indent = 4
+        indent_mul = 2
+        directive_settings = self._get_apache_ip_directive()
+        opening_directive = directive_settings[0]
+        ip_directive = directive_settings[1]
+        closing_directive = directive_settings[2]
+        if opening_directive:
+            allow += opening_directive + '\n'
+            indent_mul += 1
+        indentation = space * indent * indent_mul
         while len(cidr_blocks) > 300:
-            allow += '        %s %s\n\n' % (ip_directive,
-                                            space.join(cidr_blocks[:300]))
+            allow += '%s%s %s\n\n' % (indentation, ip_directive,
+                                      space.join(cidr_blocks[:300]))
             del cidr_blocks[:300]
 
-        allow += '        %s %s\n' % (ip_directive, space.join(cidr_blocks))
+        allow += '%s%s %s\n' % (indentation, ip_directive,
+                                space.join(cidr_blocks))
+        if closing_directive:
+            allow += closing_directive + '\n'
 
         found_dir_config = None
         found_allow = None
@@ -100,6 +118,7 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                 if apache_directory_directive.match(ln):
                     new_content += ln
                     found_dir_config = 1
+                    found_allow = None
                     # Inside the <Directory> directive
                 elif found_dir_config:
                     # Replace the Order directive if it exists
@@ -107,6 +126,16 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                         found_order = 1
                         if ip_directive == 'Allow from':
                             new_content += order
+                    # Strip opening and closing directive from new
+                    # access restriction list if they exist and are in the
+                    # config file
+                    elif ( ln.strip().startswith(opening_directive) ):
+                        allow = allow[
+                            len(opening_directive) + 1:
+                            -(len(closing_directive) +1)
+                        ]
+                        new_content += ln
+                        continue
                     # Replace the Allow from directive if it exists
                     elif (
                             ('Allow from' in ln or
@@ -123,14 +152,15 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                     ):
                         continue
                     # Recognize the end of the <Directory> directive
-                    elif '</Directory>' in ln:
+                    elif '</Directory>' in ln or '</RequireAll>' in ln:
                         # Insert the Order directive
                         if not found_order and ip_directive == 'Allow from':
                             new_content += order
                         # Insert the Allow from directive
                         if not found_allow:
                             new_content += allow
-                        # Add the closing tag for the <Directory> directive
+                            found_allow = 1
+                        # Add the closing tag for the directive
                         new_content += ln
                     else:
                         new_content += ln

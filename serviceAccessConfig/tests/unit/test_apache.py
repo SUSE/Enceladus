@@ -62,17 +62,17 @@ def test_get_apache_ip_directive_apachectl_call_22(
         mock_ospopen,
         mock_osaccess,
         mock_ospath):
-    """Test we get the expected directive value for Apache 2.4
+    """Test we get the expected directive value for Apache 2.2
        when 'apachctl' is called"""
 
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_22.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == 'Allow from'
+    assert ip_directive == ('', 'Allow from', '')
 
 
 # ======================================================================
@@ -87,14 +87,18 @@ def test_get_apache_ip_directive_apachectl_call_24(
     """Test we get the expected directive value for Apache 2.4
        when 'apachctl' is called"""
 
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_24.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == 'Require ip'
+    assert ip_directive == (
+        '    <RequireAny>',
+        'Require ip',
+        '    </RequireAny>'
+    )
 
 
 # ======================================================================
@@ -109,14 +113,14 @@ def test_get_apache_ip_directive_upgrade_file_22(
     """Test we get the expected directive value for Apache 2.2
        when using the upgrade file filename"""
 
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_22.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == 'Allow from'
+    assert ip_directive == ('', 'Allow from', '')
 
 
 # ======================================================================
@@ -131,14 +135,18 @@ def test_get_apache_ip_directive_upgrade_file_24(
     """Test we get the expected directive value for Apache 2.4
        when using the upgrade file filename"""
 
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_24.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
     gen.set_config_values(config)
     ip_directive = gen._get_apache_ip_directive()
 
-    assert ip_directive == 'Require ip'
+    assert ip_directive == (
+        '    <RequireAny>',
+        'Require ip',
+        '    </RequireAny>'
+    )
 
 
 # ======================================================================
@@ -156,8 +164,8 @@ def test_update_config_v22(
     """Test we get the expected modifications in the config file"""
 
     utils.create_test_tmpdir()
-    utils.copy_to_testdir('%s/apache-vhost.cfg' % utils.get_data_path())
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    utils.copy_to_testdir('%s/apache-vhost_22.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_22.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
@@ -173,7 +181,7 @@ def test_update_config_v22(
 
     # Load the generated result
     gen_result_file = (
-        '%s/apache-vhost.cfg' % utils.get_test_tmpdir()
+        '%s/apache-vhost_22.cfg' % utils.get_test_tmpdir()
     )
     gen_result = open(gen_result_file).read()
 
@@ -201,8 +209,8 @@ def test_update_config_v24(
     """Test we get the expected modifications in the config file"""
 
     utils.create_test_tmpdir()
-    utils.copy_to_testdir('%s/apache-vhost.cfg' % utils.get_data_path())
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    utils.copy_to_testdir('%s/apache-vhost_24.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_24.cfg' % utils.get_data_path())
     gen = ServiceAccessGeneratorApache(
         '%s/ip_data.cfg' % utils.get_data_path()
     )
@@ -218,7 +226,7 @@ def test_update_config_v24(
 
     # Load the generated result
     gen_result_file = (
-        '%s/apache-vhost.cfg' % utils.get_test_tmpdir()
+        '%s/apache-vhost_24.cfg' % utils.get_test_tmpdir()
     )
     gen_result = open(gen_result_file).read()
 
@@ -246,8 +254,8 @@ def test_update_config_v24_large_IP_set(
     """Test we get the expected modifications in the config file"""
 
     utils.create_test_tmpdir()
-    utils.copy_to_testdir('%s/apache-vhost.cfg' % utils.get_data_path())
-    config = utils.get_config('%s/apache_setup.cfg' % utils.get_data_path())
+    utils.copy_to_testdir('%s/apache-vhost_24.cfg' % utils.get_data_path())
+    config = utils.get_config('%s/apache_setup_24.cfg' % utils.get_data_path())
     ip_config = utils.get_config('%s/ip_data.cfg' % utils.get_data_path())
     large_ip_set = '192.168.1.0/24,' * 400
     large_ip_set += '192.168.1.0/24'
@@ -272,7 +280,7 @@ def test_update_config_v24_large_IP_set(
 
     # Load the generated result
     gen_result_file = (
-        '%s/apache-vhost.cfg' % utils.get_test_tmpdir()
+        '%s/apache-vhost_24.cfg' % utils.get_test_tmpdir()
     )
     gen_result = open(gen_result_file).read()
 
@@ -283,3 +291,4 @@ def test_update_config_v24_large_IP_set(
         msg = 'Test failed, not removing test directory '
         msg += '"%s" to aid debugging ' % utils.get_test_tmpdir()
         assert False, msg
+

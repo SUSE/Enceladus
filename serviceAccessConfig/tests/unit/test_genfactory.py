@@ -37,7 +37,7 @@ def test_factory_apache():
     """Test that we get a genarator for Apache"""
 
     config = utils.get_config(
-        '%s/apache_setup.cfg' % utils.get_data_path()
+        '%s/apache_setup_22.cfg' % utils.get_data_path()
     )
     generators = get_access_rule_generators(config)
 
