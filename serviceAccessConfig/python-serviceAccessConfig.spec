@@ -17,7 +17,7 @@
 
 
 Name:           python-serviceAccessConfig
-Version:        0.5.1
+Version:        0.5.2
 Release:        0
 Summary:        Generate access controll
 License:        GPL-3.0+
