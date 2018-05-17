@@ -48,7 +48,7 @@ def generateRegionSrvArgs():
     except:
         msg = 'Unable to determine instance placement from metadata '
         msg += 'server "%s"'
-        logging.warning(msg % (metaDataUrl + zoneInfo))
+        logging.warning(msg % (meta_data_url + zone_info))
 
     if zone_response:
         if zone_response.status_code == 200:
