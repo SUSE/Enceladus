@@ -30,7 +30,6 @@ common:
 	mkdir -p $(DEST_NETCONFDIR)
 	mkdir -p $(DEST_UDEVRULESDIR)
 	mkdir -p $(DEST_SCRIPTDIR)
-	install -m 644 common/75-cloud-persistent-net-generator.rules $(DEST_UDEVRULESDIR)
 	install -m 755 common/cloud-netconfig $(DEST_NETCONFDIR)
 	install -m 755 common/cloud-netconfig-cleanup $(DEST_SCRIPTDIR)
 	install -m 755 common/cloud-netconfig-hotplug $(DEST_SCRIPTDIR)
@@ -40,6 +39,7 @@ install-azure: common
 	install -m 755 azure/functions.cloud-netconfig $(DEST_SCRIPTDIR)
 
 install-ec2: common
+	install -m 644 common/75-cloud-persistent-net-generator.rules $(DEST_UDEVRULESDIR)
 	install -m 644 ec2/51-cloud-netconfig-hotplug.rules $(DEST_UDEVRULESDIR)
 	install -m 755 ec2/functions.cloud-netconfig $(DEST_SCRIPTDIR)
 
