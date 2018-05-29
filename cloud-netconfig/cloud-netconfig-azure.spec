@@ -18,7 +18,7 @@
 %define base_name cloud-netconfig
 
 Name:           %{base_name}-azure
-Version:        0.6
+Version:        0.7
 Release:        0
 License:        GPL-3.0+
 Summary:        Network configuration scripts for Microsoft Azure
@@ -72,7 +72,6 @@ ln -s /dev/null %{buildroot}/%{_sysconfdir}/udev/rules.d/75-persistent-net-gener
 %{_sysconfdir}/udev/rules.d
 %endif
 %{_udevrulesdir}/61-cloud-netconfig-hotplug.rules
-%{_udevrulesdir}/75-cloud-persistent-net-generator.rules
 %doc README.md LICENSE
 
 %changelog
