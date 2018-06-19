@@ -52,7 +52,8 @@ gzip %{buildroot}/%{_mandir}/man1/gcemetadata.1
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE README.md
+%doc README.md
+%license LICENSE
 %{_mandir}/man*/*
 %dir %{python3_sitelib}/%{upstream_name}
 %dir %{python3_sitelib}/%{upstream_name}-%{version}-py%{py3_ver}.egg-info
