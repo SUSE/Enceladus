@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of gcemetadata.
 #
@@ -35,6 +35,7 @@ class GCEMetadata:
         self.default_disk_id = '0'
         self.default_license_id = '0'
         self.default_net_dev_id = '0'
+        self.default_subnet_id = '0'
         self.disk_data_shown = []
         self.disk_dev_id = -1
         self.header = {'Metadata-Flavor': 'Google'}
@@ -49,6 +50,7 @@ class GCEMetadata:
         self.query_license_data = False
         self.query_net_data = False
         self.server = 'metadata.google.internal'
+        self.subnet_id = -1
 
         if apiv not in self.get_available_api_versions():
             msg = 'Given API version "%s" not available' % apiv
@@ -212,7 +214,10 @@ class GCEMetadata:
             else:
                 opt_id = self.net_dev_id
             interfaces = category_data['network-interfaces']
-            path = interfaces[opt_id].get(option, None)
+            if self.subnet_id != -1:
+                path = interfaces[opt_id][self.subnet_id].get(option, None)
+            else:
+                path = interfaces[opt_id].get(option, None)
 
         return path
 
@@ -229,7 +234,7 @@ class GCEMetadata:
             return self._get_item_id_list(option)
 
         path = None
-        # Top level accessors and lovwer level accessors are not necessarily
+        # Top level accessors and lower level accessors are not necessarily
         # unique, for example "id" is used for license and for instance id.
         # Thus we need to differentiate what the user is looking for. When
         # querying for a path that has suboptions such as disks, licenses,
@@ -250,6 +255,11 @@ class GCEMetadata:
                 )
         ):
             path = self._get_path_from_suboption(option)
+            if isinstance(path, dict):
+                values = ''
+                for key, uri in path.items():
+                    values += self._get(self._build_full_url(uri + key))
+                return values
         if not path:
             path = self.options[self.query_category].get(option, None)
         # Try the sub options again as the user may have specified a unique
@@ -376,5 +386,15 @@ class GCEMetadata:
             raise GCEMetadataException(msg)
 
         self.net_dev_id = net_dev_id
+        self.query_net_data = True
+        self.net_data_shown = []
+
+    def set_subnet(self, subnet_id):
+        """Set the subnet ID for this query"""
+        if self.net_dev_id == -1:
+            msg = 'When specifying the subnet the network device to query '
+            msg += 'must also be specified with "--netid"'
+            raise GCEMetadataException(msg)
+        self.subnet_id = subnet_id
         self.query_net_data = True
         self.net_data_shown = []
