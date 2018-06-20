@@ -1,7 +1,7 @@
 #
 # spec file for package python-gcemetadata
 #
-# Copyright (c) 2015 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# Copyright (c) 2018 SUSE LINUX Products GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -18,7 +18,7 @@
 
 %define upstream_name gcemetadata
 Name:           python-gcemetadata
-Version:        0.3.2
+Version:        0.3.3
 Release:        0
 Summary:        Collect instance metadata in GCE
 License:        GPL-3.0+
