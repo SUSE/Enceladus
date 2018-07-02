@@ -1,4 +1,4 @@
-# Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+ # Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of ec2utilsbase.
 #
@@ -33,12 +33,16 @@ regionConfig = PATH_TO_REGION_DATA_FILE_INCLUDING_FILENAME
 
 The region data configuration file is also in ini format. Each section
 defines a region and contains options for public-ips, smt-server-ip,
-smt-server-name, and smt-fingerprint. It is assumed that there is no DNS
+smt-server-name, and smt-fingerprint. IPv6 region IP addresses and
+SMT server addresses are specified by the respective *v6 entries. The
+IPv6 entries are optional. It is assumed that there is no DNS
 resolution of the name, thus both fields -ip and -name are expected.
 
 [region]
 public-ips = COMMA_SEPARATED_LIST_OF_IP_ADDRESSES_WITH_MASK_POSTFIX
+public-ipsv6 = COMMA_SEPARATED_LIST_OF_IPv6_ADDRESSES_WITH_MASK_POSTFIX
 smt-server-ip = IP_OF_SMT_SERVER_FOR_THIS_REGION
+smt-server-ipv6 = IPv6_OF_SMT_SERVER_FOR_THIS_REGION
 smt-server-name = HOSTNAME_OF_SMT_SERVER_FOR_THIS_REGION
 smt-fingerprint = SMT_CERT_FINGERPRINT
 """
@@ -48,6 +52,7 @@ import getopt
 import ipaddress
 import logging
 import os
+import pytricia
 import random
 import sys
 
@@ -59,10 +64,11 @@ from flask import request
 def create_smt_region_map(conf):
     """Create two mappings:
          ip_to_smt_data_map:
-             maps all IP ranges to their respctive SMT server info
+             maps all IP ranges to their respctive SMT server info in a
+             tree structure
          region_name_to_smt_data_map:
              maps all region names to their respective SMT server info"""
-    ip_range_to_smt_data_map = {}
+    ip_range_to_smt_data_map = pytricia.PyTricia()
     region_name_to_smt_data_map = {}
     region_data_cfg = configparser.RawConfigParser()
     try:
@@ -91,6 +97,12 @@ def create_smt_region_map(conf):
             logging.error('Missing smt-server-ip data in section %s' % section)
             sys.exit(1)
         try:
+            region_smt_ipsv6 = None
+            region_smt_ipsv6 = region_data_cfg.get(section, 'smt-server-ipv6')
+        except Exception:
+            # IPv6 addresses are optional not all cloud frameworks support IPv6
+            pass
+        try:
             region_smt_names = region_data_cfg.get(section, 'smt-server-name')
         except Exception:
             logging.error(
@@ -108,6 +120,15 @@ def create_smt_region_map(conf):
             )
             sys.exit(1)
         smt_ips = region_smt_ips.split(',')
+        smt_ipsv6 = None
+        if region_smt_ipsv6:
+            smt_ipsv6 = region_smt_ipsv6.split(',')
+            if len(smt_ips) != len(smt_ipsv6):
+                msg = 'Number of configured SMT IPv4 adresses does not '
+                msg += 'match number of configured IPv6 addresses for '
+                msg += 'section "%s"'
+                logging.error(msg % section)
+                sys.exit(1)
         if len(smt_ips) > 1:
             smt_names = region_smt_names.split(',')
             if len(smt_names) > 1 and len(smt_names) != len(smt_ips):
@@ -124,12 +145,13 @@ def create_smt_region_map(conf):
                     'Ambiguous SMT name and finger print pairings %s' % section
                 )
                 sys.exit(1)
-        smtInfo = (
-            region_smt_ips,
-            region_smt_names,
-            region_smt_cert_fingerprints
-        )
-        region_name_to_smt_data_map[section] = smtInfo
+        smt_info = {
+            'smt_ipsv4': region_smt_ips,
+            'smt_ipsv6': region_smt_ipsv6,
+            'smt_names': region_smt_names,
+            'smt_fps': region_smt_cert_fingerprints
+        }
+        region_name_to_smt_data_map[section] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
             try:
                 ipaddress.ip_network(ip_range)
@@ -137,36 +159,9 @@ def create_smt_region_map(conf):
                 msg = 'Could not proces range, improper format: %s'
                 logging.error(msg % ip_range)
                 continue
-            ip_range_to_smt_data_map[ip_range] = smtInfo
+            ip_range_to_smt_data_map.insert(ip_range, smt_info)
 
     return ip_range_to_smt_data_map, region_name_to_smt_data_map
-
-
-# ============================================================================
-def find_longest_prefix_ipv4(requester, ip_range_map):
-    """Find IP ranges for IPv4 adresses that are likely to contain the
-       requester address"""
-    potential_ranges = {
-        1: [],
-        2: [],
-        3: []
-    }
-    results_map = {}
-    requester_parts = requester.split('.')
-    for ip_range in ip_range_map.keys():
-        ip_range_parts = ip_range.split('.')
-        match_cnt = 0
-        for i in range(3):
-            if requester_parts[i] == ip_range_parts[i]:
-                match_cnt += 1
-        if match_cnt:
-            potential_ranges[match_cnt].append(ip_range)
-    for match_len in [3, 2, 1]:
-        if not potential_ranges[match_len]:
-            continue
-        for ip_range in potential_ranges[match_len]:
-            results_map[ip_range] = ip_range_map[ip_range]
-        return results_map
 
 
 # ============================================================================
@@ -264,43 +259,35 @@ app = Flask(__name__)
 
 @app.route('/regionInfo')
 def index():
-    """Provide the SMT server information based on the IP address
-       region association. This path only suports IPv4"""
-    requester = request.remote_addr
-    logging.info('Data request from: %s' % requester)
-    url = request.url
-    region_hint = url.split('regionHint=')[-1]
+    requester_ip = request.remote_addr
+    request_url = request.url
+    logging.info('Data request from: %s' % requester_ip)
+    region_hint = request_url.split('regionHint=')[-1]
     smt_server_data = None
-    if region_hint != url:
+    if region_hint != request_url:
         logging.info('\tRegion hint: %s' % region_hint)
         smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
     if not smt_server_data:
-        range_matches_map = find_longest_prefix_ipv4(
-            requester,
-            ip_range_to_smt_data_map
-        )
-        ip_addr = ipaddress.ip_address(requester)
-        for ip_range, smt_data in range_matches_map.items():
-            net = ipaddress.ip_network(ip_range)
-            if ip_addr in net:
-                smt_server_data = smt_data
-                break
+        smt_server_data = ip_range_to_smt_data_map.get(requester_ip)
     if not smt_server_data:
         logging.info('\tDenied')
-        return 'Not found', 404
-    smt_ip_data, smt_name_data, smt_fingerprint_data = smt_server_data
-    smt_ips = smt_ip_data.split(',')
-    num_smt_ips = len(smt_ips)
-    smt_names = smt_name_data.split(',')
+        return 404
+    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
+    num_smt_ipsv4 = len(smt_ipsv4)
+    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
+    if smt_server_data['smt_ipsv6']:
+        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
+    smt_names = smt_server_data['smt_names'].split(',')
     num_smt_names = len(smt_names)
-    smt_cert_fingerprints = smt_fingerprint_data.split(',')
+    smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
     num_smt_fingerprints = len(smt_cert_fingerprints)
     smt_info_xml = '<regionSMTdata>'
     # Randomize the order of the SMT server information provided to the client
-    while num_smt_ips:
-        entry = random.randint(0, num_smt_ips-1)
-        smt_ip = smt_ips[entry]
-        del(smt_ips[entry])
+    while num_smt_ipsv4:
+        entry = random.randint(0, num_smt_ipsv4-1)
+        smt_ip = smt_ipsv4[entry]
+        smt_ipv6 = smt_ipsv6[entry]
+        del(smt_ipsv4[entry])
         if num_smt_names > 1:
             smt_name = smt_names[entry]
             del(smt_names[entry])
@@ -311,8 +298,9 @@ def index():
             del(smt_cert_fingerprints[entry])
         else:
             smt_fingerprint = smt_cert_fingerprints[0]
-        num_smt_ips -= 1
+        num_smt_ipsv4 -= 1
         smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
+        smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
         smt_info_xml += 'SMTserverName="%s" ' % smt_name
         smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
     smt_info_xml += '</regionSMTdata>'
