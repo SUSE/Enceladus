@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
-# Copyright (c) 2015 SUSE Linux GmbH.  All rights reserved.
+# Copyright (c) 2018 SUSE Linux GmbH.  All rights reserved.
 #
 # This file is part of susePublicCloudInfoClient
 #
@@ -45,9 +45,6 @@ options:
 from docopt import docopt
 from lxml import etree
 
-import boto
-import boto.ec2
-
 import susepubliccloudinfoclient.infoserverrequests as ifsrequest
 import susepubliccloudinfoclient.version as version
 
@@ -81,36 +78,31 @@ image_data = ifsrequest.get_image_data(
     region,
     name_filter)
 
-ec2_regions = boto.ec2.regions()
-image_info = etree.fromstring(image_data)
-region_data = {}
-for region in ec2_regions:
-    region_data[region.name] = []
-
-for image in image_info.findall('image'):
-    region_data[image.get('region')].append(image)
-
 print('ami-name,ami-id,region,arch,virt-typ,backing-store')
-for region in ec2_regions:
-    for image in region_data[region.name]:
-        name = image.get('name')
-        if virt_type and virt_type not in name:
-            continue
-        if 'hvm' in name:
-            virt_type = 'hvm'
-        else:
-            virt_type = 'pv'
-        if 'x86_64' in name:
-            arch = 'x86_64'
-        else:
-            arch = 'i386'
-        if 'ssd' in name:
-            backing_store = 'gp2'
-        else:
-            backing_store = 'standard'
-        print('%s,%s,%s,%s,%s,%s' % (name,
-                                     image.get('id'),
-                                     region.name,
-                                     arch,
-                                     virt_type,
-                                     backing_store))
+for entry in image_data.split('\n'):
+    image_info = entry.strip()
+    if not image_info.startswith('<image '):
+        continue
+    image = etree.fromstring(image_info)
+    name = image.get('name')
+    region = image.get('region')
+    if virt_type and virt_type not in name:
+        continue
+    if 'hvm' in name:
+        virt_type = 'hvm'
+    else:
+        virt_type = 'pv'
+    if 'x86_64' in name:
+        arch = 'x86_64'
+    else:
+        arch = 'i386'
+    if 'ssd' in name:
+        backing_store = 'gp2'
+    else:
+        backing_store = 'standard'
+    print('%s,%s,%s,%s,%s,%s' % (name,
+                                 image.get('id'),
+                                 region,
+                                 arch,
+                                 virt_type,
+                                 backing_store))
