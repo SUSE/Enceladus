@@ -1,7 +1,0 @@
-include LICENSE
-include Makefile
-include README.md
-
-recursive-include man *.1
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
