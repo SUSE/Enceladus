@@ -59,9 +59,9 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
             for scr in upgradeScript:
                 toVer = scr.split('-')[2]
                 if int(toVer) >= 24:
-                    opening_directive = '    <RequireAny>'
+                    opening_directive = '<RequireAny>'
                     directive = 'Require ip'
-                    closing_directive = '    </RequireAny>'
+                    closing_directive = '</RequireAny>'
                     break
             return opening_directive, directive, closing_directive
 
@@ -72,9 +72,9 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
                 major, minor, release = ver.split('.')
                 base_version = '%s%s' % (major, minor)
                 if int(base_version) >= 24:
-                    opening_directive = '    <RequireAny>'
+                    opening_directive = '<RequireAny>'
                     directive = 'Require ip'
-                    closing_directive = '    </RequireAny>'
+                    closing_directive = '</RequireAny>'
                     break
 
         return opening_directive, directive, closing_directive
@@ -88,7 +88,7 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
         allow = ''
         space = ' '
         indent = 4
-        indent_mul = 2
+        indent_mul = 0
         directive_settings = self._get_apache_ip_directive()
         opening_directive = directive_settings[0]
         ip_directive = directive_settings[1]
@@ -107,73 +107,10 @@ class ServiceAccessGeneratorApache(ServiceAccessGenerator):
         if closing_directive:
             allow += closing_directive + '\n'
 
-        found_dir_config = None
-        found_allow = None
-        found_order = None
-        for cfg in self.service_config.split(','):
-            new_content = ''
-            lines = open(cfg, 'r').readlines()
-            for ln in lines:
-                # Write the <Directory ......> directive
-                if apache_directory_directive.match(ln):
-                    new_content += ln
-                    found_dir_config = 1
-                    found_allow = None
-                    # Inside the <Directory> directive
-                elif found_dir_config:
-                    # Replace the Order directive if it exists
-                    if 'Order' in ln:
-                        found_order = 1
-                        if ip_directive == 'Allow from':
-                            new_content += order
-                    # Strip opening and closing directive from new
-                    # access restriction list if they exist and are in the
-                    # config file
-                    elif ( 
-                        opening_directive
-                        and ln.strip().startswith(opening_directive.strip())
-                    ):
-                        allow = allow[
-                            len(opening_directive) + 1:
-                            -(len(closing_directive) +1)
-                        ]
-                        new_content += ln
-                        continue
-                    # Replace the Allow from directive if it exists
-                    elif (
-                            ('Allow from' in ln or
-                             'Require ip' in ln) and
-                            not found_allow
-                    ):
-                        found_allow = 1
-                        new_content += allow
-                    # Skip other Allow directives, new one has been written
-                    elif (
-                            ('Allow from' in ln or
-                             'Require ip' in ln) and
-                            found_allow
-                    ):
-                        continue
-                    # Recognize the end of the <Directory> directive
-                    elif '</Directory>' in ln or '</RequireAll>' in ln:
-                        # Insert the Order directive
-                        if not found_order and ip_directive == 'Allow from':
-                            new_content += order
-                        # Insert the Allow from directive
-                        if not found_allow:
-                            new_content += allow
-                            found_allow = 1
-                        # Add the closing tag for the directive
-                        new_content += ln
-                    else:
-                        new_content += ln
-                # Write everything else
-                else:
-                    new_content += ln
-
         # Write the updated config
+        cfg = '/etc/apache2/allowed-ips.conf'
         fout = open(cfg, 'w')
-        fout.write(new_content)
+        fout.write(allow)
         fout.close()
         logging.info('Updated Apache config file %s' % cfg)
 
