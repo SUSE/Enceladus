@@ -131,7 +131,7 @@ def enable_repository(repo_name):
 # ----------------------------------------------------------------------------
 def exec_subprocess(cmd, return_output=False):
     """Execute the given command as a subprocess (blocking)
-       Returns on off:
+       Returns one off:
            - exit code of the command
            - stdout and stderr
            - -1 indicates an exception"""
@@ -147,8 +147,6 @@ def exec_subprocess(cmd, return_output=False):
         return proc.returncode
     except:
         return -1
-
-    return 1
 
 
 # ----------------------------------------------------------------------------
@@ -383,7 +381,15 @@ def get_zypper_pid():
 # ----------------------------------------------------------------------------
 def has_nvidia_support():
     """Check if the instance has Nvida capabilities"""
-    pci_info, errors = exec_subprocess(['lspci'], True)
+    try:
+        pci_info, errors = exec_subprocess(['lspci'], True)
+    except TypeError:
+        logging.info(
+            'lspci command not found, instance Nvidia support cannot '
+            'be determined'
+        )
+        return False
+
     if 'NVIDIA' in pci_info.decode():
         logging.info('Instance has Nvidia support')
         return True

@@ -16,7 +16,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-%define base_version 8.0.4
+%define base_version 8.0.5
 Name:           cloud-regionsrv-client
 Version:        %{base_version}
 Release:        0
@@ -25,13 +25,17 @@ Summary:        Cloud Environment Guest Registration
 URL:            http://www.github.com:SUSE/Enceladus
 Group:          Productivity/Networking/Web/Servers
 Source0:        %{name}-%{version}.tar.bz2
+Requires:       ca-certificates
 Requires:       cloud-regionsrv-client-config
+Requires:       pciutils
+Requires:       procps
 Requires:       python3
 Requires:       python3-lxml
 Requires:       python3-M2Crypto
 Requires:       python3-requests
 Requires:       regionsrv-certs
 Requires:       SUSEConnect
+Requires:       zypper
 BuildRequires:  systemd
 %{?systemd_requires}
 BuildRequires:  python3-setuptools
