@@ -6,27 +6,25 @@ the code is SUSE specific while other code is generic and useful for anyone.
 Each directory represents a "project" onto it's own containing a README file
 explaining the details of the code developed in that directory.
 
-# azuremetadata
+The code is being migrated to the [SUSE-Enceladus] (https://github.com/SUSE-Enceladus) organization where each code base previously contained in a directory is being setup as it's own project.
 
-A tool to collect metadata in a Microsoft Azure instance
+# azure-bond-autoconf
 
-# CloudFormation 
-
-Cloud Formation scripts to deploy/orchestrate SUSE images in Amazon EC2
+Auto bonding of SR-IOV and synthetic interfaces in Azure. This has been
+superseded by code included in the Linux kernel included in SUSE kernels
+available in SUSE Linux Enterprise Server 12 Sp2 and later. This code
+will not be migratedto SUSE-Enceladus.
 
 # dockerImgStore
 
 Setup image storage for docker in cloud images
 
-# ec2utils
+# mockboto3
 
-A collection of utilities useful for interacting with Amazon EC2
+Python Mock implementation for boto. This is no longer needed and the code
+will not be migrated to SUSE-Enceladus.
 
-# gcemetadata
-
-A tool to collect metadata in a Google Compute Engine instance
-
-# monitoring
+# monitor
 
 Plugins for Nagios/Icinga used to monitor the SUSE update infrastructure
 in the Public CLoud covering cases for which we could not find already
@@ -43,6 +41,16 @@ The client for the SUSE Linux Enterprise Specific update infrastructure. The
 client is used in all SUSE released on demand images and is recommended for
 any Cloud Service Provider that is interested in providing SUSE Linux
 Enterprise in their Public Cloud offering.
+
+# serviceAccessConfig
+
+Automaticaly generate ACL rules for Apache and HA Proxy based on a
+configuration file.
+
+# supportutilsPluginSUSEPublicCloud
+
+Plugin for SUSE support utils.
+
 
 ## Contributing
 
