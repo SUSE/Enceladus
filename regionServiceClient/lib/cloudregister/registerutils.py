@@ -1,4 +1,4 @@
-# Copyright (c) 2016, SUSE LLC, All rights reserved.
+# Copyright (c) 2019, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -45,8 +45,11 @@ def add_hosts_entry(smt_server):
     smt_hosts_entry_comment += 'retain comment as well\n'
     hosts = open('/etc/hosts', 'a')
     hosts.write(smt_hosts_entry_comment)
+    smt_ip = smt_server.get_ipv4()
+    if has_ipv6_access(smt_server):
+        smt_ip = smt_server.get_ipv6()
     entry = '%s\t%s\t%s\n' % (
-        smt_server.get_ip(),
+        smt_ip,
         smt_server.get_FQDN(),
         smt_server.get_name()
     )
@@ -238,7 +241,11 @@ def find_equivalent_smt_server(configured_smt, known_smt_servers):
     """Find an SMT server that is equivalent to the currently configured
        SMT server, only consider responsive servers"""
     for smt in known_smt_servers:
-        if smt.get_ip() == configured_smt.get_ip():
+        # Take a shortcut and only compare the IPv4 address to
+        # skip the same server in the list. If the IPv4 addresses of
+        # a given object are the same and other data is different we have
+        # a really big problem.
+        if smt.get_ipv4() == configured_smt.get_ipv4():
             continue
         if smt.is_equivalent(configured_smt) and smt.is_responsive():
             return smt
@@ -311,11 +318,15 @@ def get_current_smt():
         return
     # Verify that this system is also in /etc/hosts and we are in
     # a consistent state
-    smt_ip = smt.get_ip()
+    smt_ipv4 = smt.get_ipv4()
+    smt_ipv6 = smt.get_ipv6()
     smt_fqdn = smt.get_FQDN()
     hosts = open(HOSTSFILE_PATH, 'r').read()
     if (
-            not re.search(r'%s\s' % smt_ip, hosts) or not
+            not (
+                re.search(r'%s\s' % smt_ipv4, hosts) or
+                re.search(r'%s\s' % smt_ipv6, hosts)
+            ) or not
             re.search(r'\s%s\s' % smt_fqdn, hosts)
     ):
         os.unlink(__get_registered_smt_file_path())
@@ -376,6 +387,25 @@ def get_zypper_pid():
     pidData = zyppPID.communicate()
 
     return pidData[0].strip().decode()
+
+
+# ----------------------------------------------------------------------------
+def has_ipv6_access(smt):
+    """IPv6 access is possible if we have an SMT server that has an IPv6
+       address and it can be accessed over IPv6"""
+    if not smt.get_ipv6():
+        return None
+    logging.info('Attempt to access update server over IPv6')
+    try:
+        cert_rq = requests.get(
+            'http://%s/smt.crt' % smt.get_ipv6(),
+            timeout=3
+        )
+    except Exception:
+        logging.info('Update server not reachable over IPv6')
+        return None
+    if cert_rq and cert_rq.status_code == 200:
+        return True
 
 
 # ----------------------------------------------------------------------------
@@ -527,8 +557,8 @@ def remove_registration_data():
     smt_data_file = __get_registered_smt_file_path()
     if os.path.exists(smt_data_file):
         smt = get_smt_from_store(smt_data_file)
-        ip_address = smt.get_ip()
-        logging.info('Clean current registration server: %s' % ip_address)
+        smt_ips = (smt.get_ipv4(),smt.get_ipv6())
+        logging.info('Clean current registration server: %s' % str(smt_ips))
         server_name = smt.get_FQDN()
         domain_name = smt.get_domain_name()
         clean_hosts_file(domain_name)
@@ -547,12 +577,38 @@ def replace_hosts_entry(current_smt, new_smt):
     """Replace the information of the SMT server in /etc/hosts"""
     known_hosts = open(HOSTSFILE_PATH, 'r').readlines()
     new_hosts = ''
-    current_smt_ip = current_smt.get_ip()
+    current_smt_ipv4 = current_smt.get_ipv4()
+    current_smt_ipv6 = current_smt.get_ipv6()
+    smt_ipv6_access = has_ipv6_access(new_smt)
+    new_entry = '%s\t' + new_smt.get_FQDN() + '\t' + new_smt.get_name() + '\n'
     for entry in known_hosts:
-        if current_smt_ip in entry:
-            new_hosts += '%s\t%s\t%s\n' % (new_smt.get_ip(),
-                                           new_smt.get_FQDN(),
-                                           new_smt.get_name())
+        if (
+                current_smt_ipv4 and
+                entry.startswith(current_smt_ipv4) and not
+                smt_ipv6_access
+        ):
+            new_hosts += new_entry % new_smt.get_ipv4()
+            continue
+        if (
+                current_smt_ipv4 and
+                entry.startswith(current_smt_ipv4) and
+                smt_ipv6_access
+        ):
+            new_hosts += new_entry % new_smt.get_ipv6()
+            continue
+        if (
+                current_smt_ipv6 and
+                entry.startswith(current_smt_ipv6) and not
+                smt_ipv6_access
+        ):
+            new_hosts += new_entry % new_smt.get_ipv4()
+            continue
+        if (
+                current_smt_ipv6 and
+                entry.startswith(current_smt_ipv6) and
+                smt_ipv6_access
+        ):
+            new_hosts += new_entry % new_smt.get_ipv6()
             continue
         new_hosts += entry
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2017, SUSE LLC, All rights reserved.
+# Copyright (c) 2019, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -254,8 +254,11 @@ if registration_smt:
             region_smt_servers
         )
         if new_target:
+            smt_ip = new_target.get_ipv4()
+            if utils.has_ipv6_access(new_target):
+                smt_ip = new_target.get_ipv6()
             msg = 'Configured SMT unresponsive, switching to equivalent '
-            msg += 'SMT server with ip %s' % new_target.get_ip()
+            msg += 'SMT server with ip %s' % smt_ip
             utils.replace_hosts_entry(registration_smt, new_target)
             utils.store_smt_data(
                 registration_smt_cache_file_name,
@@ -272,8 +275,7 @@ if registration_smt:
 registration_target = None
 tested_smt_servers = []
 for smt in region_smt_servers:
-    smt_ip = smt.get_ip()
-    tested_smt_servers.append(smt_ip)
+    tested_smt_servers.append((smt.get_ipv4(),smt.get_ipv6()))
     alive = smt.is_responsive()
     if alive:
         registration_target = smt
@@ -281,7 +283,7 @@ for smt in region_smt_servers:
         break
 
 if not registration_target:
-    logging.error('No response from: %s' % tested_smt_servers)
+    logging.error('No response from: %s' % str(tested_smt_servers))
     sys.exit(1)
 
 # Add the target SMT server to the hosts file
@@ -340,20 +342,20 @@ if (os.path.exists(register11) and os.access(register11, os.X_OK)):
         res = os.system(cmd)
 
         if res:
-            failed_smts.append(registration_target.get_ip())
+            failed_smts.append(registration_target.get_ipv4())
             if len(failed_smts) == len(region_smt_servers):
                 logging.error('Registration failed')
                 sys.exit(1)
             for smt in region_smt_servers:
                 if (
-                        smt.get_ip() != registration_target.get_ip() and
-                        smt.get_ip() not in failed_smts
+                        smt.get_ipv4() != registration_target.get_ipv4() and
+                        smt.get_ipv4() not in failed_smts
                 ):
                     error_msg = 'Registration with %s failed. Trying %s'
                     logging.error(
                         error_msg % (
-                            registration_target.get_ip(),
-                            smt.get_ip()
+                            registration_target.get_ipv4(),
+                            smt.get_ipv4()
                         )
                     )
                     utils.remove_registration_data()
@@ -402,21 +404,25 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
         for item in res:
             entry = item.decode()
             if error_exp.match(entry):
-                failed_smts.append(registration_target.get_ip())
+                failed_smts.append(registration_target.get_ipv4())
                 if len(failed_smts) == len(region_smt_servers):
                     logging.error('Baseproduct registration failed')
                     logging.error('\t%s' % entry)
                     sys.exit(1)
                 for smt in region_smt_servers:
+                    target_smt_ipv4 = registration_target.get_ipv4()
+                    target_smt_ipv6 = registration_target.get_ipv6()
+                    new_smt_ipv4 = smt.get_ipv4()
+                    new_smt_ipv6 = smt.get_ipv6()
                     if (
-                            smt.get_ip() != registration_target.get_ip() and
-                            smt.get_ip() not in failed_smts
+                            smt.get_ipv4() != registration_target.get_ipv4() and
+                            smt.get_ipv4() not in failed_smts
                     ):
                         error_msg = 'Registration with %s failed. Trying %s'
                         logging.error(
                             error_msg % (
-                                registration_target.get_ip(),
-                                smt.get_ip()
+                                str(target_smt_ipv4,target_smt_ipv6),
+                                str(new_smt_ipv4,new_smt_ipv6)
                             )
                         )
                         utils.remove_registration_data()
