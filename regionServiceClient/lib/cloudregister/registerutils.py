@@ -394,7 +394,7 @@ def has_ipv6_access(smt):
     """IPv6 access is possible if we have an SMT server that has an IPv6
        address and it can be accessed over IPv6"""
     if not smt.get_ipv6():
-        return None
+        return False
     logging.info('Attempt to access update server over IPv6')
     try:
         cert_rq = requests.get(
@@ -403,7 +403,7 @@ def has_ipv6_access(smt):
         )
     except Exception:
         logging.info('Update server not reachable over IPv6')
-        return None
+        return False
     if cert_rq and cert_rq.status_code == 200:
         return True
 
@@ -557,7 +557,7 @@ def remove_registration_data():
     smt_data_file = __get_registered_smt_file_path()
     if os.path.exists(smt_data_file):
         smt = get_smt_from_store(smt_data_file)
-        smt_ips = (smt.get_ipv4(),smt.get_ipv6())
+        smt_ips = (smt.get_ipv4(), smt.get_ipv6())
         logging.info('Clean current registration server: %s' % str(smt_ips))
         server_name = smt.get_FQDN()
         domain_name = smt.get_domain_name()
@@ -582,36 +582,19 @@ def replace_hosts_entry(current_smt, new_smt):
     smt_ipv6_access = has_ipv6_access(new_smt)
     new_entry = '%s\t' + new_smt.get_FQDN() + '\t' + new_smt.get_name() + '\n'
     for entry in known_hosts:
-        if (
-                current_smt_ipv4 and
-                entry.startswith(current_smt_ipv4) and not
-                smt_ipv6_access
-        ):
-            new_hosts += new_entry % new_smt.get_ipv4()
-            continue
-        if (
-                current_smt_ipv4 and
-                entry.startswith(current_smt_ipv4) and
-                smt_ipv6_access
-        ):
-            new_hosts += new_entry % new_smt.get_ipv6()
-            continue
-        if (
-                current_smt_ipv6 and
-                entry.startswith(current_smt_ipv6) and not
-                smt_ipv6_access
-        ):
-            new_hosts += new_entry % new_smt.get_ipv4()
-            continue
-        if (
-                current_smt_ipv6 and
-                entry.startswith(current_smt_ipv6) and
-                smt_ipv6_access
-        ):
-            new_hosts += new_entry % new_smt.get_ipv6()
-            continue
-        new_hosts += entry
-
+        if current_smt_ipv4 and entry.startswith(current_smt_ipv4):
+            if smt_ipv6_access:
+                new_hosts += new_entry % new_smt.get_ipv6()
+            else:
+                new_hosts += new_entry % new_smt.get_ipv4()
+        elif current_smt_ipv6 and entry.startswith(current_smt_ipv6):
+            if smt_ipv6_access:
+                new_hosts += new_entry % new_smt.get_ipv6()
+            else:
+                new_hosts += new_entry % new_smt.get_ipv4()
+        else:
+            new_hosts += entry
+        
     with open(HOSTSFILE_PATH, 'w') as hosts_file:
         hosts_file.write(new_hosts)
 

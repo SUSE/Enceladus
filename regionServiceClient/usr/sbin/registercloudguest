@@ -275,7 +275,7 @@ if registration_smt:
 registration_target = None
 tested_smt_servers = []
 for smt in region_smt_servers:
-    tested_smt_servers.append((smt.get_ipv4(),smt.get_ipv6()))
+    tested_smt_servers.append((smt.get_ipv4(), smt.get_ipv6()))
     alive = smt.is_responsive()
     if alive:
         registration_target = smt
@@ -421,8 +421,8 @@ elif (os.path.exists(register12) and os.access(register12, os.X_OK)):
                         error_msg = 'Registration with %s failed. Trying %s'
                         logging.error(
                             error_msg % (
-                                str(target_smt_ipv4,target_smt_ipv6),
-                                str(new_smt_ipv4,new_smt_ipv6)
+                                str((target_smt_ipv4, target_smt_ipv6)),
+                                str((new_smt_ipv4, new_smt_ipv6))
                             )
                         )
                         utils.remove_registration_data()
