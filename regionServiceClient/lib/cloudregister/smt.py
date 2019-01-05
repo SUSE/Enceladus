@@ -1,4 +1,4 @@
-# Copyright (c) 2015, SUSE LLC, All rights reserved.
+# Copyright (c) 2019, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -86,11 +86,23 @@ class SMT:
     # --------------------------------------------------------------------
     def get_ipv4(self):
         """Return the IP address"""
+        # Before handling ipv6 the IP address was stored in the _ip
+        # member. When the SMT object is restored from an old pickeled
+        # file the _ip member gets created while th e-ipv4 member does
+        # not exist. Handle this transition properly.
+        if hasattr(self, '_ip'):
+            self._ipv4 = self._ip
         return self._ipv4
 
     # --------------------------------------------------------------------
     def get_ipv6(self):
         """Return the IP address"""
+        # Before handling ipv6 the IP address was stored in the _ip
+        # member. When the SMT object is restored from an old pickeled
+        # file the _ipv6 member does not exist. Handle this transition
+        # properly.
+        if not hasattr(self, '_ipv6'):
+            return None
         return self._ipv6
 
     # --------------------------------------------------------------------

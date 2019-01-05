@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2015, SUSE LLC, All rights reserved.
+# Copyright (c) 2019, SUSE LLC, All rights reserved.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,11 @@
    The configuration is in ini format and is located in
    /etc/regionserverclnt.cfg"""
 
+# Note we do not care about handling IPv6 handling in this plugin.
+# This plugin will be replaced by a URL resolver plugin which will
+# take over the SMT failover once proper server side implementation
+# is in place
+
 import logging
 import os
 import subprocess
@@ -39,9 +44,9 @@ if not current_smt:
 
 if utils.is_registered(current_smt):
     alive = current_smt.is_responsive()
-    # TODO: verify instance data here if applicable
+    # Verification will be added into a new URL Resolver plugin
     if alive:
-        msg = '[Service] Current SMT (%s) ' % current_smt.get_ip()
+        msg = '[Service] Current SMT (%s) ' % current_smt.get_ipv4()
         msg += 'server will be refreshed'
         logging.info(msg)
         sys.exit()
@@ -54,7 +59,7 @@ if utils.is_registered(current_smt):
             available_servers)
         if new_target:
             msg = '[Service] Switching to alternate SMT server: '
-            msg += new_target.get_ip()
+            msg += new_target.get_ipv4()
             logging.info(msg)
             utils.replace_hosts_entry(current_smt, new_target)
             utils.set_as_current_smt(new_target)
@@ -69,11 +74,11 @@ if utils.is_registered(current_smt):
                 if smt.is_responsive():
                     utils.import_smt_cert(smt)
                     msg = '[Service] Switching the service to: '
-                    msg += smt.get_ip()
+                    msg += smt.get_ipv4()
                     logging.info(msg)
                     utils.switch_smt_service(smt)
                     msg = '[Service] Switching all repos to: '
-                    msg += smt.get_ip()
+                    msg += smt.get_ipv4()
                     logging.info(msg)
                     utils.switch_smt_repos(smt)
                     utils.replace_hosts_entry(current_smt, smt)
