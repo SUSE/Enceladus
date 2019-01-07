@@ -35,13 +35,6 @@ developed plugins
 Server side for providing update server information per region in a cloud
 framework.
 
-# regionServiceClient
-
-The client for the SUSE Linux Enterprise Specific update infrastructure. The
-client is used in all SUSE released on demand images and is recommended for
-any Cloud Service Provider that is interested in providing SUSE Linux
-Enterprise in their Public Cloud offering.
-
 # serviceAccessConfig
 
 Automaticaly generate ACL rules for Apache and HA Proxy based on a
