@@ -23,3 +23,9 @@ table for the process with the given name.
 
 The script monitors that the given directory is/remains empty or does not
 exist
+
+# check_repo_signatures
+
+The script monitors that repositories in the given directory have valid
+metadata GPG signatures (i.e., that `repomd.xml.asc` and `repomd.xml.key` match
+`repomd.xml`).
