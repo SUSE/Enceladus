@@ -15,10 +15,6 @@ superseded by code included in the Linux kernel included in SUSE kernels
 available in SUSE Linux Enterprise Server 12 Sp2 and later. This code
 will not be migratedto SUSE-Enceladus.
 
-# dockerImgStore
-
-Setup image storage for docker in cloud images
-
 # mockboto3
 
 Python Mock implementation for boto. This is no longer needed and the code
