@@ -26,11 +26,6 @@ Plugins for Nagios/Icinga used to monitor the SUSE update infrastructure
 in the Public CLoud covering cases for which we could not find already
 developed plugins
 
-# regionService
-
-Server side for providing update server information per region in a cloud
-framework.
-
 # serviceAccessConfig
 
 Automaticaly generate ACL rules for Apache and HA Proxy based on a
